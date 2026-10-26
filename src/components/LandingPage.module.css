@@ -1,0 +1,246 @@
+.page {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  color: #1a1a2e;
+  background: #f8f7ff;
+  min-height: 100vh;
+}
+
+/* ── HERO ─── */
+.hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #6c63ff 60%, #8b5cf6 100%);
+  color: #fff;
+  padding: 5rem 1.5rem 4rem;
+  text-align: center;
+}
+
+.heroInner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.badge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  padding: 0.35rem 1.1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 1.2rem;
+}
+
+.headline {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  font-weight: 900;
+  line-height: 1.2;
+  margin: 0 0 1rem;
+}
+
+.description {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
+  margin: 0 0 1.5rem;
+}
+
+.meta {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.meta span {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+}
+
+.earlyBird {
+  margin-top: 1.5rem;
+  background: rgba(255, 220, 50, 0.18);
+  border: 1.5px solid rgba(255, 220, 50, 0.4);
+  border-radius: 10px;
+  padding: 0.7rem 1.3rem;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+/* ── SECTIONS ─── */
+.section {
+  padding: 4rem 1.5rem;
+}
+
+.altBg {
+  background: #fff;
+}
+
+.registerSection {
+  background: linear-gradient(135deg, #1a1a2e 0%, #6c63ff 100%);
+}
+
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 2.5rem;
+}
+
+/* ── BULLETS ─── */
+.bullets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+}
+
+.bullet {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.3rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  box-shadow: 0 2px 12px rgba(108, 99, 255, 0.08);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.bulletIcon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+/* ── SPEAKERS ─── */
+.speakers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.speakerCard {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6c63ff, #8b5cf6);
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.speakerName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  max-width: 140px;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── AGENDA ─── */
+.agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 16px rgba(108, 99, 255, 0.08);
+}
+
+.agendaItem {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #fff;
+  border-bottom: 1px solid #f0eeff;
+  gap: 1.2rem;
+}
+
+.agendaItem:last-child {
+  border-bottom: none;
+}
+
+.agendaTime {
+  font-weight: 700;
+  color: #6c63ff;
+  font-size: 0.88rem;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.agendaTitle {
+  font-size: 0.95rem;
+  color: #333;
+}
+
+/* ── VIEW LIST ─── */
+.viewListWrap {
+  text-align: center;
+  margin-top: 1.2rem;
+}
+
+.viewListBtn {
+  padding: 0.55rem 1.5rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.viewListBtn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+/* ── RESET BAR ─── */
+.resetBar {
+  text-align: center;
+  padding: 2rem;
+  background: #f8f7ff;
+}
+
+.resetBtn {
+  padding: 0.8rem 2.5rem;
+  border: 2px solid #6c63ff;
+  border-radius: 999px;
+  background: transparent;
+  color: #6c63ff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.resetBtn:hover {
+  background: #6c63ff;
+  color: #fff;
+}
+
