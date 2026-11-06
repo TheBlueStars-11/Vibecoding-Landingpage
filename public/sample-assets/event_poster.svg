@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="35%" stop-color="#1e1b4b"/>
+      <stop offset="70%" stop-color="#312e81"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="glowCircle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Ambient Glow Orbs -->
+  <circle cx="1050" cy="120" r="320" fill="url(#glowCircle)"/>
+  <circle cx="120" cy="520" r="360" fill="url(#glowCircle)"/>
+
+  <!-- Futuristic Grid Lines -->
+  <g stroke="#ffffff" stroke-opacity="0.05" stroke-width="1">
+    <line x1="0" y1="120" x2="1200" y2="120"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="360" x2="1200" y2="360"/>
+    <line x1="0" y1="480" x2="1200" y2="480"/>
+    <line x1="200" y1="0" x2="200" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="1000" y1="0" x2="1000" y2="630"/>
+  </g>
+
+  <!-- Neural Network Connections -->
+  <g stroke="url(#accentGrad)" stroke-width="1.5" stroke-opacity="0.3" fill="none">
+    <path d="M 850 180 Q 950 240 1080 200 T 1160 320"/>
+    <path d="M 900 350 Q 1020 300 1120 420"/>
+  </g>
+  <circle cx="850" cy="180" r="5" fill="#38bdf8"/>
+  <circle cx="1080" cy="200" r="6" fill="#818cf8"/>
+  <circle cx="1160" cy="320" r="7" fill="#c084fc"/>
+  <circle cx="900" cy="350" r="5" fill="#06b6d4"/>
+  <circle cx="1120" cy="420" r="6" fill="#38bdf8"/>
+
+  <!-- Top Pill Badges -->
+  <g transform="translate(100, 80)">
+    <rect width="210" height="38" rx="19" fill="#ffffff" fill-opacity="0.12" stroke="#ffffff" stroke-opacity="0.25"/>
+    <circle cx="22" cy="19" r="6" fill="#10b981"/>
+    <text x="36" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#ffffff" letter-spacing="0.08em">VIBE CODING 2026</text>
+  </g>
+
+  <g transform="translate(325, 80)">
+    <rect width="180" height="38" rx="19" fill="#6366f1" fill-opacity="0.25" stroke="#818cf8" stroke-opacity="0.4"/>
+    <text x="90" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700" fill="#c7d2fe" text-anchor="middle" letter-spacing="0.05em">LIVE SUMMIT &amp; DEMO</text>
+  </g>
+
+  <!-- Main Headline -->
+  <text x="100" y="235" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="900" fill="#ffffff" letter-spacing="-0.02em">
+    HỘI THẢO AI &amp; VIBE CODING
+  </text>
+  <text x="100" y="305" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="800" fill="url(#accentGrad)" letter-spacing="-0.01em">
+    VIETNAM SUMMIT 2026
+  </text>
+
+  <!-- Description Lead -->
+  <text x="100" y="375" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="400" fill="#cbd5e1">
+    Kiến tạo kỷ nguyên số với Lập trình trực quan, Design System và Generative AI thế hệ mới.
+  </text>
+  <text x="100" y="410" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="400" fill="#94a3b8">
+    Cơ hội kết nối trực tiếp cùng các chuyên gia đầu ngành công nghệ tại Việt Nam.
+  </text>
+
+  <!-- Info Cards Strip -->
+  <g transform="translate(100, 465)">
+    <!-- Date Card -->
+    <rect x="0" y="0" width="280" height="85" rx="16" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15"/>
+    <text x="24" y="34" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#38bdf8" letter-spacing="0.08em">THỜI GIAN TỔ CHỨC</text>
+    <text x="24" y="64" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#ffffff">08:30 · 20/11/2026</text>
+
+    <!-- Venue Card -->
+    <rect x="300" y="0" width="380" height="85" rx="16" fill="#ffffff" fill-opacity="0.08" stroke="#ffffff" stroke-opacity="0.15"/>
+    <text x="324" y="34" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#a78bfa" letter-spacing="0.08em">ĐỊA ĐIỂM SỰ KIỆN</text>
+    <text x="324" y="64" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#ffffff">Hội trường A1 · NIC Innovation Hub</text>
+
+    <!-- Ticket Card -->
+    <rect x="700" y="0" width="240" height="85" rx="16" fill="#10b981" fill-opacity="0.15" stroke="#10b981" stroke-opacity="0.35"/>
+    <text x="724" y="34" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="#34d399" letter-spacing="0.08em">VÉ THAM DỰ</text>
+    <text x="724" y="64" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="#6ee7b7">100% MIỄN PHÍ</text>
+  </g>
+</svg>
+

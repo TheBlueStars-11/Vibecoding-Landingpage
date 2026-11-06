@@ -1,0 +1,47 @@
+.stickyBar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  background: var(--surface, #ffffff);
+  border-top: 1px solid var(--border, #e2e8f0);
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.08);
+  padding: 0.75rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 58%;
+}
+
+.ctaBtn {
+  background: var(--accent-gradient, linear-gradient(135deg, #4f46e5, #7c3aed));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.55rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+}
+
+@media (max-width: 768px) {
+  .stickyBar {
+    display: flex;
+  }
+}
+

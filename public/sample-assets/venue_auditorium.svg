@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <defs>
+    <linearGradient id="hallBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="60%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="ledScreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="stageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="woodPanel" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#78350f" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#451a03" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Hall Background -->
+  <rect width="800" height="500" fill="url(#hallBg)"/>
+
+  <!-- Acoustic Wood Wall Accents -->
+  <rect x="0" y="0" width="80" height="340" fill="url(#woodPanel)"/>
+  <rect x="720" y="0" width="80" height="340" fill="url(#woodPanel)"/>
+
+  <!-- Ceiling Spotlight Cones -->
+  <g fill="#ffffff" fill-opacity="0.04">
+    <polygon points="200,0 120,240 280,240"/>
+    <polygon points="400,0 300,240 500,240"/>
+    <polygon points="600,0 520,240 680,240"/>
+  </g>
+
+  <!-- Stage Elevation -->
+  <polygon points="60,250 740,250 800,320 0,320" fill="url(#stageGrad)"/>
+  <rect x="0" y="320" width="800" height="20" fill="#0f172a"/>
+
+  <!-- Huge Center Stage LED Screen -->
+  <g transform="translate(140, 50)">
+    <rect width="520" height="190" rx="12" fill="#020617" stroke="#38bdf8" stroke-width="2" stroke-opacity="0.6"/>
+    <rect x="6" y="6" width="508" height="178" rx="8" fill="url(#ledScreen)"/>
+
+    <!-- Content on LED Screen -->
+    <rect x="26" y="24" width="130" height="24" rx="12" fill="#ffffff" fill-opacity="0.2"/>
+    <text x="91" y="40" font-family="system-ui, sans-serif" font-size="10" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="0.05em">INNOVATION HUB</text>
+    
+    <text x="254" y="95" font-family="system-ui, sans-serif" font-size="24" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="0.02em">HỘI TRƯỜNG A1 · NIC</text>
+    <text x="254" y="125" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#e0e7ff" text-anchor="middle">Sức chứa 150 chỗ ngồi · Âm thanh &amp; Ánh sáng 4.0</text>
+    
+    <g transform="translate(180, 142)">
+      <rect width="148" height="24" rx="12" fill="#ffffff" fill-opacity="0.25"/>
+      <text x="74" y="16" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">239 Xuân Thủy, Hà Nội</text>
+    </g>
+  </g>
+
+  <!-- Stage Podium -->
+  <g transform="translate(200, 210)">
+    <polygon points="10,0 50,0 55,50 5,50" fill="#475569"/>
+    <rect x="15" y="-12" width="30" height="12" rx="2" fill="#64748b"/>
+    <line x1="30" y1="-12" x2="25" y2="-25" stroke="#94a3b8" stroke-width="2"/>
+    <circle cx="25" cy="-27" r="3" fill="#cbd5e1"/>
+  </g>
+
+  <!-- Audience Theater Seating Rows -->
+  <g fill="#1e293b" stroke="#334155" stroke-width="1.5">
+    <!-- Row 1 -->
+    <ellipse cx="400" cy="370" rx="340" ry="24"/>
+    <!-- Row 2 -->
+    <ellipse cx="400" cy="415" rx="365" ry="26"/>
+    <!-- Row 3 -->
+    <ellipse cx="400" cy="465" rx="390" ry="28"/>
+  </g>
+
+  <!-- Floating Address Tag -->
+  <g transform="translate(24, 435)">
+    <rect width="360" height="42" rx="10" fill="#0f172a" fill-opacity="0.85" stroke="#38bdf8" stroke-width="1"/>
+    <circle cx="22" cy="21" r="5" fill="#ef4444"/>
+    <text x="36" y="26" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Trung tâm Đổi mới Sáng tạo Quốc gia (NIC), Hà Nội</text>
+  </g>
+</svg>
+

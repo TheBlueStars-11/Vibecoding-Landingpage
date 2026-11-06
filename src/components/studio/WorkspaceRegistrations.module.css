@@ -1,0 +1,931 @@
+/* ========================================================= */
+/* WORKSPACE REGISTRATIONS (QR SHARING & REAL-TIME DASHBOARD)*/
+/* ========================================================= */
+
+.workspaceContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px 4px 60px 4px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* 1. Header Workspace */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.headerIconWrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(79, 70, 229, 0.2) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4f46e5;
+  flex-shrink: 0;
+}
+
+.headerIcon {
+  color: #4f46e5;
+}
+
+.pageTitle {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+  letter-spacing: -0.01em;
+}
+
+.pageSubtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  transform: translateY(-1px);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background-color: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnSecondary:hover:not(:disabled) {
+  background-color: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.spinIcon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ========================================================= */
+/* 2. KHU VỰC CHIA SẺ MÃ QR TRỰC TIẾP                        */
+/* ========================================================= */
+.shareCard {
+  background: linear-gradient(160deg, #faf7ff 0%, #f4edff 100%);
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  border-radius: 20px;
+  box-shadow: 0 8px 30px -4px rgba(124, 58, 237, 0.09);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.shareCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4f46e5, #8b5cf6, #ec4899);
+}
+
+.shareCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.12);
+}
+
+.shareTitleWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.shareHeading {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+  animation: pulseDot 1.8s infinite;
+}
+
+@keyframes pulseDot {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+}
+
+.modeTabs {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.modeTab {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modeTab:hover {
+  color: #1e293b;
+}
+
+.modeTabActive {
+  background: #ffffff;
+  color: #4f46e5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.shareCardBody {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+/* Cột Trái: QR Frame */
+.qrCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.qrFrame {
+  width: 240px;
+  height: 240px;
+  background: #ffffff;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px -3px rgba(124, 58, 237, 0.08);
+}
+
+.qrImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.qrPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.qrActions {
+  display: flex;
+  gap: 8px;
+  width: 240px;
+}
+
+.qrBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qrBtn:hover:not(:disabled) {
+  background: #ffffff;
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.qrBtnSuccess {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
+}
+
+/* Cột Phải: Thông tin URL & Hướng dẫn */
+.infoCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.urlInputBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputLabel {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.urlBar {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 4px 6px 4px 12px;
+  gap: 6px;
+}
+
+.urlInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #0f172a;
+  outline: none;
+}
+
+.btnCopyUrl, .btnOpenUrl {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #ffffff;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.15s ease;
+}
+
+.btnCopyUrl:hover, .btnOpenUrl:hover {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.adapterSelectBox, .tunnelInputBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #faf7ff;
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.tunnelControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btnStartTunnel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+}
+
+.btnStartTunnel:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+}
+
+.btnStartTunnel:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.btnStopTunnel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnStopTunnel:hover {
+  background: #fecaca;
+}
+
+.tunnelStatusActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tunnelError {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+
+.subLabel {
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.selectInput, .tunnelInput {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.825rem;
+  color: #1e293b;
+  outline: none;
+}
+
+.tunnelInput:focus, .selectInput:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.hintText {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.hintText code {
+  background: #e2e8f0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.instructionCard {
+  background: #fbf9ff;
+  border: 1px dashed rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.instructionTitle {
+  font-size: 0.825rem;
+  font-weight: 700;
+  color: #334155;
+  margin: 0 0 8px 0;
+}
+
+.stepsList {
+  padding-left: 20px;
+  margin: 0;
+  font-size: 0.8rem;
+  color: #475569;
+  line-height: 1.6;
+}
+
+/* ========================================================= */
+/* 3. BẢNG THỐNG KÊ SỐ LIỆU THỜI GIAN THỰC                   */
+/* ========================================================= */
+.statsSection {
+  margin-top: 4px;
+}
+
+.statCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.statCard {
+  background: linear-gradient(165deg, #ffffff 0%, #faf6ff 100%);
+  border: 1px solid rgba(139, 92, 246, 0.16);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.statCardHighlight {
+  border-color: rgba(139, 92, 246, 0.35);
+  background: linear-gradient(165deg, #f7f3ff 0%, #eee6ff 100%);
+}
+
+.statCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.statCardLabel {
+  font-size: 0.775rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.liveTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #16a34a;
+  background-color: #f0fdf4;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid #bbf7d0;
+}
+
+.badgeNew {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #4f46e5;
+  background-color: #e0e7ff;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.statusDotGreen {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #16a34a;
+}
+
+.statIcon {
+  color: #94a3b8;
+}
+
+.statNumber {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.statNumberSmall {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statDesc {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* ========================================================= */
+/* 4. DANH SÁCH CHI TIẾT ĐƠN ĐĂNG KÝ                         */
+/* ========================================================= */
+.tableSection {
+  background: linear-gradient(170deg, #ffffff 0%, #faf7ff 100%);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tableHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tableTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tableControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  width: 240px;
+}
+
+.searchIcon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.searchInput {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.825rem;
+  color: #0f172a;
+  width: 100%;
+}
+
+.btnClearSearch {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.sortSelect {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.825rem;
+  color: #334155;
+  outline: none;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 12px;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.dataTable th {
+  background: #f6f0ff;
+  color: #5b21b6;
+  font-weight: 700;
+  font-size: 0.775rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(139, 92, 246, 0.18);
+}
+
+.dataTable td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.tableRow:hover {
+  background: #f8fafc;
+}
+
+.codeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  color: #4338ca;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.codeBadge:hover {
+  background: #e0e7ff;
+}
+
+.codeBadgeCopied {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.nameCell strong {
+  color: #0f172a;
+}
+
+.contactCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.825rem;
+  color: #475569;
+}
+
+.phoneSub {
+  font-size: 0.775rem;
+  color: #64748b;
+}
+
+.timeCell {
+  font-size: 0.8rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.sourceBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.725rem;
+  font-weight: 600;
+}
+
+.sourceBadgeLive {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.sourceBadgeMock {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.btnDeleteRow {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btnDeleteRow:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.emptyCard {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.emptyIconWrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emptyTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.emptyDesc {
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 440px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ========================================================= */
+/* 5. RESPONSIVE DESIGN (TABLET & MOBILE)                    */
+/* ========================================================= */
+@media (max-width: 900px) {
+  .shareCardBody {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .infoCol {
+    width: 100%;
+  }
+
+  .statCardsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .workspaceContainer {
+    padding: 4px 0 60px 0;
+    gap: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerActions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .shareCard {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .modeTabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .qrFrame {
+    width: 200px;
+    height: 200px;
+  }
+
+  .qrActions {
+    width: 200px;
+  }
+
+  .statCardsGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .tableHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tableControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchBox {
+    width: 100%;
+  }
+}

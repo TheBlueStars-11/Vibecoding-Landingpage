@@ -1,44 +1,52 @@
 import { useState, useEffect, useRef } from 'react';
+import { calculateCountdown } from '../domain/time.js';
+import { CalendarIcon, FlameIcon } from './ui/Icons.jsx';
 import styles from './Countdown.module.css';
 
 function pad(n) {
   return String(n).padStart(2, '0');
 }
 
-export default function Countdown({ targetDatetime }) {
-  const [timeLeft, setTimeLeft] = useState(null);
+export default function Countdown({ targetDatetime, regCount = null }) {
+  const [timeLeft, setTimeLeft] = useState(() => calculateCountdown(targetDatetime));
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    const calc = () => {
-      const diff = new Date(targetDatetime) - Date.now();
-      if (diff <= 0) {
-        setTimeLeft(null);
+    const tick = () => {
+      const res = calculateCountdown(targetDatetime);
+      setTimeLeft(res);
+      if (res.isPast && intervalRef.current) {
         clearInterval(intervalRef.current);
-      } else {
-        const d = Math.floor(diff / 86400000);
-        const h = Math.floor((diff % 86400000) / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        setTimeLeft({ d, h, m, s });
       }
     };
 
-    calc();
-    intervalRef.current = setInterval(calc, 1000);
+    tick();
+    intervalRef.current = setInterval(tick, 1000);
     return () => clearInterval(intervalRef.current);
   }, [targetDatetime]);
 
-  if (!timeLeft) {
+  if (timeLeft.isPast) {
     return (
       <div className={styles.past}>
-        <span>📅 Sự kiện đã diễn ra</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <CalendarIcon size={16} />
+          <span>Sự kiện đã diễn ra</span>
+        </span>
       </div>
     );
   }
 
   return (
     <div className={styles.countdown}>
+      {regCount != null && regCount > 0 && (
+        <div className={styles.cinematicRegBanner}>
+          <span className={styles.pulseDot} />
+          <span className={styles.regBannerText} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <FlameIcon size={14} />
+            <span><strong>{regCount.toLocaleString('vi-VN')}</strong> người đã đăng ký giữ chỗ</span>
+          </span>
+        </div>
+      )}
       <p className={styles.label}>Sự kiện bắt đầu sau</p>
       <div className={styles.boxes}>
         {[
@@ -56,4 +64,3 @@ export default function Countdown({ targetDatetime }) {
     </div>
   );
 }
-

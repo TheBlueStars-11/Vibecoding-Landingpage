@@ -1,15 +1,18 @@
 {
   "name": "vibecode",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "tunnel": "npx --yes cloudflared tunnel --url http://localhost:5173",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "node --test tests/domain.test.js tests/els.test.js tests/module.test.js tests/barem.test.js",
     "preview": "vite preview"
   },
   "dependencies": {
+    "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

@@ -1,0 +1,720 @@
+.workspaceContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 80px;
+  /* Chừa không gian cho action bar */
+}
+
+/* Thanh công cụ đỉnh Workspace 1 */
+.workspaceTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #f7f3ff 0%, #eee6ff 100%);
+  border: 1px solid #ddd1fe;
+  border-radius: 18px;
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.06);
+  gap: 16px;
+}
+
+.workspaceTopBarLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workspaceMainTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.workspaceSubDesc {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.btnDevAutofill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btnDevAutofill:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  transform: translateY(-1px);
+}
+
+.btnDevAutofill:active {
+  transform: translateY(0);
+}
+
+/* Tóm tắt lỗi */
+.errorSummary {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: #991b1b;
+}
+
+.errorSummaryHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.errorList {
+  margin: 0;
+  padding-left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.errorLink {
+  color: #dc2626;
+  text-decoration: underline;
+  font-size: 0.875rem;
+}
+
+.errorLink:hover {
+  color: #991b1b;
+}
+
+/* Bố cục 2 cột Desktop */
+.layoutTwoColumns {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.formColumn,
+.assetsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Thẻ section */
+.sectionCard {
+  background: linear-gradient(165deg, #ffffff 0%, #faf7ff 100%);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 4px 20px -2px rgba(124, 58, 237, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cardSubtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+
+.badgeRequired {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #dc2626;
+  background-color: #fef2f2;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.badgeOptional {
+  font-size: 0.725rem;
+  font-weight: 500;
+  color: #64748b;
+  background-color: #f1f5f9;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Form inputs */
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroup:last-child {
+  margin-bottom: 0;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.labelSmall {
+  display: block;
+  font-size: 0.775rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 4px;
+}
+
+.required {
+  color: #dc2626;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+  outline: none;
+  background-color: #ffffff;
+  color: #0f172a;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.inputSmall {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.825rem;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.inputSmall:focus {
+  border-color: #4f46e5;
+}
+
+.inputError {
+  border-color: #dc2626;
+  background-color: #fffaf0;
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin: 5px 0 0 0;
+  font-weight: 500;
+}
+
+.helperText {
+  display: block;
+  font-size: 0.775rem;
+  color: #64748b;
+  margin-top: 5px;
+}
+
+.charCount {
+  text-align: right;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.rowTwoCols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Nút thêm nhỏ */
+.btnAddSmall {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background-color: #e0e7ff;
+  color: #4338ca;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btnAddSmall:hover {
+  background-color: #c7d2fe;
+}
+
+/* Speaker List */
+.speakerList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.speakerRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.indexCircle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.speakerInputs {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+}
+
+.btnTrash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.btnTrash:hover {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+
+/* Agenda List */
+.agendaList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agendaRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f8fafc;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.reorderButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btnReorder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.btnReorder:hover:not(:disabled) {
+  color: #0f172a;
+  background-color: #e2e8f0;
+}
+
+.btnReorder:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.agendaTimeInput {
+  width: 100px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  background-color: #ffffff;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.agendaTitleInput {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  background-color: #ffffff;
+  outline: none;
+}
+
+/* ========================================================= */
+/* THƯ VIỆN ẢNH (ASSETS)                                    */
+/* ========================================================= */
+.dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  background-color: #f8fafc;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dropzone:hover {
+  border-color: #4f46e5;
+  background-color: #f5f3ff;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.uploadIcon {
+  color: #4f46e5;
+}
+
+.dropzoneText {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.dropzoneSub {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.assetList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.emptyAssets {
+  text-align: center;
+  padding: 24px 12px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.emptyAssets span {
+  font-size: 0.775rem;
+  color: #94a3b8;
+  display: block;
+  margin-top: 4px;
+}
+
+.assetItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.assetThumbWrapper {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #e2e8f0;
+}
+
+.assetThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.assetSizeTag {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background-color: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.assetDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roleRadios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.radioLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #475569;
+  cursor: pointer;
+}
+
+.btnDeleteAsset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.btnDeleteAsset:hover {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+
+/* ========================================================= */
+/* ACTION BAR CỐ ĐỊNH PHÍA DƯỚI                              */
+/* ========================================================= */
+.badgeLocked {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inputLocked {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  border-color: #e2e8f0 !important;
+  cursor: not-allowed !important;
+  user-select: none;
+}
+
+.actionBar {
+  position: sticky;
+  bottom: 0;
+  background-color: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  padding: 14px 24px;
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 12px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+  z-index: 10;
+}
+
+.saveNotice {
+  font-size: 0.825rem;
+  color: #475569;
+}
+
+.autoSaveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.savePulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+  animation: pulseDot 2s infinite ease-in-out;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.7;
+  }
+}
+
+.lastSavedText {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.btnSaveSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 38px;
+}
+
+.btnSaveSecondary:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.btnSavePrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: none;
+  background-color: #4f46e5;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2);
+  transition: background-color 0.15s;
+  min-height: 44px;
+}
+
+.btnSavePrimary:hover {
+  background-color: #4338ca;
+}
+
+/* ========================================================= */
+/* RESPONSIVE: MOBILE (< 768px)                              */
+/* ========================================================= */
+@media (max-width: 767px) {
+  .layoutTwoColumns {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .rowTwoCols {
+    grid-template-columns: 1fr;
+  }
+
+  .speakerInputs {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .assetItem {
+    flex-direction: column;
+  }
+
+  .assetThumbWrapper {
+    width: 100%;
+    height: 140px;
+  }
+
+  .actionBar {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+    padding: 12px 16px;
+  }
+
+  .btnSavePrimary {
+    width: 100%;
+    justify-content: center;
+  }
+}

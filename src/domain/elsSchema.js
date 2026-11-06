@@ -1,0 +1,225 @@
+/**
+ * @file elsSchema.js
+ * Mô hình dữ liệu chuẩn cho Event Landing Studio theo FDD thiet-ke-chuc-nang-event-landing-studio.md
+ */
+
+export const ELS_SCHEMA_VERSION = 1;
+
+export const ELS_STORAGE_KEYS = {
+  PROJECTS: 'els:v1:projects',
+  ASSETS_PREFIX: 'els:v1:assets:',
+  REGISTRATIONS_PREFIX: 'els:v1:registrations:',
+  META: 'els:v1:meta',
+};
+
+export const PROJECT_STATUS = {
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+};
+
+export const FIELD_TYPES = {
+  TEXT: 'text',
+  NUMBER: 'number',
+  EMAIL: 'email',
+  TEL: 'tel',
+};
+
+export const FIELD_ROLES = {
+  DISPLAY_NAME: 'displayName',
+  IDENTITY: 'identity',
+};
+
+export const ASSET_ROLES = {
+  SPEAKER: 'speaker',
+  VENUE: 'venue',
+  GIFT: 'gift',
+  OTHER: 'other',
+};
+
+/**
+ * Sinh ID duy nhất với tiền tố
+ */
+export function generateId(prefix = 'id') {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return `${prefix}_${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}`;
+  }
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Sinh mã đăng ký DK-XXXXXX dễ đọc (loại bỏ ký tự dễ nhầm 0/O, 1/I)
+ */
+export function generateRegistrationCode() {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let result = '';
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const bytes = new Uint8Array(6);
+    crypto.getRandomValues(bytes);
+    for (let i = 0; i < 6; i++) {
+      result += chars[bytes[i] % chars.length];
+    }
+  } else {
+    for (let i = 0; i < 6; i++) {
+      result += chars[Math.floor(Math.random() * chars.length)];
+    }
+  }
+  return `DK-${result}`;
+}
+
+/**
+ * Sinh slug thân thiện từ tên
+ */
+export function generateSlug(name) {
+  if (!name) return `event-${Date.now().toString(36)}`;
+  const clean = name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 40);
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return `${clean || 'event'}-${suffix}`;
+}
+
+/**
+ * Bộ trường mặc định của Form đăng ký (WS2) tuân thủ nguyên tắc "chỉ thu thập trường cần thiết" (ADR-12, GAP-F7)
+ */
+export function createDefaultFormFields() {
+  return [
+    {
+      key: 'fld_name',
+      label: 'Họ và tên',
+      type: FIELD_TYPES.TEXT,
+      required: true,
+      role: FIELD_ROLES.DISPLAY_NAME,
+      hint: 'Họ và tên đầy đủ của người tham dự',
+      deleted: false,
+    },
+    {
+      key: 'fld_email',
+      label: 'Email',
+      type: FIELD_TYPES.EMAIL,
+      required: true,
+      role: FIELD_ROLES.IDENTITY,
+      hint: 'Email nhận thông báo vé mời và tài liệu',
+      deleted: false,
+    },
+    {
+      key: 'fld_phone',
+      label: 'Số điện thoại',
+      type: FIELD_TYPES.TEL,
+      required: false,
+      role: null,
+      hint: 'Số điện thoại liên hệ (tùy chọn)',
+      deleted: false,
+    },
+  ];
+}
+
+/**
+ * Khởi tạo một Project mới
+ */
+export function createProject({
+  id = generateId('prj'),
+  name = '',
+  slug = null,
+  status = PROJECT_STATUS.DRAFT,
+  event = {},
+  formFields = null,
+  ai = null,
+} = {}) {
+  const now = new Date().toISOString();
+  return {
+    id,
+    slug: slug || generateSlug(name),
+    name: name.trim(),
+    status,
+    createdAt: now,
+    updatedAt: now,
+    event: {
+      eventName: event.eventName || name.trim(),
+      eventDate: event.eventDate || '',
+      eventTime: event.eventTime || '09:00',
+      venue: event.venue || '',
+      description: event.description || '',
+      speakers: Array.isArray(event.speakers) && event.speakers.length > 0
+        ? event.speakers
+        : [{ id: generateId('spk'), name: '', title: '', assetId: null }],
+      earlyBirdOffer: event.earlyBirdOffer || '',
+      earlyBirdDeadline: event.earlyBirdDeadline || '',
+      agenda: Array.isArray(event.agenda) && event.agenda.length > 0
+        ? event.agenda
+        : [
+            { id: generateId('ag'), time: '09:00', title: 'Đón tiếp & Check-in' },
+            { id: generateId('ag'), time: '09:30', title: 'Khai mạc & Nội dung chính' },
+          ],
+    },
+    formFields: formFields || createDefaultFormFields(),
+    ai: ai || {
+      source: 'mock',
+      generatedAt: null,
+      headline: '',
+      description: '',
+      benefits: ['', '', ''],
+      edited: false,
+    },
+  };
+}
+
+/**
+ * Khởi tạo một đối tượng ảnh nguồn (AssetImage)
+ */
+export function createAssetImage({
+  id = generateId('img'),
+  projectId,
+  dataUrl,
+  caption = '',
+  role = ASSET_ROLES.OTHER,
+  speakerRef = null,
+  width = 0,
+  height = 0,
+  sizeKB = 0,
+}) {
+  return {
+    id,
+    projectId,
+    dataUrl,
+    caption: caption.trim(),
+    role,
+    speakerRef,
+    width,
+    height,
+    sizeKB,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+/**
+ * Khởi tạo bản ghi đăng ký (Registration)
+ */
+export function createRegistrationRecord({
+  id = generateId('reg'),
+  code = null,
+  projectId,
+  values = {},
+  displayName = '',
+  identityKey = '',
+  source = 'landing',
+  status = 'confirmed',
+}) {
+  return {
+    id,
+    code: code || generateRegistrationCode(),
+    projectId,
+    values,
+    displayName: displayName.trim(),
+    identityKey: (identityKey || '').trim().toLowerCase(),
+    createdAt: new Date().toISOString(),
+    status,
+    source, // 'landing' | 'preview'
+  };
+}
+

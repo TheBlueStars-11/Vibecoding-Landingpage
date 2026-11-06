@@ -26,3 +26,9 @@ dist-ssr
 # Environment
 .env
 .env.local
+.sync-cache.json
+
+# Internal markdown documentation, reports & plans
+*.md
+!README.md
+module_reports/

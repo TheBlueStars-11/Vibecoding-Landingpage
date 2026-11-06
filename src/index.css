@@ -1,15 +1,84 @@
+@import './themes/tokens.css';
+@import './themes/themes.css';
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
-html, body {
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+/* Tỷ lệ chữ trên điện thoại và thiết bị di động nhỏ lại so với máy tính */
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+body {
   margin: 0;
   padding: 0;
-  font-family: 'Inter', 'Segoe UI', -apple-system, sans-serif;
-  background: #f8f7ff;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  letter-spacing: -0.011em;
+}
+
+/* Kiểu chữ Serif Italic nghệ thuật theo phong cách Resolvo */
+.serifItalic,
+h1 em, h1 i,
+h2 em, h2 i,
+h3 em, h3 i {
+  font-family: var(--font-serif-italic);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: inherit;
+}
+
+/* Tiêu đề hiển thị mặc định */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
 }
 
 #root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Thanh cuộn hiện đại siêu thanh mảnh */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
 }

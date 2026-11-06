@@ -1,0 +1,107 @@
+/* ── THEME 1: CLASSIC / RESOLVO (Mặc định: Hiện đại, Tinh tế, Lavender & Royal Indigo) ── */
+[data-theme="classic"], :root {
+  --bg: #fbf9ff;
+  --bg-mesh: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.1) 0%, rgba(245, 240, 255, 0.5) 45%, #faf8ff 100%);
+  --surface: #faf7ff;
+  --surface-alt: #f3edff;
+  --surface-card: linear-gradient(165deg, #ffffff 0%, #f7f3ff 100%);
+  --text: #0b0f19;
+  --text-muted: #64748b;
+  --accent: #4f46e5;
+  --accent-2: #7c3aed;
+  --accent-dark: #3730a3;
+  --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --hero-bg: radial-gradient(120% 120% at 50% 0%, #f5f0ff 0%, #ffffff 70%, #f8f6ff 100%);
+  --hero-text: #0b0f19;
+  --hero-muted: #64748b;
+  --border: #e6dcfa;
+  --border-subtle: #f0e9fe;
+  --badge-bg: #f5f0ff;
+  --badge-text: #6d28d9;
+  --badge-border: #ddd1fe;
+  --card-shadow: 0 4px 24px -2px rgba(124, 58, 237, 0.08), 0 10px 30px -4px rgba(15, 23, 42, 0.04);
+  --footer-bg: #070a1e;
+  --footer-text: #ffffff;
+  --footer-muted: #94a3b8;
+}
+
+/* ── THEME 2: MIDNIGHT (Tech talk, Hackathon, High-Tech Dark) ── */
+[data-theme="midnight"] {
+  --bg: #070a18;
+  --bg-mesh: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, rgba(7, 10, 24, 0.8) 50%, #050711 100%);
+  --surface: #0f152e;
+  --surface-alt: #161e3f;
+  --surface-card: #111836;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-2: #818cf8;
+  --accent-dark: #1d4ed8;
+  --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+  --hero-bg: radial-gradient(120% 120% at 50% 0%, #151d42 0%, #070a18 70%, #03050a 100%);
+  --hero-text: #f8fafc;
+  --hero-muted: #94a3b8;
+  --border: #1e2952;
+  --border-subtle: #182245;
+  --badge-bg: rgba(56, 189, 248, 0.15);
+  --badge-text: #38bdf8;
+  --badge-border: rgba(56, 189, 248, 0.3);
+  --card-shadow: 0 4px 25px rgba(0, 0, 0, 0.45);
+  --footer-bg: #03050d;
+  --footer-text: #f8fafc;
+  --footer-muted: #64748b;
+}
+
+/* ── THEME 3: SUNRISE (Cộng đồng, Lễ hội, Trẻ trung) ── */
+[data-theme="sunrise"] {
+  --bg: #fffbf5;
+  --bg-mesh: radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.08) 0%, rgba(255, 247, 237, 0.6) 45%, #ffffff 100%);
+  --surface: #ffffff;
+  --surface-alt: #fff7ed;
+  --surface-card: #ffffff;
+  --text: #431407;
+  --text-muted: #9a3412;
+  --accent: #f97316;
+  --accent-2: #e11d48;
+  --accent-dark: #c2410c;
+  --accent-gradient: linear-gradient(135deg, #f97316, #e11d48);
+  --hero-bg: radial-gradient(120% 120% at 50% 0%, #ffedd5 0%, #ffffff 70%, #fff7ed 100%);
+  --hero-text: #431407;
+  --hero-muted: #9a3412;
+  --border: #fed7aa;
+  --border-subtle: #ffedd5;
+  --badge-bg: #ffedd5;
+  --badge-text: #ea580c;
+  --badge-border: #fdba74;
+  --card-shadow: 0 4px 20px rgba(249, 115, 22, 0.08);
+  --footer-bg: #1c0a03;
+  --footer-text: #ffffff;
+  --footer-muted: #fdba74;
+}
+
+/* ── THEME 4: MINIMAL (Talkshow cao cấp, Gala, Nghệ thuật) ── */
+[data-theme="minimal"] {
+  --bg: #fafafa;
+  --bg-mesh: radial-gradient(circle at 50% 0%, rgba(24, 24, 27, 0.04) 0%, #ffffff 60%, #f4f4f5 100%);
+  --surface: #ffffff;
+  --surface-alt: #f4f4f5;
+  --surface-card: #ffffff;
+  --text: #09090b;
+  --text-muted: #52525b;
+  --accent: #18181b;
+  --accent-2: #3f3f46;
+  --accent-dark: #000000;
+  --accent-gradient: linear-gradient(135deg, #18181b, #3f3f46);
+  --hero-bg: radial-gradient(120% 120% at 50% 0%, #f4f4f5 0%, #ffffff 70%, #fafafa 100%);
+  --hero-text: #09090b;
+  --hero-muted: #52525b;
+  --border: #e4e4e7;
+  --border-subtle: #f4f4f5;
+  --badge-bg: #f4f4f5;
+  --badge-text: #18181b;
+  --badge-border: #d4d4d8;
+  --card-shadow: 0 2px 14px rgba(0, 0, 0, 0.04);
+  --footer-bg: #09090b;
+  --footer-text: #ffffff;
+  --footer-muted: #71717a;
+}

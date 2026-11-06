@@ -1,0 +1,45 @@
+.lozenge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  user-select: none;
+  border: 1px solid transparent;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.draft {
+  background-color: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.published {
+  background-color: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+@media (prefers-color-scheme: dark) {
+  .draft {
+    background-color: #1e293b;
+    color: #94a3b8;
+    border-color: #334155;
+  }
+
+  .published {
+    background-color: #064e3b;
+    color: #4ade80;
+    border-color: #047857;
+  }
+}
+
