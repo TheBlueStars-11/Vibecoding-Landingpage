@@ -63,7 +63,11 @@ let isStartingTunnel = false;
 function stopTunnelProcess() {
   if (tunnelProcess) {
     try {
-      tunnelProcess.kill();
+      if (process.platform === 'win32' && tunnelProcess.pid) {
+        spawn('taskkill', ['/pid', String(tunnelProcess.pid), '/T', '/F']);
+      } else {
+        tunnelProcess.kill('SIGTERM');
+      }
     } catch {}
     tunnelProcess = null;
     activeTunnelUrl = null;
@@ -94,7 +98,8 @@ function startCloudflareTunnel(port = 5173) {
   isStartingTunnel = true;
   return new Promise((resolve, reject) => {
     try {
-      tunnelProcess = spawn('npx', ['--yes', 'cloudflared', 'tunnel', '--url', `http://localhost:${port}`], {
+      // Dùng 127.0.0.1 thay cho localhost để tránh lỗi phân giải IPv6 trên Windows
+      tunnelProcess = spawn('npx', ['--yes', 'cloudflared', 'tunnel', '--url', `http://127.0.0.1:${port}`, '--no-autoupdate'], {
         shell: true,
         stdio: ['ignore', 'pipe', 'pipe'],
       });

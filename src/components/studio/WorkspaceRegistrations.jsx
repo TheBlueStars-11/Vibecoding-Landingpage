@@ -10,6 +10,7 @@ import {
   getRemoteRegistrations,
   startTunnel,
   stopTunnel,
+  checkCloudflareHealth,
 } from '../../services/realtimeSync.js';
 import {
   UsersIcon,
@@ -25,21 +26,26 @@ import {
   QrCodeIcon,
   GlobeIcon,
   LightbulbIcon,
+  ActivityIcon,
+  WifiIcon,
 } from '../ui/Icons.jsx';
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
 
-export function WorkspaceRegistrations({ project, onShowToast }) {
+export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }) {
   const [registrations, setRegistrations] = useState(() => {
     return project?.id ? elsRepository.getRegistrations(project.id) : [];
   });
   const [customTunnelUrl, setCustomTunnelUrl] = useState('');
   const [isStartingTunnel, setIsStartingTunnel] = useState(false);
+  const [isCheckingTunnel, setIsCheckingTunnel] = useState(false);
+  const [tunnelHealthResult, setTunnelHealthResult] = useState(null);
   const [tunnelError, setTunnelError] = useState(null);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCodeId, setCopiedCodeId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'az'
+  const [checkInFilter, setCheckInFilter] = useState('all'); // 'all' | 'checked_in' | 'pending'
   const [deletingRecord, setDeletingRecord] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('Vừa xong');
@@ -76,7 +82,7 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
               setCustomTunnelUrl(res.tunnelUrl);
             }
           })
-          .catch(() => {})
+          .catch(() => { })
           .finally(() => {
             if (mounted) setIsStartingTunnel(false);
           });
@@ -110,17 +116,76 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
   const handleStopTunnel = async () => {
     await stopTunnel();
     setCustomTunnelUrl('');
+    setTunnelHealthResult(null);
     onShowToast?.('Đã dừng Cloudflare Tunnel', 'info');
   };
 
-  // 2. Tính toán đường dẫn Landing Page công khai qua Public Tunnel
+  // Khởi động lại Cloudflare Tunnel sạch sẽ
+  const handleRestartTunnel = async () => {
+    setIsStartingTunnel(true);
+    setTunnelError(null);
+    setTunnelHealthResult(null);
+    try {
+      await stopTunnel();
+      const res = await startTunnel();
+      if (res && res.ok && res.tunnelUrl) {
+        setCustomTunnelUrl(res.tunnelUrl);
+        onShowToast?.('Cloudflare Tunnel đã được khởi động lại thành công!', 'success');
+      } else {
+        const errMsg = res?.error || 'Không thể tạo Cloudflare Tunnel';
+        setTunnelError(errMsg);
+        onShowToast?.(errMsg, 'error');
+      }
+    } catch (err) {
+      setTunnelError(err.message || 'Lỗi khởi động lại Cloudflare Tunnel');
+    } finally {
+      setIsStartingTunnel(false);
+    }
+  };
+
+  // Kiểm tra trạng thái hoạt động thực tế của Cloudflare Tunnel và đo độ trễ
+  const handleCheckCloudflare = async () => {
+    setIsCheckingTunnel(true);
+    setTunnelHealthResult(null);
+    try {
+      const res = await checkCloudflareHealth(customTunnelUrl);
+      setTunnelHealthResult(res);
+
+      if (res.tunnelUrl && !customTunnelUrl) {
+        setCustomTunnelUrl(res.tunnelUrl);
+      }
+
+      if (res.ok) {
+        onShowToast?.(res.message, 'success');
+      } else {
+        onShowToast?.(res.message, 'warning');
+      }
+    } catch (err) {
+      const fallback = {
+        ok: false,
+        latency: 0,
+        message: `Lỗi kiểm tra kết nối: ${err.message || 'Không thể kết nối máy chủ'}`,
+        checkedAt: new Date().toLocaleTimeString('vi-VN'),
+      };
+      setTunnelHealthResult(fallback);
+      onShowToast?.(fallback.message, 'error');
+    } finally {
+      setIsCheckingTunnel(false);
+    }
+  };
+
+  // 2. Tính toán đường dẫn Landing Page công khai qua Cloudflare Tunnel / Server
   const activeUrl = useMemo(() => {
     const slug = project?.slug || '';
     if (!slug) return '';
 
     const cleanTunnel = (customTunnelUrl || '').trim().replace(/\/+$/, '');
-    if (!cleanTunnel) return `https://example.trycloudflare.com/#/e/${slug}`;
-    return `${cleanTunnel}/#/e/${slug}`;
+    if (cleanTunnel) {
+      return `${cleanTunnel}/#/e/${slug}`;
+    }
+    // Fallback an toàn về domain máy chủ hiện tại
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+    return `${origin}/#/e/${slug}`;
   }, [project?.slug, customTunnelUrl]);
 
   // 3. Tạo mã QR độ nét cao khi activeUrl thay đổi
@@ -210,11 +275,15 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
       return rDate === todayIsoStr;
     }).length;
 
+    const checkedInCount = registrations.filter((r) => r.checkedIn).length;
+    const checkInRate = total > 0 ? Math.round((checkedInCount / total) * 100) : 0;
     const latest = registrations.length > 0 ? registrations[0] : null;
 
     return {
       total,
       todayCount,
+      checkedInCount,
+      checkInRate,
       latest,
     };
   }, [registrations, todayIsoStr]);
@@ -222,6 +291,13 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
   // 6. Lọc và Sắp xếp danh sách
   const filteredRegistrations = useMemo(() => {
     let result = [...registrations];
+
+    // Lọc theo trạng thái check-in
+    if (checkInFilter === 'checked_in') {
+      result = result.filter((r) => r.checkedIn);
+    } else if (checkInFilter === 'pending') {
+      result = result.filter((r) => !r.checkedIn);
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -242,7 +318,22 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
     }
 
     return result;
-  }, [registrations, searchQuery, sortBy]);
+  }, [registrations, checkInFilter, searchQuery, sortBy]);
+
+  // Đảo trạng thái check-in thủ công
+  const handleToggleCheckIn = (regId) => {
+    if (!project?.id) return;
+    const updated = elsRepository.toggleCheckIn(project.id, regId);
+    if (updated) {
+      setRegistrations(elsRepository.getRegistrations(project.id));
+      onShowToast?.(
+        updated.checkedIn
+          ? `Đã check-in cho ${updated.displayName} (${updated.code})`
+          : `Đã hủy check-in cho ${updated.displayName}`,
+        'success'
+      );
+    }
+  };
 
   // 7. Thao tác tiện ích
   const handleCopyLink = () => {
@@ -348,6 +439,17 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
         </div>
 
         <div className={styles.headerActions}>
+          {/* Nút Quét QR Check-in */}
+          <button
+            type="button"
+            className={styles.btnPrimaryScan}
+            onClick={() => onOpenQrScanner?.()}
+            title="Mở máy quét QR kiểm tra vé check-in sự kiện"
+          >
+            <QrCodeIcon size={16} />
+            <span>Quét QR Check-in</span>
+          </button>
+
           <button
             type="button"
             className={styles.btnSecondary}
@@ -357,6 +459,18 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
           >
             <RefreshCwIcon size={16} className={isSyncing ? styles.spinIcon : ''} />
             <span>{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ'}</span>
+          </button>
+
+          {/* Nút Kiểm tra Cloudflare */}
+          <button
+            type="button"
+            className={styles.btnSecondary}
+            onClick={handleCheckCloudflare}
+            disabled={isCheckingTunnel}
+            title="Kiểm tra Cloudflare Tunnel còn hoạt động tốt không"
+          >
+            <ActivityIcon size={16} className={isCheckingTunnel ? styles.spinIcon : ''} />
+            <span>{isCheckingTunnel ? 'Đang kiểm tra...' : 'Kiểm tra Cloudflare'}</span>
           </button>
 
           <button
@@ -451,7 +565,7 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
             </div>
           </div>
 
-          {/* Cột phải: Thông tin URL & Hướng dẫn */}
+          {/* Cột phải: Thông tin URL & Quản lý Cloudflare */}
           <div className={styles.infoCol}>
             {/* Input đường dẫn hiện tại */}
             <div className={styles.urlInputBox}>
@@ -486,7 +600,7 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
               </div>
             </div>
 
-            {/* Cấu hình Public Tunnel */}
+            {/* Cấu hình Cloudflare Tunnel */}
             <div className={styles.tunnelInputBox}>
               <div className={styles.tunnelControls}>
                 {customTunnelUrl ? (
@@ -497,6 +611,26 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
                     </div>
                     <button
                       type="button"
+                      className={styles.btnCheckTunnel}
+                      onClick={handleCheckCloudflare}
+                      disabled={isCheckingTunnel}
+                      title="Kiểm tra tín hiệu phản hồi và đo độ trễ Cloudflare"
+                    >
+                      <ActivityIcon size={14} className={isCheckingTunnel ? styles.spinIcon : ''} />
+                      <span>{isCheckingTunnel ? 'Đang kiểm tra...' : 'Kiểm tra Cloudflare'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnCheckTunnel}
+                      onClick={handleRestartTunnel}
+                      disabled={isStartingTunnel}
+                      title="Khởi động lại tiến trình Cloudflare Tunnel"
+                    >
+                      <RefreshCwIcon size={14} className={isStartingTunnel ? styles.spinIcon : ''} />
+                      <span>Khởi động lại</span>
+                    </button>
+                    <button
+                      type="button"
                       className={styles.btnStopTunnel}
                       onClick={handleStopTunnel}
                     >
@@ -504,26 +638,60 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
                     </button>
                   </>
                 ) : (
-                  <button
-                    type="button"
-                    className={styles.btnStartTunnel}
-                    onClick={handleStartTunnel}
-                    disabled={isStartingTunnel}
-                  >
-                    {isStartingTunnel ? (
-                      <>
-                        <RefreshCwIcon size={14} className={styles.spinIcon} />
-                        <span>Đang kết nối Cloudflare...</span>
-                      </>
-                    ) : (
-                      <>
-                        <GlobeIcon size={14} />
-                        <span>Khởi động Cloudflare Tunnel (1 Click)</span>
-                      </>
-                    )}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      className={styles.btnStartTunnel}
+                      onClick={handleStartTunnel}
+                      disabled={isStartingTunnel}
+                    >
+                      {isStartingTunnel ? (
+                        <>
+                          <RefreshCwIcon size={14} className={styles.spinIcon} />
+                          <span>Đang kết nối Cloudflare...</span>
+                        </>
+                      ) : (
+                        <>
+                          <GlobeIcon size={14} />
+                          <span>Khởi động Cloudflare Tunnel (1 Click)</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnCheckTunnel}
+                      onClick={handleCheckCloudflare}
+                      disabled={isCheckingTunnel}
+                      title="Kiểm tra Cloudflare Tunnel có đang chạy trên máy chủ không"
+                    >
+                      <ActivityIcon size={14} className={isCheckingTunnel ? styles.spinIcon : ''} />
+                      <span>{isCheckingTunnel ? 'Đang kiểm tra...' : 'Kiểm tra Cloudflare'}</span>
+                    </button>
+                  </>
                 )}
               </div>
+
+              {/* Banner kết quả kiểm tra Cloudflare */}
+              {tunnelHealthResult && (
+                <div
+                  className={tunnelHealthResult.ok ? styles.tunnelHealthOk : styles.tunnelHealthWarn}
+                  role="status"
+                >
+                  <div className={styles.tunnelHealthIconWrap}>
+                    {tunnelHealthResult.ok ? <WifiIcon size={18} /> : <ActivityIcon size={18} />}
+                  </div>
+                  <div className={styles.tunnelHealthContent}>
+                    <div className={styles.tunnelHealthTitleRow}>
+                      <strong>{tunnelHealthResult.ok ? 'Cloudflare đang hoạt động bình thường' : 'Cloudflare phản hồi chậm hoặc bị chặn'}</strong>
+                      {tunnelHealthResult.latency > 0 && (
+                        <span className={styles.latencyBadge}>{tunnelHealthResult.latency} ms</span>
+                      )}
+                    </div>
+                    <p className={styles.tunnelHealthMsg}>{tunnelHealthResult.message}</p>
+                    <span className={styles.tunnelHealthTime}>Đã kiểm tra lúc: {tunnelHealthResult.checkedAt}</span>
+                  </div>
+                </div>
+              )}
 
               {tunnelError && (
                 <div className={styles.tunnelError}>
@@ -531,7 +699,7 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
                 </div>
               )}
 
-              <span className={styles.subLabel}>Đường dẫn Tunnel (tự động cập nhật hoặc dán link thủ công):</span>
+              <span className={styles.subLabel}>Đường dẫn Cloudflare Tunnel (tự động cập nhật hoặc dán link thủ công):</span>
               <input
                 type="url"
                 placeholder="https://random-words.trycloudflare.com"
@@ -603,6 +771,22 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
             </div>
             <div className={styles.statDesc}>Đồng bộ lúc: {lastSyncTime}</div>
           </div>
+
+          {/* Card 5: Thống kê Check-in vé sự kiện */}
+          <div className={`${styles.statCard} ${styles.statCardHighlight}`}>
+            <div className={styles.statCardTop}>
+              <span className={styles.statCardLabel}>Đã Check-in vé</span>
+              <span className={styles.badgeNew}>{stats.checkInRate}%</span>
+            </div>
+            <div className={styles.statNumber} style={{ color: '#059669' }}>
+              {stats.checkedInCount} <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 500 }}>/ {stats.total}</span>
+            </div>
+            <div className={styles.statDesc}>
+              {stats.checkedInCount === stats.total && stats.total > 0
+                ? 'Đã check-in đủ 100%'
+                : `Còn ${stats.total - stats.checkedInCount} vé chưa quét`}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -616,6 +800,18 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
           </div>
 
           <div className={styles.tableControls}>
+            {/* Bộ lọc trạng thái check-in */}
+            <select
+              value={checkInFilter}
+              onChange={(e) => setCheckInFilter(e.target.value)}
+              className={styles.sortSelect}
+              aria-label="Lọc theo trạng thái check-in"
+            >
+              <option value="all">Tất cả ({registrations.length})</option>
+              <option value="checked_in">Đã Check-in ({stats.checkedInCount})</option>
+              <option value="pending">Chưa Check-in ({registrations.length - stats.checkedInCount})</option>
+            </select>
+
             {/* Thanh tìm kiếm */}
             <div className={styles.searchBox}>
               <SearchIcon size={16} className={styles.searchIcon} />
@@ -661,6 +857,7 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
                   <th>Mã đăng ký</th>
                   <th>Họ và tên</th>
                   <th>Thông tin liên hệ</th>
+                  <th>Trạng thái Check-in</th>
                   <th>Thời gian</th>
                   <th>Nguồn</th>
                   <th style={{ textAlign: 'center' }}>Thao tác</th>
@@ -670,12 +867,12 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
                 {filteredRegistrations.map((rec) => {
                   const dateStr = rec.createdAt
                     ? new Date(rec.createdAt).toLocaleTimeString('vi-VN', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        day: '2-digit',
-                        month: '2-digit',
-                      })
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      day: '2-digit',
+                      month: '2-digit',
+                    })
                     : '—';
 
                   const isJustCopied = copiedCodeId === rec.code;
@@ -704,12 +901,34 @@ export function WorkspaceRegistrations({ project, onShowToast }) {
                           )}
                         </div>
                       </td>
+                      <td>
+                        {rec.checkedIn ? (
+                          <button
+                            type="button"
+                            className={styles.checkInTagYes}
+                            onClick={() => handleToggleCheckIn(rec.id)}
+                            title={`Đã check-in lúc ${new Date(rec.checkInTime).toLocaleString('vi-VN')}. Bấm để hủy check-in nếu cần.`}
+                          >
+                            <CheckIcon size={12} />
+                            <span>Đã check-in ({new Date(rec.checkInTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.checkInTagNo}
+                            onClick={() => handleToggleCheckIn(rec.id)}
+                            title="Bấm để đánh dấu check-in thủ công cho người này"
+                          >
+                            <QrCodeIcon size={12} />
+                            <span>Chưa check-in</span>
+                          </button>
+                        )}
+                      </td>
                       <td className={styles.timeCell}>{dateStr}</td>
                       <td>
                         <span
-                          className={`${styles.sourceBadge} ${
-                            rec.source === 'preview_mock' ? styles.sourceBadgeMock : styles.sourceBadgeLive
-                          }`}
+                          className={`${styles.sourceBadge} ${rec.source === 'preview_mock' ? styles.sourceBadgeMock : styles.sourceBadgeLive
+                            }`}
                         >
                           {rec.source === 'preview_mock' ? 'Thử nghiệm' : 'Landing Page'}
                         </span>

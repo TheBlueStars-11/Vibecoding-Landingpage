@@ -366,6 +366,104 @@ export const elsRepository = {
     return true;
   },
 
+  /**
+   * Check-in vé tham dự bằng mã code (hoặc chuỗi quét từ QR)
+   * @param {string} projectId
+   * @param {string} rawCode
+   * @returns {{ status: 'valid' | 'already_used' | 'invalid', record: object | null, cleanCode: string, message: string, checkInTime?: string }}
+   */
+  checkInByCode(projectId, rawCode) {
+    if (!projectId || !rawCode) {
+      return { status: 'invalid', record: null, cleanCode: '', message: 'Mã vé không được để trống.' };
+    }
+
+    let cleanCode = String(rawCode).trim();
+    if (cleanCode.startsWith('{') && cleanCode.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(cleanCode);
+        if (parsed.code) cleanCode = String(parsed.code).trim();
+      } catch {}
+    } else if (cleanCode.includes('code=')) {
+      const match = cleanCode.match(/[?&#]code=([A-Za-z0-9_-]+)/i);
+      if (match) cleanCode = match[1];
+    }
+
+    const registrations = this.getRegistrations(projectId);
+    const targetIdx = registrations.findIndex(
+      (r) =>
+        (r.code && r.code.toUpperCase() === cleanCode.toUpperCase()) ||
+        (r.id && r.id === cleanCode)
+    );
+
+    if (targetIdx === -1) {
+      return {
+        status: 'invalid',
+        record: null,
+        cleanCode,
+        message: `Mã không hợp lệ: Không tìm thấy vé "${cleanCode}" trong danh sách sự kiện.`,
+      };
+    }
+
+    const target = registrations[targetIdx];
+    if (target.checkedIn) {
+      return {
+        status: 'already_used',
+        record: target,
+        cleanCode,
+        checkInTime: target.checkInTime,
+        message: `Mã đã sử dụng! Vé đã check-in lúc ${new Date(target.checkInTime).toLocaleTimeString('vi-VN')} ngày ${new Date(target.checkInTime).toLocaleDateString('vi-VN')}.`,
+      };
+    }
+
+    const checkInTime = new Date().toISOString();
+    const updatedRecord = {
+      ...target,
+      checkedIn: true,
+      checkInTime,
+    };
+
+    const nextRegistrations = [...registrations];
+    nextRegistrations[targetIdx] = updatedRecord;
+    safeSetItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${projectId}`, nextRegistrations);
+
+    this._notifyChannel('registration_updated', { projectId, registration: updatedRecord });
+    this._dispatchLocalEvent('registration_updated', { projectId, registration: updatedRecord });
+
+    return {
+      status: 'valid',
+      record: updatedRecord,
+      cleanCode,
+      checkInTime,
+      message: 'Mã hợp lệ! Đã check-in thành công cho người tham dự.',
+    };
+  },
+
+  /**
+   * Đảo ngược trạng thái check-in thủ công từ bảng quản lý
+   */
+  toggleCheckIn(projectId, regId) {
+    if (!projectId || !regId) return false;
+    const registrations = this.getRegistrations(projectId);
+    const targetIdx = registrations.findIndex((r) => r.id === regId);
+    if (targetIdx === -1) return false;
+
+    const target = registrations[targetIdx];
+    const isNowCheckedIn = !target.checkedIn;
+    const updatedRecord = {
+      ...target,
+      checkedIn: isNowCheckedIn,
+      checkInTime: isNowCheckedIn ? new Date().toISOString() : null,
+    };
+
+    const nextRegistrations = [...registrations];
+    nextRegistrations[targetIdx] = updatedRecord;
+    safeSetItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${projectId}`, nextRegistrations);
+
+    this._notifyChannel('registration_updated', { projectId, registration: updatedRecord });
+    this._dispatchLocalEvent('registration_updated', { projectId, registration: updatedRecord });
+    return updatedRecord;
+  },
+
   // ======================
   // 4. META & REAL-TIME
   // ======================
@@ -450,7 +548,7 @@ export const elsRepository = {
     }
 
     // Tiêu đề các cột
-    const headers = ['Mã đăng ký', 'Thời gian đăng ký', 'Nguồn'];
+    const headers = ['Mã đăng ký', 'Thời gian đăng ký', 'Nguồn', 'Trạng thái Check-in', 'Thời gian Check-in'];
     const fieldCols = formFields.filter((f) => !f.deleted);
     fieldCols.forEach((f) => headers.push(f.label));
 
@@ -458,7 +556,11 @@ export const elsRepository = {
     const rows = registrations.map((r) => {
       const dateStr = new Date(r.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
       const sourceStr = r.source === 'preview' ? 'Bản thử nghiệm' : 'Landing công khai';
-      const row = [r.code, dateStr, sourceStr];
+      const checkInStatusStr = r.checkedIn ? 'Đã check-in' : 'Chưa check-in';
+      const checkInTimeStr = r.checkInTime
+        ? new Date(r.checkInTime).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+        : '';
+      const row = [r.code, dateStr, sourceStr, checkInStatusStr, checkInTimeStr];
       fieldCols.forEach((f) => {
         const val = r.values && r.values[f.key] !== undefined ? String(r.values[f.key]) : '';
         row.push(formatCsvCell(val));

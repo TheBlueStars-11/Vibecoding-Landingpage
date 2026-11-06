@@ -545,10 +545,9 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
           <div className={styles.previewActions}>
             <button
               type="button"
-              className={styles.btnToggleDevMode}
+              className={styles.btnResetPage}
               onClick={() => setIsResetConfirmOpen(true)}
               title="Khởi tạo landing page sự kiện mới (Tính năng #5 - Đề 08)"
-              style={{ background: '#f8fafc', color: '#334155', border: '1px solid #cbd5e1' }}
             >
               <PlusIcon size={14} />
               <span className={styles.btnFullText}>Tạo trang mới</span>

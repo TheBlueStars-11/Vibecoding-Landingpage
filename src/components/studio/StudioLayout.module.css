@@ -83,23 +83,34 @@
   flex-shrink: 0;
 }
 
-.saveStatusIndicator {
-  font-size: 0.8rem;
-  color: #64748b;
+.btnQrScanAppBar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 7px 15px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
 }
 
-.savingText {
-  color: #d97706;
-  font-weight: 600;
+.btnQrScanAppBar:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
 }
 
-.errorText {
-  color: #dc2626;
-  font-weight: 600;
+.btnQrScanAppBar:active {
+  transform: translateY(0);
 }
 
-.savedText {
-  color: #10b981;
+.btnQrScanLabel {
+  display: inline;
 }
 
 .btnViewPublic {
@@ -488,6 +499,14 @@
 
   .btnPublicLabel {
     display: none;
+  }
+
+  .btnQrScanLabel {
+    display: none;
+  }
+
+  .btnQrScanAppBar {
+    padding: 7px 10px;
   }
 
   .sidebarNav {

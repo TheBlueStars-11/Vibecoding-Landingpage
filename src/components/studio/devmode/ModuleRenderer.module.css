@@ -2574,6 +2574,93 @@
   border-color: #94a3b8;
 }
 
+/* Khung hiển thị Mã QR Vé Check-in */
+@keyframes popTicketQr {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.ticketQrFrame {
+  max-width: 300px;
+  margin: 12px auto 18px auto;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  animation: popTicketQr 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ticketQrHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #4f46e5;
+  letter-spacing: 0.05em;
+  background-color: #eef2ff;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.ticketQrImgWrapper {
+  background-color: #ffffff;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ticketQrImg {
+  width: 180px;
+  height: 180px;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.ticketQrAttendee {
+  font-size: 0.84rem;
+  color: #334155;
+  margin: 0;
+}
+
+.btnDownloadQrTicket {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+}
+
+.btnDownloadQrTicket:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.35);
+}
+
 .successNote {
   font-size: 0.825rem;
   color: #64748b;

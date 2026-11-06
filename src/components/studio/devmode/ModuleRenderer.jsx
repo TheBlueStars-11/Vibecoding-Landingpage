@@ -27,6 +27,8 @@ import {
   TrophyIcon,
   GiftIcon,
   WifiIcon,
+  QrCodeIcon,
+  DownloadIcon,
 } from '../../ui/Icons.jsx';
 
 const AVATAR_GRADIENTS = [
@@ -1649,13 +1651,47 @@ export function ModuleRenderer({
             <div className={styles.successIconCircle}><CheckIcon size={24} /></div>
             <h3 className={styles.successTitle}>Đăng ký thành công!</h3>
             <p className={styles.successSub}>Mã xác nhận tham dự sự kiện của bạn:</p>
+
+            {/* Khung hiển thị mã vé chữ */}
             <div className={styles.successCodeBox}>
               <span className={styles.successCodeText}>{formProps.submitSuccessRecord.code}</span>
               <button type="button" className={styles.btnCopySuccessCode} onClick={formProps.onCopyCode} title="Sao chép mã">
                 <CopyIcon size={14} /><span>{formProps.copiedCode ? 'Đã sao chép' : 'Sao chép'}</span>
               </button>
             </div>
-            <p className={styles.successNote}>Vui lòng lưu lại mã này hoặc xuất trình tại quầy check-in của sự kiện.</p>
+
+            {/* Khung hiển thị và tải mã QR vé check-in */}
+            {formProps.ticketQrUrl && (
+              <div className={styles.ticketQrFrame}>
+                <div className={styles.ticketQrHeader}>
+                  <QrCodeIcon size={15} />
+                  <span>MÃ QR CHECK-IN SỰ KIỆN</span>
+                </div>
+                <div className={styles.ticketQrImgWrapper}>
+                  <img
+                    src={formProps.ticketQrUrl}
+                    alt={`Mã QR vé ${formProps.submitSuccessRecord.code}`}
+                    className={styles.ticketQrImg}
+                  />
+                </div>
+                <p className={styles.ticketQrAttendee}>
+                  Người tham dự: <strong>{formProps.submitSuccessRecord.displayName}</strong>
+                </p>
+                {formProps.onDownloadQr && (
+                  <button
+                    type="button"
+                    className={styles.btnDownloadQrTicket}
+                    onClick={formProps.onDownloadQr}
+                    title="Tải ảnh vé chứa mã QR để xuất trình khi check-in"
+                  >
+                    <DownloadIcon size={15} />
+                    <span>Tải ảnh mã QR vé (.png)</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            <p className={styles.successNote}>Vui lòng lưu lại mã vé hoặc tải ảnh QR để xuất trình tại quầy check-in của sự kiện.</p>
             <div className={styles.successActionsRow}>
               {formProps.onDownloadCalendar && (
                 <button type="button" className={styles.btnSuccessDownloadCal} onClick={formProps.onDownloadCalendar}>

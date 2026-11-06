@@ -210,4 +210,108 @@ export async function stopTunnel() {
   return { ok: false };
 }
 
+/**
+ * Kiểm tra chuyên sâu trạng thái hoạt động của Cloudflare Tunnel và đo độ trễ mạng
+ * @param {string} customTunnelUrl URL tunnel tùy chọn người dùng cấu hình
+ * @returns {Promise<{ ok: boolean, isRunning: boolean, tunnelUrl: string | null, latency: number, message: string, checkedAt: string }>}
+ */
+export async function checkCloudflareHealth(customTunnelUrl = '') {
+  const startTime = performance.now();
+  const checkedAt = new Date().toLocaleTimeString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  try {
+    // 1. Kiểm tra trạng thái tiến trình từ dev server
+    const statusRes = await fetch('/api/tunnel/status', {
+      signal: AbortSignal.timeout(5000),
+      cache: 'no-store',
+    });
+
+    const statusData = statusRes.ok ? await statusRes.json().catch(() => ({})) : {};
+    const activeUrl = statusData.tunnelUrl || customTunnelUrl;
+
+    if (!statusData.isRunning && !activeUrl) {
+      const latency = Math.round(performance.now() - startTime);
+      return {
+        ok: false,
+        isRunning: false,
+        tunnelUrl: null,
+        latency,
+        checkedAt,
+        message: 'Cloudflare Tunnel chưa được bật. Bạn có thể nhấn "Khởi động Cloudflare Tunnel" để kích hoạt.',
+      };
+    }
+
+    // 2. Nếu có tunnel URL, kiểm tra xem thiết bị hiện tại có thực sự truy cập được không
+    if (activeUrl) {
+      try {
+        const pingTarget = `${activeUrl.replace(/\/+$/, '')}/api/network-info`;
+        const pingRes = await fetch(pingTarget, {
+          signal: AbortSignal.timeout(6000),
+          cache: 'no-store',
+          mode: 'cors',
+        });
+        const latency = Math.round(performance.now() - startTime);
+
+        if (pingRes.ok) {
+          return {
+            ok: true,
+            isRunning: true,
+            tunnelUrl: activeUrl,
+            latency,
+            checkedAt,
+            message: `Cloudflare đang hoạt động rất tốt! (Độ trễ phản hồi: ${latency}ms)`,
+          };
+        }
+      } catch {
+        // Thiết bị không thể chạm tới trycloudflare.com
+        const latency = Math.round(performance.now() - startTime);
+        return {
+          ok: false,
+          isRunning: Boolean(statusData.isRunning),
+          tunnelUrl: activeUrl,
+          latency,
+          checkedAt,
+          message: `Không thể truy cập tên miền Cloudflare "${activeUrl}" từ mạng của bạn (bị chặn DNS hoặc nhà mạng). Vui lòng chuyển sang tab "Mạng Cục bộ (Wi-Fi)" hoặc "Tên miền Sự kiện" để quét QR thành công 100%!`,
+        };
+      }
+    }
+
+    const latency = Math.round(performance.now() - startTime);
+    if (statusData.isRunning) {
+      return {
+        ok: true,
+        isRunning: true,
+        tunnelUrl: activeUrl,
+        latency,
+        checkedAt,
+        message: `Tiến trình Cloudflare đang hoạt động (${activeUrl || 'Đang cấp phát domain...'}). Độ trễ: ${latency}ms`,
+      };
+    }
+
+    return {
+      ok: false,
+      isRunning: false,
+      tunnelUrl: activeUrl,
+      latency,
+      checkedAt,
+      message: 'Cloudflare Tunnel không phản hồi. Hãy thử bấm Khởi động lại hoặc dán URL mới.',
+    };
+  } catch (err) {
+    const latency = Math.round(performance.now() - startTime);
+    return {
+      ok: false,
+      isRunning: false,
+      tunnelUrl: customTunnelUrl || null,
+      latency,
+      checkedAt,
+      message: `Không thể kết nối với Cloudflare: ${err.message || 'Mất kết nối máy chủ'}`,
+    };
+  }
+}
+
+
 

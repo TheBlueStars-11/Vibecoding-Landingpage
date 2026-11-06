@@ -15,19 +15,21 @@ function getAllEventEntries() {
   });
 
   // 2. Quét thêm từ localStorage (epb:v1:regs:* và event_lp_*)
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key) continue;
+  if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
 
-    if (key.startsWith(STORAGE_KEYS.REG_PREFIX)) {
-      const eventId = key.replace(STORAGE_KEYS.REG_PREFIX, '');
-      if (!map.has(eventId)) {
-        map.set(eventId, eventId.split('-').slice(0, 3).join(' '));
-      }
-    } else if (key.startsWith('event_lp_') && key.endsWith('_registrations')) {
-      const legacyId = key.replace('event_lp_', '').replace('_registrations', '');
-      if (!map.has(legacyId)) {
-        map.set(legacyId, legacyId.split('-').slice(0, 3).join(' '));
+      if (key.startsWith(STORAGE_KEYS.REG_PREFIX)) {
+        const eventId = key.replace(STORAGE_KEYS.REG_PREFIX, '');
+        if (!map.has(eventId)) {
+          map.set(eventId, eventId.split('-').slice(0, 3).join(' '));
+        }
+      } else if (key.startsWith('event_lp_') && key.endsWith('_registrations')) {
+        const legacyId = key.replace('event_lp_', '').replace('_registrations', '');
+        if (!map.has(legacyId)) {
+          map.set(legacyId, legacyId.split('-').slice(0, 3).join(' '));
+        }
       }
     }
   }

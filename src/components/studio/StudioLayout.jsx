@@ -14,6 +14,7 @@ import {
   CodeIcon,
   CpuIcon,
   PlusIcon,
+  QrCodeIcon,
 } from '../ui/Icons.jsx';
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
 import { WorkspaceInfo } from './WorkspaceInfo.jsx';
@@ -22,6 +23,7 @@ import { WorkspaceLanding } from './WorkspaceLanding.jsx';
 import { WorkspaceRegistrations } from './WorkspaceRegistrations.jsx';
 import { DevModeWorkspace } from './devmode/DevModeWorkspace.jsx';
 import { WorkspaceAiControl } from './WorkspaceAiControl.jsx';
+import { QrCheckInModal } from './QrCheckInModal.jsx';
 
 export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }) {
   const [project, setProject] = useState(() => elsRepository.getProjectById(projectId));
@@ -29,6 +31,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
   const [saveStatus, setSaveStatus] = useState({ state: 'saved', time: 'vừa xong' });
   const [toast, setToast] = useState(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
 
   const handleConfirmReset = () => {
     setIsResetModalOpen(false);
@@ -119,16 +122,16 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
         </div>
 
         <div className={styles.appBarRight}>
-          {/* Trạng thái lưu */}
-          <div className={styles.saveStatusIndicator} role="status">
-            {saveStatus.state === 'saving' ? (
-              <span className={styles.savingText}>Đang lưu...</span>
-            ) : saveStatus.state === 'error' ? (
-              <span className={styles.errorText}>Lưu thất bại</span>
-            ) : (
-              <span className={styles.savedText}>Đã lưu lúc {saveStatus.time}</span>
-            )}
-          </div>
+          {/* Nút Quét QR Check-in vé sự kiện (Thay thế dòng Đã lưu) */}
+          <button
+            type="button"
+            className={styles.btnQrScanAppBar}
+            onClick={() => setIsQrScannerOpen(true)}
+            title="Mở máy quét QR check-in vé người tham dự"
+          >
+            <QrCodeIcon size={15} />
+            <span className={styles.btnQrScanLabel}>Quét QR Check-in</span>
+          </button>
 
           {/* Nút Tạo trang mới (Tính năng #5 - Đề 08) */}
           <button
@@ -276,6 +279,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
               <WorkspaceRegistrations
                 project={project}
                 onShowToast={showToast}
+                onOpenQrScanner={() => setIsQrScannerOpen(true)}
               />
             )}
 
@@ -376,6 +380,14 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
         cancelLabel="Hủy"
         onConfirm={handleConfirmReset}
         onCancel={() => setIsResetModalOpen(false)}
+      />
+
+      {/* Modal Quét QR Check-in vé sự kiện */}
+      <QrCheckInModal
+        isOpen={isQrScannerOpen}
+        onClose={() => setIsQrScannerOpen(false)}
+        project={project}
+        onShowToast={showToast}
       />
     </div>
   );

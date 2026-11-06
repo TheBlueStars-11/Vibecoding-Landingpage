@@ -209,6 +209,8 @@ export function createRegistrationRecord({
   identityKey = '',
   source = 'landing',
   status = 'confirmed',
+  checkedIn = false,
+  checkInTime = null,
 }) {
   return {
     id,
@@ -220,6 +222,8 @@ export function createRegistrationRecord({
     createdAt: new Date().toISOString(),
     status,
     source, // 'landing' | 'preview'
+    checkedIn: Boolean(checkedIn),
+    checkInTime: checkInTime || null,
   };
 }
 

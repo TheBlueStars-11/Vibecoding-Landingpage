@@ -6,6 +6,7 @@ import { normalizeEmail, normalizePhone } from '../domain/normalize.js';
  * Helper an toàn đọc localStorage
  */
 function safeGet(key, defaultValue = null) {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return defaultValue;
   try {
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : defaultValue;
@@ -19,6 +20,7 @@ function safeGet(key, defaultValue = null) {
  * Helper an toàn ghi localStorage và đọc lại để xác nhận
  */
 function safeSet(key, value) {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return false;
   try {
     const serialized = JSON.stringify(value);
     localStorage.setItem(key, serialized);
@@ -211,6 +213,7 @@ export const registrationRepo = {
  * Di chuyển dữ liệu cũ từ tiền tố event_lp_* sang epb:v1:*
  */
 export function migrateLegacyStorage() {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

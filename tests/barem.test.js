@@ -49,7 +49,7 @@ import {
 
 import { generateMockContent } from '../src/services/mockAi.js';
 import { sanitizeForLog } from '../src/services/aiLogger.js';
-import { formatCsvCell } from '../src/services/elsRepository.js';
+import { elsRepository, formatCsvCell } from '../src/services/elsRepository.js';
 
 // ============================================================================
 // BẢNG KIỂM THỬ A: 6 CA KIỂM THỬ BẮT BUỘC THEO BAREM ĐỀ 08 (BẢNG A CÔNG NGHỆ)
@@ -517,6 +517,59 @@ describe('BẢNG KIỂM THỬ BỔ SUNG (TX-01 -> TX-14): ĐỘ ỔN ĐỊNH & K
     assert.equal(mock.notice, 'Bản demo vòng loại - Dữ liệu mô phỏng AI');
     assert.ok(mock.headline.includes('Hội thảo Vibe Coding'));
     assert.equal(mock.bullets.length, 3);
+  });
+
+  // TX-15: Check-in QR: phân định chính xác Mã hợp lệ, Mã đã sử dụng và Mã không hợp lệ
+  it('TX-15: Check-in QR: phân định chính xác Mã hợp lệ, Mã đã sử dụng và Mã không hợp lệ; ghi nhận thời gian quét thực tế', () => {
+    const store = new Map();
+    globalThis.window = {
+      localStorage: {
+        getItem: (k) => store.get(k) || null,
+        setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k),
+      },
+    };
+
+    const projectId = 'prj_qr_test_1';
+    const reg1 = elsRepository.addRegistration(projectId, {
+      values: { fld_name: 'Lê Văn An', fld_email: 'an.le@example.com' },
+      displayName: 'Lê Văn An',
+      identityKey: 'an.le@example.com',
+    });
+
+    // 1. Quét lần đầu -> Mã hợp lệ
+    const res1 = elsRepository.checkInByCode(projectId, reg1.code);
+    assert.equal(res1.status, 'valid');
+    assert.equal(res1.record.checkedIn, true);
+    assert.ok(res1.checkInTime, 'Phải lưu thời gian quét thực tế');
+
+    // 2. Quét lần hai cùng mã -> Mã đã sử dụng
+    const res2 = elsRepository.checkInByCode(projectId, reg1.code);
+    assert.equal(res2.status, 'already_used');
+    assert.equal(res2.checkInTime, res1.checkInTime);
+    assert.ok(res2.message.includes('Mã đã sử dụng'));
+
+    // 3. Quét mã không tồn tại -> Mã không hợp lệ
+    const res3 = elsRepository.checkInByCode(projectId, 'DK-INVALID');
+    assert.equal(res3.status, 'invalid');
+    assert.ok(res3.message.includes('không hợp lệ'));
+
+    // 4. Quét chuỗi JSON hoặc URL chứa mã
+    const reg2 = elsRepository.addRegistration(projectId, {
+      values: { fld_name: 'Phạm Bình', fld_email: 'binh@example.com' },
+      displayName: 'Phạm Bình',
+      identityKey: 'binh@example.com',
+    });
+
+    const resJson = elsRepository.checkInByCode(projectId, JSON.stringify({ code: reg2.code }));
+    assert.equal(resJson.status, 'valid');
+    assert.equal(resJson.record.displayName, 'Phạm Bình');
+
+    // 5. Toggle check-in thủ công
+    elsRepository.toggleCheckIn(projectId, reg2.id);
+    const afterToggle = elsRepository.getRegistrations(projectId).find((r) => r.id === reg2.id);
+    assert.equal(afterToggle.checkedIn, false);
+    assert.equal(afterToggle.checkInTime, null);
   });
 });
 
