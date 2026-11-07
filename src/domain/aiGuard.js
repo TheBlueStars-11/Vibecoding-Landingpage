@@ -168,6 +168,45 @@ export function checkFactGuard(aiContent, inputData = {}) {
     }
   }
 
+  // 8. [L4 Truthfulness] Chống bịa đặt mã voucher / coupon / mã ưu đãi lạ
+  const couponRegex = /(?:mã\s+(?:giảm\s*giá|voucher|coupon|ưu\s*đãi)|code\s*[:=]?)\s*[:=]?\s*["']?([A-Z0-9_-]{3,15})["']?/gi;
+  let cpMatch;
+  while ((cpMatch = couponRegex.exec(fullAiText)) !== null) {
+    const code = cpMatch[1];
+    const hasCodeInInput = fullInputText.includes(code);
+    const mentionsVoucher = /(?:voucher|coupon|mã\s+giảm|mã\s+ưu\s+đãi)/i.test(fullInputText);
+    if (!hasCodeInInput && !mentionsVoucher) {
+      return {
+        pass: false,
+        reason: `AI tự ý bịa đặt mã voucher/ưu đãi (${cpMatch[0]}) không có trong dữ liệu đầu vào.`,
+      };
+    }
+  }
+
+  // 9. [L4 Truthfulness] Chống khẳng định "100% miễn phí / tài trợ toàn phần" nếu input không nêu
+  const freeRegex = /(?:100%\s*miễn\s*phí|tài\s*trợ\s*toàn\s*phần|hoàn\s*toàn\s*miễn\s*phí|miễn\s*phí\s*100%|miễn\s*phí\s*hoàn\s*toàn)/i;
+  if (freeRegex.test(fullAiText)) {
+    const inputMentionsFree = /(?:miễn\s*phí|free|0\s*(?:đ|vnđ|đồng)|không\s*thu\s*phí|tài\s*trợ)/i.test(fullInputText);
+    if (!inputMentionsFree) {
+      return {
+        pass: false,
+        reason: 'AI tự ý khẳng định sự kiện miễn phí 100% / tài trợ toàn phần khi dữ liệu đầu vào không nêu.',
+      };
+    }
+  }
+
+  // 10. [L4 Truthfulness] Chống cam kết "cấp chứng chỉ / chứng nhận" nếu input không nhắc tới
+  const certRegex = /(?:cấp|nhận|trao|được)\s+(?:chứng\s*chỉ|chứng\s*nhận|certificate)|(?:chứng\s*chỉ|chứng\s*nhận|certificate)\s+(?:hoàn\s*thành|tham\s*gia|quốc\s*tế|xác\s*nhận)/i;
+  if (certRegex.test(fullAiText)) {
+    const inputMentionsCert = /(?:chứng\s*chỉ|chứng\s*nhận|certificate|chứng\s*thực)/i.test(fullInputText);
+    if (!inputMentionsCert) {
+      return {
+        pass: false,
+        reason: 'AI tự ý cam kết cấp chứng chỉ / chứng nhận khi dữ liệu đầu vào không nhắc tới.',
+      };
+    }
+  }
+
   return { pass: true, warnings };
 }
 

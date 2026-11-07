@@ -129,3 +129,20 @@ describe('5. Services: Mock Engine', () => {
   });
 });
 
+describe('8. API Lib: HTTP & URL Sanitizer (SYS-02, SYS-03)', () => {
+  it('sanitizeEndpointUrl che mờ hoàn toàn ?key=... và tokens trong URL trả về', async () => {
+    const { sanitizeEndpointUrl } = await import('../api/_lib/http.js');
+    const sensitiveUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSySecretApiKey12345';
+    const cleanUrl = sanitizeEndpointUrl(sensitiveUrl);
+    assert.equal(cleanUrl.includes('AIzaSySecretApiKey12345'), false, 'Không được để lộ API key trong URL');
+    assert.ok(cleanUrl.includes('***MASKED***'), 'Phải che mờ tham số key');
+  });
+
+  it('sanitizeEndpointUrl an toàn khi nhận null/undefined hoặc chuỗi không phải URL', async () => {
+    const { sanitizeEndpointUrl } = await import('../api/_lib/http.js');
+    assert.equal(sanitizeEndpointUrl(null), '');
+    assert.equal(sanitizeEndpointUrl(undefined), '');
+    assert.equal(sanitizeEndpointUrl('not-a-valid-url?key=secret'), 'not-a-valid-url?key=***MASKED***');
+  });
+});
+

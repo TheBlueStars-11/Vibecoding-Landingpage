@@ -43,7 +43,7 @@ export function generateMockContent(eventData = {}, assets = []) {
     benefits = [
       `Nắm vững phương pháp và công cụ thực chiến từ ${mainSpeaker}.`,
       `Mở rộng mạng lưới kết nối và học hỏi kinh nghiệm cùng cộng đồng.`,
-      earlyBird ? `Ưu đãi dành riêng cho người đăng ký sớm: ${earlyBird}.` : 'Nhận toàn bộ tài liệu và chứng chỉ chứng nhận tham gia sự kiện.',
+      earlyBird ? `Ưu đãi dành riêng cho người đăng ký sớm: ${earlyBird}.` : 'Nhận toàn bộ tài liệu và slide thuyết trình sau sự kiện.',
     ];
   }
 
@@ -64,6 +64,9 @@ export function generateMockContent(eventData = {}, assets = []) {
     recommendedSpeakerVariant = 'portrait-cards';
   }
 
+  const eventTimeStr = eventData.eventTime || eventData.time || '09:00';
+  const eventDateStr = eventData.eventDate || eventData.date || 'theo thông báo';
+
   return {
     headline,
     description,
@@ -73,17 +76,16 @@ export function generateMockContent(eventData = {}, assets = []) {
     recommendedSpeakerVariant,
     colorTheme: inferredDesign.colorTheme,
     designReasoning: inferredDesign.reasoning,
-    earlyBirdOffer: earlyBird || 'Tặng vé mời VIP và Ebook tài liệu độc quyền',
-    couponCode: 'VIBE2026',
+    earlyBirdOffer: earlyBird || 'Ưu đãi dành cho người tham dự đăng ký sớm',
     faq: [
-      { q: 'Sự kiện có thu phí tham dự không?', a: 'Sự kiện hoàn toàn miễn phí cho người đăng ký sớm và sinh viên.' },
-      { q: 'Tôi có nhận được chứng chỉ sau buổi học không?', a: 'Có, toàn bộ người tham gia đầy đủ sẽ nhận chứng nhận điện tử sau sự kiện.' },
-      { q: 'Tôi cần chuẩn bị gì khi đến tham dự?', a: 'Bạn nên mang theo laptop để cùng thực hành các bài tập demo trực tiếp.' },
+      { q: 'Sự kiện diễn ra vào thời gian nào?', a: `Chương trình diễn ra vào ngày ${eventDateStr} lúc ${eventTimeStr} (GMT+7).` },
+      { q: 'Địa điểm tổ chức ở đâu?', a: `Sự kiện được tổ chức tại ${location}.` },
+      { q: 'Ai là người chia sẻ trong chương trình?', a: `Chương trình có sự đồng hành và chia sẻ của ${mainSpeaker}.` },
     ],
     stats: [
-      { num: '3+', label: 'Giờ nội dung thực chiến', sub: 'Từ lý thuyết đến ứng dụng' },
-      { num: '150', label: 'Suất tham dự trực tiếp', sub: 'Hội trường chuẩn quốc tế' },
-      { num: '100%', label: 'Miễn phí hoàn toàn', sub: 'Tài trợ bởi Ban Tổ Chức' },
+      { num: '01', label: 'Sự kiện chuyên đề', sub: 'Nội dung thực chiến' },
+      { num: speakers.length > 0 ? String(speakers.length) : '01', label: 'Diễn giả chia sẻ', sub: 'Kinh nghiệm thực tiễn' },
+      { num: '100%', label: 'Tâm huyết tổ chức', sub: 'Chất lượng hàng đầu' },
     ],
     imageAssignments: {
       heroImageId: heroAsset?.id || null,

@@ -3,10 +3,17 @@
  * Serverless function (Vercel / Node.js) giấu hoàn toàn API key khỏi client bundle.
  */
 
+import { ensureMethod, ensurePayloadSize, sanitizeEndpointUrl, sendError, sendSuccess } from './_lib/http.js';
+
 export default async function handler(req, res) {
   // Chỉ cho phép phương thức POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'Chỉ chấp nhận phương thức POST.' });
+  if (!ensureMethod(req, res, ['POST'])) {
+    return;
+  }
+
+  // Giới hạn kích thước payload ≤ 16KB
+  if (!ensurePayloadSize(req, res, 16384)) {
+    return;
   }
 
   const { prompt, config } = req.body || {};
@@ -22,16 +29,16 @@ export default async function handler(req, res) {
   const startTime = Date.now();
 
   if (!API_KEY || API_KEY === 'your_gemini_api_key_here') {
-    return res.status(503).json({
-      ok: false,
-      error: 'Dịch vụ AI chưa được cấu hình API key trên máy chủ.',
+    return sendError(res, 'Dịch vụ AI chưa được cấu hình API key trên máy chủ.', 503, {
       isMissingKey: true,
       latencyMs: Date.now() - startTime,
     });
   }
 
   if (!prompt || typeof prompt !== 'string') {
-    return res.status(400).json({ ok: false, error: 'Thiếu nội dung prompt.', latencyMs: Date.now() - startTime });
+    return sendError(res, 'Thiếu nội dung prompt.', 400, {
+      latencyMs: Date.now() - startTime,
+    });
   }
 
   const isOpenAICompat = BASE_URL.includes('/v1') && !BASE_URL.includes('googleapis');
@@ -72,17 +79,16 @@ export default async function handler(req, res) {
 
     clearTimeout(timeoutId);
     const latencyMs = Date.now() - startTime;
+    const sanitizedEndpoint = sanitizeEndpointUrl(url);
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
       const errMsg = errData?.error?.message || `HTTP ${response.status} từ nhà cung cấp AI`;
-      return res.status(response.status).json({
-        ok: false,
-        error: errMsg,
+      return sendError(res, errMsg, response.status, {
         latencyMs,
         model: MODEL,
         rawResponse: errData,
-        endpoint: url,
+        endpoint: sanitizedEndpoint,
       });
     }
 
@@ -94,32 +100,26 @@ export default async function handler(req, res) {
       text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     }
 
-    return res.status(200).json({
-      ok: true,
+    return sendSuccess(res, {
       text,
       model: MODEL,
       latencyMs,
       usage: data.usage || null,
       rawResponse: data,
-      endpoint: url,
+      endpoint: sanitizedEndpoint,
     });
   } catch (err) {
     clearTimeout(timeoutId);
     const latencyMs = Date.now() - startTime;
     if (err.name === 'AbortError') {
-      return res.status(504).json({
-        ok: false,
-        error: `Yêu cầu tới dịch vụ AI bị quá thời gian (${Math.round(timeoutMs / 1000)}s).`,
+      return sendError(res, `Yêu cầu tới dịch vụ AI bị quá thời gian (${Math.round(timeoutMs / 1000)}s).`, 504, {
         latencyMs,
         model: MODEL,
       });
     }
-    return res.status(500).json({
-      ok: false,
-      error: err.message || 'Lỗi kết nối tới dịch vụ AI.',
+    return sendError(res, err.message || 'Lỗi kết nối tới dịch vụ AI.', 500, {
       latencyMs,
       model: MODEL,
     });
   }
 }
-

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 /**
  * Serverless / Express API Handler để lưu nhật ký đánh giá module trực tiếp vào thư mục module_reports/
@@ -13,9 +14,18 @@ export default async function handler(req, res) {
   try {
     const { reviews = [], markdownContent = '', summary = {} } = req.body || {};
 
-    const reportsDir = path.resolve(process.cwd(), 'module_reports');
-    if (!fs.existsSync(reportsDir)) {
-      fs.mkdirSync(reportsDir, { recursive: true });
+    // Xác định thư mục ghi báo cáo an toàn: trên môi trường Serverless (Vercel) dùng os.tmpdir() để tránh EROFS
+    const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+    const reportsDir = isServerless
+      ? path.join(os.tmpdir(), 'module_reports')
+      : path.resolve(process.cwd(), 'module_reports');
+
+    try {
+      if (!fs.existsSync(reportsDir)) {
+        fs.mkdirSync(reportsDir, { recursive: true });
+      }
+    } catch {
+      // Bỏ qua lỗi tạo thư mục nếu hệ thống file bị khóa hoàn toàn
     }
 
     const mdFilePath = path.join(reportsDir, 'MODULE_DEV_REVIEW_LOG.md');
@@ -67,15 +77,21 @@ Dựa trên các module bị loại bỏ hoặc có nhận xét:
 `;
     }
 
-    // Ghi file Markdown và JSON
-    fs.writeFileSync(mdFilePath, finalMarkdown, 'utf8');
-    fs.writeFileSync(jsonFilePath, JSON.stringify({ summary, reviews, updatedAt: new Date().toISOString() }, null, 2), 'utf8');
+    // Ghi file Markdown và JSON an toàn
+    let writeOk = true;
+    try {
+      fs.writeFileSync(mdFilePath, finalMarkdown, 'utf8');
+      fs.writeFileSync(jsonFilePath, JSON.stringify({ summary, reviews, updatedAt: new Date().toISOString() }, null, 2), 'utf8');
+    } catch (fsErr) {
+      console.warn('Không thể ghi file báo cáo ra đĩa:', fsErr.message);
+      writeOk = false;
+    }
 
     return res.status(200).json({
       ok: true,
-      message: 'Đã lưu nhật ký đánh giá thành công!',
-      mdFilePath: 'module_reports/MODULE_DEV_REVIEW_LOG.md',
-      jsonFilePath: 'module_reports/MODULE_DEV_REVIEW_LOG.json',
+      message: writeOk ? 'Đã lưu nhật ký đánh giá thành công!' : 'Đã ghi nhận nhật ký trong bộ nhớ (môi trường serverless)',
+      mdFilePath: isServerless ? mdFilePath : 'module_reports/MODULE_DEV_REVIEW_LOG.md',
+      jsonFilePath: isServerless ? jsonFilePath : 'module_reports/MODULE_DEV_REVIEW_LOG.json',
       totalCount: reviews.length,
     });
   } catch (error) {

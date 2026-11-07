@@ -85,7 +85,7 @@ describe('BẢNG KIỂM THỬ A: 6 CA BẮT BUỘC THEO QUY CHẾ BAREM', () => 
       bullets: [
         'Làm chủ tư duy agentic coding và tự động hóa quy trình',
         'Thực hành triển khai landing page chuẩn responsive',
-        'Nhận chứng nhận hoàn thành và kết nối cộng đồng chuyên gia',
+        'Mở rộng mạng lưới quan hệ và kết nối cộng đồng chuyên gia',
       ],
     };
 
@@ -377,6 +377,65 @@ describe('BẢNG KIỂM THỬ BỔ SUNG (TX-01 -> TX-14): ĐỘ ỔN ĐỊNH & K
     const res = checkFactGuard(corrupted, { name: 'Hội thảo AI' });
     assert.equal(res.pass, false);
     assert.ok(res.reason.includes('mã hóa'));
+  });
+
+  // TX-05.1: Fact Guard Check 8 - Chống bịa đặt mã voucher / coupon khi input không nêu
+  it('TX-05.1: Fact Guard Check 8 - AI tự ý bịa mã voucher/coupon -> Bị chặn', () => {
+    const couponHallucination = {
+      headline: 'Hội thảo Đột phá AI 2026',
+      description: 'Nhập ngay mã voucher VIBE2026 để nhận quà tặng độc quyền từ ban tổ chức!',
+      bullets: ['Nắm bắt xu hướng AI mới nhất', 'Thực chiến cùng chuyên gia đầu ngành', 'Mở rộng mạng lưới kết nối'],
+    };
+    const res = checkFactGuard(couponHallucination, {
+      name: 'Hội thảo Đột phá AI 2026',
+      location: 'Hà Nội',
+    });
+    assert.equal(res.pass, false);
+    assert.ok(res.reason.includes('voucher') || res.reason.includes('ưu đãi'));
+  });
+
+  // TX-05.2: Fact Guard Check 9 - Chống khẳng định 100% miễn phí khi input không nêu
+  it('TX-05.2: Fact Guard Check 9 - AI tự ý khẳng định 100% miễn phí / tài trợ toàn phần -> Bị chặn', () => {
+    const freeHallucination = {
+      headline: 'Khóa học Chuyên sâu AI 2026',
+      description: 'Chương trình được tài trợ toàn phần 100% miễn phí cho tất cả học viên đăng ký sớm.',
+      bullets: ['Nắm vững kiến thức cốt lõi', 'Thực hành dự án thực tế', 'Được mentor hỗ trợ 1:1'],
+    };
+    const res = checkFactGuard(freeHallucination, {
+      name: 'Khóa học Chuyên sâu AI 2026',
+      location: 'Hồ Chí Minh',
+    });
+    assert.equal(res.pass, false);
+    assert.ok(res.reason.includes('miễn phí 100%') || res.reason.includes('tài trợ'));
+  });
+
+  // TX-05.3: Fact Guard Check 10 - Chống cam kết cấp chứng chỉ khi input không nhắc tới
+  it('TX-05.3: Fact Guard Check 10 - AI tự ý cam kết cấp chứng chỉ / chứng nhận -> Bị chặn', () => {
+    const certHallucination = {
+      headline: 'Hội thảo Lập trình Đỉnh cao',
+      description: 'Tham gia để được nhận chứng chỉ hoàn thành khóa học từ hiệp hội công nghệ uy tín.',
+      bullets: ['Nâng cao kỹ năng lập trình', 'Học hỏi từ chuyên gia hàng đầu', 'Mở rộng cơ hội việc làm'],
+    };
+    const res = checkFactGuard(certHallucination, {
+      name: 'Hội thảo Lập trình Đỉnh cao',
+      location: 'Đà Nẵng',
+    });
+    assert.equal(res.pass, false);
+    assert.ok(res.reason.includes('chứng chỉ') || res.reason.includes('chứng nhận'));
+  });
+
+  // TX-05.4: Fact Guard cho phép nếu input thực sự có nhắc đến voucher / miễn phí / chứng chỉ
+  it('TX-05.4: Fact Guard chấp nhận nếu dữ liệu đầu vào có xác nhận ưu đãi/chứng chỉ/miễn phí', () => {
+    const legitContent = {
+      headline: 'Khóa học Lập trình Web Fullstack',
+      description: 'Chương trình hoàn toàn miễn phí, học viên hoàn thành được cấp chứng chỉ tốt nghiệp uy tín.',
+      bullets: ['Học hoàn toàn miễn phí', 'Nhận chứng chỉ chính quy', 'Cơ hội việc làm rộng mở'],
+    };
+    const res = checkFactGuard(legitContent, {
+      name: 'Khóa học Lập trình Web Fullstack',
+      description: 'Chương trình miễn phí có cấp chứng chỉ cho học viên hoàn thành',
+    });
+    assert.equal(res.pass, true);
   });
 
   // TX-06: Khử trùng API Key trong nhật ký AI (ADR-5, Luồng 3)
