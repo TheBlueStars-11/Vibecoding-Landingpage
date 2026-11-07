@@ -17,6 +17,12 @@ import {
   inferPresetAndTheme,
   createModuleInstance,
   createDefaultModuleTree,
+  PERMANENT_DELETED_VARIANTS,
+  PERMANENT_DELETED_MODULE_TYPES,
+  getDeletedVariants,
+  getDeletedModuleTypes,
+  isVariantDeleted,
+  getSafeVariant,
 } from '../src/domain/moduleSchema.js';
 
 import {
@@ -148,6 +154,62 @@ describe('Module Schema & Catalog', () => {
     });
     assert.equal(ws.presetId, 'workshop');
     assert.equal(ws.colorTheme, 'blue');
+  });
+
+  it('permanently blocks deleted variants from ever appearing in modules or presets', () => {
+    // 1. Kiểm tra danh sách đen vĩnh viễn và hàm hợp nhất getDeletedVariants
+    const allDeleted = getDeletedVariants();
+    assert.ok(allDeleted.hero.includes('image-left'));
+    assert.ok(Array.isArray(PERMANENT_DELETED_VARIANTS.hero));
+    assert.ok(PERMANENT_DELETED_VARIANTS.hero.includes('image-left'));
+    assert.ok(PERMANENT_DELETED_VARIANTS.hero.includes('poster-fullbleed'));
+    assert.ok(PERMANENT_DELETED_VARIANTS.agenda.includes('timeline-compact'));
+    assert.ok(PERMANENT_DELETED_VARIANTS.speakers.includes('cast-credits'));
+    assert.ok(PERMANENT_DELETED_VARIANTS.benefits.includes('cinema-trio'));
+
+    // 2. isVariantDeleted xác định chính xác
+    assert.equal(isVariantDeleted('hero', 'image-left'), true);
+    assert.equal(isVariantDeleted('hero', 'poster-fullbleed'), true);
+    assert.equal(isVariantDeleted('agenda', 'timeline-compact'), true);
+    assert.equal(isVariantDeleted('speakers', 'cast-credits'), true);
+    assert.equal(isVariantDeleted('benefits', 'cinema-trio'), true);
+    assert.equal(isVariantDeleted('hero', 'image-right'), false);
+
+    // 3. getSafeVariant tự động thay thế biến thể bị xóa bằng biến thể an toàn
+    assert.equal(getSafeVariant('hero', 'image-left'), 'image-right');
+    assert.equal(getSafeVariant('hero', 'poster-fullbleed'), 'image-right');
+    assert.equal(getSafeVariant('agenda', 'timeline-compact'), 'timeline');
+    assert.equal(getSafeVariant('speakers', 'cast-credits'), 'portrait-cards');
+    assert.equal(getSafeVariant('benefits', 'cinema-trio'), 'cards');
+
+    // 4. createModuleInstance không bao giờ tạo module với biến thể đã bị xóa
+    const badHero = createModuleInstance('hero', { variant: 'image-left' });
+    assert.notEqual(badHero.variant, 'image-left');
+    assert.equal(badHero.variant, 'image-right');
+
+    const badAgenda = createModuleInstance('agenda', { variant: 'timeline-compact' });
+    assert.notEqual(badAgenda.variant, 'timeline-compact');
+    assert.equal(badAgenda.variant, 'timeline');
+
+    // 5. Toàn bộ 5 presets đều không chứa bất kỳ biến thể nào bị xóa và không chứa module thanh thông báo khẩn
+    assert.ok(PERMANENT_DELETED_MODULE_TYPES.includes('announcement_bar'));
+    assert.ok(getDeletedModuleTypes().includes('announcement_bar'));
+
+    for (const presetKey of Object.keys(PRESET_TEMPLATES)) {
+      const tree = createPresetModuleTree(presetKey);
+      assert.equal(
+        tree.some((m) => m.type === 'announcement_bar'),
+        false,
+        `Preset ${presetKey} must not contain announcement_bar`
+      );
+      for (const mod of tree) {
+        assert.equal(
+          isVariantDeleted(mod.type, mod.variant),
+          false,
+          `Preset ${presetKey} contains deleted variant ${mod.type}:${mod.variant}`
+        );
+      }
+    }
   });
 
   it('BREAKPOINT_PRESETS covers mobile, tablet and desktop screen sizes', () => {

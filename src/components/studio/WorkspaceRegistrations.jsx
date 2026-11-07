@@ -26,9 +26,7 @@ import {
   ClockIcon,
   QrCodeIcon,
   GlobeIcon,
-  LightbulbIcon,
   ActivityIcon,
-  WifiIcon,
 } from '../ui/Icons.jsx';
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
 
@@ -36,11 +34,10 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
   const [registrations, setRegistrations] = useState(() => {
     return project?.id ? elsRepository.getRegistrations(project.id) : [];
   });
+  const [shareMode, setShareMode] = useState('direct'); // 'direct' | 'tunnel'
   const [customTunnelUrl, setCustomTunnelUrl] = useState('');
   const [isStartingTunnel, setIsStartingTunnel] = useState(false);
   const [isCheckingTunnel, setIsCheckingTunnel] = useState(false);
-  const [tunnelHealthResult, setTunnelHealthResult] = useState(null);
-  const [tunnelError, setTunnelError] = useState(null);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedCodeId, setCopiedCodeId] = useState(null);
@@ -51,6 +48,18 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState('Vừa xong');
   const qrImageRef = useRef(null);
+
+  const isVercel = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const host = window.location.hostname;
+    return (
+      host.includes('vercel.app') ||
+      (!['localhost', '127.0.0.1'].includes(host) &&
+        !host.startsWith('192.168.') &&
+        !host.startsWith('10.') &&
+        !host.startsWith('172.'))
+    );
+  }, []);
 
   const [todayIsoStr] = useState(() => {
     const now = new Date();
@@ -66,15 +75,15 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
     }
   }, [project]);
 
-  // 1. Tải thông tin mạng & kết nối Cloudflare Tunnel khi mount
+  // 1. Tải thông tin mạng & kết nối Cloudflare Tunnel khi mount (chỉ auto-start khi local dev)
   useEffect(() => {
     let mounted = true;
     getNetworkInfo().then((info) => {
       if (!mounted || !info) return;
       if (info.tunnelUrl) {
         setCustomTunnelUrl(info.tunnelUrl);
-      } else {
-        // Tự động khởi động Cloudflare Tunnel nếu chưa chạy
+      } else if (!isVercel) {
+        // Tự động khởi động Cloudflare Tunnel nếu chưa chạy và đang ở môi trường local
         setIsStartingTunnel(true);
         startTunnel()
           .then((res) => {
@@ -92,11 +101,16 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isVercel]);
 
   const handleStartTunnel = async () => {
+    if (isVercel) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      setCustomTunnelUrl(origin);
+      onShowToast?.('Bạn đang trên Vercel: Website đã có HTTPS công khai trực tiếp!', 'success');
+      return;
+    }
     setIsStartingTunnel(true);
-    setTunnelError(null);
     try {
       const res = await startTunnel();
       if (res && res.ok && res.tunnelUrl) {
@@ -104,11 +118,10 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
         onShowToast?.('Cloudflare Tunnel đã kết nối thành công!', 'success');
       } else {
         const errMsg = res?.error || 'Không thể tạo Cloudflare Tunnel';
-        setTunnelError(errMsg);
         onShowToast?.(errMsg, 'error');
       }
     } catch (err) {
-      setTunnelError(err.message || 'Lỗi khởi động Cloudflare Tunnel');
+      onShowToast?.(err.message || 'Lỗi khởi động Cloudflare Tunnel', 'error');
     } finally {
       setIsStartingTunnel(false);
     }
@@ -117,15 +130,18 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
   const handleStopTunnel = async () => {
     await stopTunnel();
     setCustomTunnelUrl('');
-    setTunnelHealthResult(null);
     onShowToast?.('Đã dừng Cloudflare Tunnel', 'info');
   };
 
   // Khởi động lại Cloudflare Tunnel sạch sẽ
   const handleRestartTunnel = async () => {
+    if (isVercel) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      setCustomTunnelUrl(origin);
+      onShowToast?.('Đã làm mới kết nối Vercel HTTPS!', 'success');
+      return;
+    }
     setIsStartingTunnel(true);
-    setTunnelError(null);
-    setTunnelHealthResult(null);
     try {
       await stopTunnel();
       const res = await startTunnel();
@@ -134,11 +150,10 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
         onShowToast?.('Cloudflare Tunnel đã được khởi động lại thành công!', 'success');
       } else {
         const errMsg = res?.error || 'Không thể tạo Cloudflare Tunnel';
-        setTunnelError(errMsg);
         onShowToast?.(errMsg, 'error');
       }
     } catch (err) {
-      setTunnelError(err.message || 'Lỗi khởi động lại Cloudflare Tunnel');
+      onShowToast?.(err.message || 'Lỗi khởi động lại Cloudflare Tunnel', 'error');
     } finally {
       setIsStartingTunnel(false);
     }
@@ -147,47 +162,47 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
   // Kiểm tra trạng thái hoạt động thực tế của Cloudflare Tunnel và đo độ trễ
   const handleCheckCloudflare = async () => {
     setIsCheckingTunnel(true);
-    setTunnelHealthResult(null);
     try {
+      if (isVercel && !customTunnelUrl) {
+        onShowToast?.('Ứng dụng đang chạy trên Vercel HTTPS công khai! Không cần Cloudflare Tunnel.', 'info');
+        return;
+      }
       const res = await checkCloudflareHealth(customTunnelUrl);
-      setTunnelHealthResult(res);
-
       if (res.tunnelUrl && !customTunnelUrl) {
         setCustomTunnelUrl(res.tunnelUrl);
       }
-
       if (res.ok) {
         onShowToast?.(res.message, 'success');
       } else {
         onShowToast?.(res.message, 'warning');
       }
     } catch (err) {
-      const fallback = {
-        ok: false,
-        latency: 0,
-        message: `Lỗi kiểm tra kết nối: ${err.message || 'Không thể kết nối máy chủ'}`,
-        checkedAt: new Date().toLocaleTimeString('vi-VN'),
-      };
-      setTunnelHealthResult(fallback);
-      onShowToast?.(fallback.message, 'error');
+      onShowToast?.(`Lỗi kiểm tra kết nối: ${err.message || 'Không thể kết nối máy chủ'}`, 'error');
     } finally {
       setIsCheckingTunnel(false);
     }
   };
 
-  // 2. Tính toán đường dẫn Landing Page công khai qua Cloudflare Tunnel / Server
-  const activeUrl = useMemo(() => {
+  // 2. Tính toán đường dẫn Landing Page theo chế độ (Trực tiếp / Localhost vs Cloudflare)
+  const directUrl = useMemo(() => {
     const slug = project?.slug || '';
     if (!slug) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+    return `${origin}/#/e/${slug}`;
+  }, [project?.slug]);
 
+  const tunnelUrl = useMemo(() => {
+    const slug = project?.slug || '';
+    if (!slug) return '';
     const cleanTunnel = (customTunnelUrl || '').trim().replace(/\/+$/, '');
     if (cleanTunnel) {
       return `${cleanTunnel}/#/e/${slug}`;
     }
-    // Fallback an toàn về domain máy chủ hiện tại
     const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
     return `${origin}/#/e/${slug}`;
   }, [project?.slug, customTunnelUrl]);
+
+  const activeUrl = shareMode === 'direct' ? directUrl : tunnelUrl;
 
   // 3. Tạo mã QR độ nét cao khi activeUrl thay đổi
   useEffect(() => {
@@ -197,7 +212,7 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
         width: 320,
         margin: 2,
         color: {
-          dark: '#1e1b4b',
+          dark: '#4c0519',
           light: '#ffffff',
         },
         errorCorrectionLevel: 'M',
@@ -519,20 +534,27 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
               <span>Real-time Live</span>
             </div>
           </div>
+        </div>
 
-          {/* Chế độ chia sẻ: Public Tunnel (Cloudflare) */}
-          <div className={styles.modeTabs} role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={true}
-              className={`${styles.modeTab} ${styles.modeTabActive}`}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'default' }}
-            >
-              <GlobeIcon size={14} />
-              <span>Public Tunnel (Cloudflare)</span>
-            </button>
-          </div>
+        {/* BẬT TAB CHẾ ĐỘ: Web trực tiếp (Localhost / Vercel) vs Cloudflare Tunnel */}
+        <div className={styles.modeTabsBar}>
+          <button
+            type="button"
+            className={`${styles.modeTab} ${shareMode === 'direct' ? styles.modeTabActive : ''}`}
+            onClick={() => setShareMode('direct')}
+          >
+            <GlobeIcon size={16} />
+            <span>Web trực tiếp / Localhost (Không cần mạng & Vercel)</span>
+            <span className={styles.modeBadgeRecommended}>Khuyên dùng</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.modeTab} ${shareMode === 'tunnel' ? styles.modeTabActive : ''}`}
+            onClick={() => setShareMode('tunnel')}
+          >
+            <ActivityIcon size={16} />
+            <span>Cloudflare Tunnel (Mạng công khai)</span>
+          </button>
         </div>
 
         <div className={styles.shareCardBody}>
@@ -575,12 +597,16 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
             </div>
           </div>
 
-          {/* Cột phải: Thông tin URL & Quản lý Cloudflare */}
+          {/* Cột phải: Thông tin URL & Quản lý */}
           <div className={styles.infoCol}>
             {/* Input đường dẫn hiện tại */}
             <div className={styles.urlInputBox}>
               <label htmlFor="active-share-url" className={styles.inputLabel}>
-                Đường dẫn truy cập cho thiết bị khác:
+                {shareMode === 'direct'
+                  ? isVercel
+                    ? 'Đường dẫn Web trực tiếp Vercel HTTPS:'
+                    : 'Đường dẫn Web trực tiếp / Localhost (Không cần mạng):'
+                  : 'Đường dẫn Cloudflare Tunnel công khai:'}
               </label>
               <div className={styles.urlBar}>
                 <input
@@ -610,120 +636,127 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
               </div>
             </div>
 
-            {/* Cấu hình Cloudflare Tunnel */}
-            <div className={styles.tunnelInputBox}>
-              <div className={styles.tunnelControls}>
-                {customTunnelUrl ? (
-                  <>
-                    <div className={styles.tunnelStatusActive}>
-                      <span className={styles.pulseDot} />
-                      <span>Cloudflare Tunnel đang hoạt động</span>
-                    </div>
-                    <button
-                      type="button"
-                      className={styles.btnCheckTunnel}
-                      onClick={handleCheckCloudflare}
-                      disabled={isCheckingTunnel}
-                      title="Kiểm tra tín hiệu phản hồi và đo độ trễ Cloudflare"
-                    >
-                      <ActivityIcon size={14} className={isCheckingTunnel ? styles.spinIcon : ''} />
-                      <span>{isCheckingTunnel ? 'Đang kiểm tra...' : 'Kiểm tra Cloudflare'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.btnCheckTunnel}
-                      onClick={handleRestartTunnel}
-                      disabled={isStartingTunnel}
-                      title="Khởi động lại tiến trình Cloudflare Tunnel"
-                    >
-                      <RefreshCwIcon size={14} className={isStartingTunnel ? styles.spinIcon : ''} />
-                      <span>Khởi động lại</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.btnStopTunnel}
-                      onClick={handleStopTunnel}
-                    >
-                      Dừng Tunnel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className={styles.btnStartTunnel}
-                      onClick={handleStartTunnel}
-                      disabled={isStartingTunnel}
-                    >
-                      {isStartingTunnel ? (
-                        <>
-                          <RefreshCwIcon size={14} className={styles.spinIcon} />
-                          <span>Đang kết nối Cloudflare...</span>
-                        </>
-                      ) : (
-                        <>
-                          <GlobeIcon size={14} />
-                          <span>Khởi động Cloudflare Tunnel (1 Click)</span>
-                        </>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.btnCheckTunnel}
-                      onClick={handleCheckCloudflare}
-                      disabled={isCheckingTunnel}
-                      title="Kiểm tra Cloudflare Tunnel có đang chạy trên máy chủ không"
-                    >
-                      <ActivityIcon size={14} className={isCheckingTunnel ? styles.spinIcon : ''} />
-                      <span>{isCheckingTunnel ? 'Đang kiểm tra...' : 'Kiểm tra Cloudflare'}</span>
-                    </button>
-                  </>
-                )}
+            {/* Chi tiết theo từng chế độ */}
+            {shareMode === 'direct' ? (
+              <div className={styles.directModeInfoBox}>
+                <div className={styles.directBadgeRow}>
+                  <span className={styles.directStatusBadge}>
+                    <CheckIcon size={14} />
+                    <span>{isVercel ? 'Vercel Cloud HTTPS Sẵn Sàng' : 'Localhost Offline Sẵn Sàng'}</span>
+                  </span>
+                  <span className={styles.directOriginText}>
+                    Máy chủ: {typeof window !== 'undefined' ? window.location.origin : 'localhost'}
+                  </span>
+                </div>
+                <div className={styles.directFeatureList}>
+                  <div className={styles.directFeatureItem}>
+                    <span className={styles.directCheckMark}>✓</span>
+                    <span>
+                      {isVercel
+                        ? 'Website đã có HTTPS công khai trực tiếp của Vercel, quét QR truy cập ngay từ mọi nơi (Wi-Fi, 4G, 5G).'
+                        : 'Hoạt động độc lập 100% không cần kết nối mạng Internet hay Cloudflare Tunnel.'}
+                    </span>
+                  </div>
+                  <div className={styles.directFeatureItem}>
+                    <span className={styles.directCheckMark}>✓</span>
+                    <span>
+                      Dữ liệu sự kiện và form đăng ký được lưu trực tiếp an toàn trong LocalStorage và máy chủ.
+                    </span>
+                  </div>
+                  <div className={styles.directFeatureItem}>
+                    <span className={styles.directCheckMark}>✓</span>
+                    <span>
+                      Tối ưu tốc độ kiểm thử tính năng tạo web, điền form thử nghiệm và quét mã QR check-in vé.
+                    </span>
+                  </div>
+                </div>
               </div>
-
-              {/* Banner kết quả kiểm tra Cloudflare */}
-              {tunnelHealthResult && (
-                <div
-                  className={tunnelHealthResult.ok ? styles.tunnelHealthOk : styles.tunnelHealthWarn}
-                  role="status"
-                >
-                  <div className={styles.tunnelHealthIconWrap}>
-                    {tunnelHealthResult.ok ? <WifiIcon size={18} /> : <ActivityIcon size={18} />}
+            ) : (
+              <div className={styles.tunnelInputBox}>
+                {isVercel && (
+                  <div className={styles.vercelTunnelNotice}>
+                    <strong>Lưu ý trên Vercel:</strong> Ứng dụng của bạn đã có tên miền HTTPS công khai chính thức từ Vercel. Bạn không cần Cloudflare Tunnel để chia sẻ. Nếu có tên miền Cloudflare Tunnel riêng, bạn có thể dán vào ô bên dưới.
                   </div>
-                  <div className={styles.tunnelHealthContent}>
-                    <div className={styles.tunnelHealthTitleRow}>
-                      <strong>{tunnelHealthResult.ok ? 'Cloudflare đang hoạt động bình thường' : 'Cloudflare phản hồi chậm hoặc bị chặn'}</strong>
-                      {tunnelHealthResult.latency > 0 && (
-                        <span className={styles.latencyBadge}>{tunnelHealthResult.latency} ms</span>
-                      )}
-                    </div>
-                    <p className={styles.tunnelHealthMsg}>{tunnelHealthResult.message}</p>
-                    <span className={styles.tunnelHealthTime}>Đã kiểm tra lúc: {tunnelHealthResult.checkedAt}</span>
-                  </div>
+                )}
+                <div className={styles.tunnelControls}>
+                  {customTunnelUrl ? (
+                    <>
+                      <div className={styles.tunnelStatusActive}>
+                        <span className={styles.pulseDot} />
+                        <span>Cloudflare Tunnel đang hoạt động</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.btnCheckTunnel}
+                        onClick={handleCheckCloudflare}
+                        disabled={isCheckingTunnel}
+                        title="Kiểm tra tín hiệu phản hồi và đo độ trễ Cloudflare"
+                      >
+                        <ActivityIcon size={14} className={isCheckingTunnel ? styles.spinIcon : ''} />
+                        <span>{isCheckingTunnel ? 'Đang kiểm tra...' : 'Kiểm tra Cloudflare'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.btnCheckTunnel}
+                        onClick={handleRestartTunnel}
+                        disabled={isStartingTunnel}
+                        title="Khởi động lại tiến trình Cloudflare Tunnel"
+                      >
+                        <RefreshCwIcon size={14} className={isStartingTunnel ? styles.spinIcon : ''} />
+                        <span>Khởi động lại</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.btnStopTunnel}
+                        onClick={handleStopTunnel}
+                      >
+                        Dừng Tunnel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className={styles.btnStartTunnel}
+                        onClick={handleStartTunnel}
+                        disabled={isStartingTunnel}
+                      >
+                        {isStartingTunnel ? (
+                          <>
+                            <RefreshCwIcon size={14} className={styles.spinIcon} />
+                            <span>Đang kết nối Cloudflare...</span>
+                          </>
+                        ) : (
+                          <>
+                            <GlobeIcon size={14} />
+                            <span>Khởi động Cloudflare Tunnel (1 Click)</span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.btnCheckTunnel}
+                        onClick={handleCheckCloudflare}
+                        disabled={isCheckingTunnel}
+                        title="Kiểm tra Cloudflare Tunnel có đang chạy trên máy chủ không"
+                      >
+                        <ActivityIcon size={14} className={isCheckingTunnel ? styles.spinIcon : ''} />
+                        <span>{isCheckingTunnel ? 'Đang kiểm tra...' : 'Kiểm tra Cloudflare'}</span>
+                      </button>
+                    </>
+                  )}
                 </div>
-              )}
 
-              {tunnelError && (
-                <div className={styles.tunnelError}>
-                  {tunnelError}
-                </div>
-              )}
-
-              <span className={styles.subLabel}>Đường dẫn Cloudflare Tunnel (tự động cập nhật hoặc dán link thủ công):</span>
-              <input
-                type="url"
-                placeholder="https://random-words.trycloudflare.com"
-                value={customTunnelUrl}
-                onChange={(e) => setCustomTunnelUrl(e.target.value)}
-                className={styles.tunnelInput}
-              />
-              <p className={styles.hintText} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                <LightbulbIcon size={14} style={{ flexShrink: 0, marginTop: 2 }} />
-                <span>
-                  Đã bật <code>server.allowedHosts: true</code>. Thiết bị từ mọi nơi (kể cả mạng 4G/5G) đều quét mã QR vào thẳng form đăng ký mà không bị chặn.
-                </span>
-              </p>
-            </div>
+                <span className={styles.subLabel}>Đường dẫn Cloudflare Tunnel (tự động cập nhật hoặc dán link thủ công):</span>
+                <input
+                  type="url"
+                  placeholder="https://random-words.trycloudflare.com"
+                  value={customTunnelUrl}
+                  onChange={(e) => setCustomTunnelUrl(e.target.value)}
+                  className={styles.tunnelInput}
+                />
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -64,13 +64,13 @@
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 4px 10px rgba(225, 29, 72, 0.3);
 }
 
 .modalTitle {
@@ -179,7 +179,7 @@
 
 .activeTab {
   background-color: #ffffff;
-  color: #4f46e5;
+  color: #e11d48;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -233,7 +233,7 @@
   position: absolute;
   width: 28px;
   height: 28px;
-  border: 4px solid #6366f1;
+  border: 4px solid #f43f5e;
 }
 
 .topLeft {
@@ -373,8 +373,8 @@
 }
 
 .uploadDropZone:hover {
-  border-color: #6366f1;
-  background-color: #f1f5f9;
+  border-color: #e11d48;
+  background-color: #fff5f7;
 }
 
 .hiddenFileInput {
@@ -382,7 +382,7 @@
 }
 
 .uploadIcon {
-  color: #6366f1;
+  color: #e11d48;
   margin-bottom: 10px;
 }
 
@@ -430,12 +430,12 @@
 
 .manualInput:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
 }
 
 .btnManualCheck {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   color: #ffffff;
   border: none;
   border-radius: 10px;

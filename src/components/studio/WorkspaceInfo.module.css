@@ -12,10 +12,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 18px 24px;
-  background: linear-gradient(135deg, #f7f3ff 0%, #eee6ff 100%);
-  border: 1px solid #ddd1fe;
+  background: linear-gradient(135deg, #fff5f7 0%, #ffe4e8 100%);
+  border: 1px solid #fecdd3;
   border-radius: 18px;
-  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.06);
+  box-shadow: 0 4px 18px rgba(225, 29, 72, 0.06);
   gap: 16px;
 }
 
@@ -42,22 +42,22 @@
   align-items: center;
   gap: 8px;
   padding: 9px 16px;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
   transition: all 0.2s ease;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .btnDevAutofill:hover {
-  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  background: linear-gradient(135deg, #be123c 0%, #9f1239 100%);
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
   transform: translateY(-1px);
 }
 
@@ -117,11 +117,11 @@
 
 /* Thẻ section */
 .sectionCard {
-  background: linear-gradient(165deg, #ffffff 0%, #faf7ff 100%);
-  border: 1px solid rgba(139, 92, 246, 0.18);
+  background: linear-gradient(165deg, #ffffff 0%, #fff8f9 100%);
+  border: 1px solid rgba(225, 29, 72, 0.16);
   border-radius: 18px;
   padding: 24px;
-  box-shadow: 0 4px 20px -2px rgba(124, 58, 237, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 4px 20px -2px rgba(225, 29, 72, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
 }
 
 .cardHeader {
@@ -217,8 +217,8 @@
 
 .input:focus,
 .textarea:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15);
 }
 
 .inputSmall {
@@ -232,7 +232,7 @@
 }
 
 .inputSmall:focus {
-  border-color: #4f46e5;
+  border-color: #e11d48;
 }
 
 .inputError {
@@ -274,8 +274,8 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: 6px;
-  background-color: #e0e7ff;
-  color: #4338ca;
+  background-color: #ffe4e8;
+  color: #be123c;
   font-size: 0.8rem;
   font-weight: 600;
   border: none;
@@ -284,7 +284,7 @@
 }
 
 .btnAddSmall:hover {
-  background-color: #c7d2fe;
+  background-color: #fecdd3;
 }
 
 /* Speaker List */
@@ -429,8 +429,8 @@
 }
 
 .dropzone:hover {
-  border-color: #4f46e5;
-  background-color: #f5f3ff;
+  border-color: #e11d48;
+  background-color: #fff1f3;
 }
 
 .hiddenFileInput {
@@ -438,7 +438,7 @@
 }
 
 .uploadIcon {
-  color: #4f46e5;
+  color: #e11d48;
 }
 
 .dropzoneText {
@@ -665,18 +665,18 @@
   padding: 10px 22px;
   border-radius: 8px;
   border: none;
-  background-color: #4f46e5;
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   color: #ffffff;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2);
-  transition: background-color 0.15s;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.25);
+  transition: all 0.15s;
   min-height: 44px;
 }
 
 .btnSavePrimary:hover {
-  background-color: #4338ca;
+  background: linear-gradient(135deg, #be123c 0%, #9f1239 100%);
 }
 
 /* ========================================================= */

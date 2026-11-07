@@ -94,7 +94,7 @@ export function PublicLandingPage({ slug, onNavigate }) {
           <button
             type="button"
             className={styles.btnHome}
-            onClick={() => onNavigate('')}
+            onClick={() => onNavigate('dashboard')}
           >
             <ArrowLeftIcon size={16} />
             <span>Về trang chủ Event Landing Studio</span>

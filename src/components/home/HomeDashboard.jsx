@@ -219,9 +219,15 @@ export function HomeDashboard({ onNavigate }) {
       {/* ============================================================== */}
       <section className={styles.greetingSidebar} aria-label="Thông tin giới thiệu">
         <div className={styles.sidebarInner}>
-          <div className={styles.brandBadge}>
+          <div
+            className={styles.brandBadge}
+            onClick={() => onNavigate?.('welcome')}
+            title="Xem trang mở đầu giới thiệu"
+            style={{ cursor: 'pointer' }}
+          >
             <SparklesIcon size={18} className={styles.brandIcon} />
             <span>Event Landing Studio</span>
+            <span style={{ fontSize: '0.72rem', opacity: 0.85, marginLeft: 'auto', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: 999 }}>✦ Mở đầu</span>
           </div>
 
           <h1 className={styles.greetingHeading}>

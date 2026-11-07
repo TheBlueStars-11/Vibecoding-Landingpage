@@ -19,11 +19,17 @@ export function parseHash(hashString) {
     clean = window.location.pathname.replace(/^\//, '').trim();
   }
 
-  if (!clean) {
-    return { page: 'home', params: {} };
+  // Mặc định không có hash hoặc #/welcome -> Trang mở đầu ứng dụng (WelcomeIntro Gateway)
+  if (!clean || clean === 'welcome' || clean === 'intro') {
+    return { page: 'welcome', params: {} };
   }
 
   const parts = clean.split('/').filter(Boolean);
+
+  // #/dashboard hoặc #/home -> Trang quản trị & danh sách dự án (HomeDashboard)
+  if (parts[0] === 'dashboard' || parts[0] === 'home' || parts[0] === 'projects') {
+    return { page: 'home', params: {} };
+  }
 
   // #/p/:projectId/:workspace? hoặc /p/:projectId/:workspace?
   if (parts[0] === 'p' && parts[1]) {
@@ -58,7 +64,16 @@ export function useHashRoute() {
   }, []);
 
   const navigate = useCallback((hash) => {
-    const target = hash.startsWith('#') ? hash : `#/${hash.replace(/^\//, '')}`;
+    let target = hash;
+    if (target === 'dashboard' || target === 'home') {
+      target = '#/dashboard';
+    } else if (target === 'welcome' || target === 'intro') {
+      target = '#/welcome';
+    } else if (target === '' || target === '/') {
+      target = '#/';
+    } else {
+      target = target.startsWith('#') ? target : `#/${target.replace(/^\//, '')}`;
+    }
     if (window.location.hash !== target) {
       window.location.hash = target;
     }

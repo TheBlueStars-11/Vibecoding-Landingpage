@@ -40,16 +40,16 @@ export function fireCelebrationConfetti(options = {}) {
   canvas.height = (window.innerHeight || 800) * dpr;
 
   const colors = [
-    '#6366f1', // Indigo
-    '#ec4899', // Pink
+    '#e11d48', // Rose Red Luxury
+    '#f43f5e', // Rose Bright
     '#f59e0b', // Amber / Gold
     '#10b981', // Emerald
     '#3b82f6', // Bright Blue
-    '#8b5cf6', // Violet
+    '#be123c', // Rose Dark
     '#ef4444', // Red
     '#06b6d4', // Cyan
     '#f97316', // Orange
-    '#14b8a6', // Teal
+    '#fb7185', // Rose Pastel
   ];
 
   const particles = [];

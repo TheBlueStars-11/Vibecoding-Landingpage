@@ -1570,7 +1570,7 @@ export function DevModeWorkspace({
               
               {/* Nhóm Đánh giá & Ghi chép Module */}
               <div className={styles.reviewSectionBox}>
-                <label className={styles.propSectionTitle} style={{ color: '#818cf8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className={styles.propSectionTitle} style={{ color: '#fb7185', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span>Đánh giá & Ghi chép Module</span>
                   {reviews[selectedModule.id]?.status === 'accepted' && (
                     <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: 700 }}>✓ ĐÃ CHẤP NHẬN</span>
@@ -1977,7 +1977,7 @@ export function DevModeWorkspace({
             {/* Hàng thống kê tổng quan */}
             <div className={styles.reviewStatsRow}>
               <div className={styles.reviewStatCard}>
-                <div className={styles.reviewStatNum} style={{ color: '#818cf8' }}>{reviewStats.total}</div>
+                <div className={styles.reviewStatNum} style={{ color: '#fb7185' }}>{reviewStats.total}</div>
                 <div className={styles.reviewStatLabel}>Đã đánh giá</div>
               </div>
               <div className={styles.reviewStatCard}>
@@ -2075,7 +2075,7 @@ export function DevModeWorkspace({
                         <strong style={{ fontSize: '0.95rem', color: '#ffffff' }}>
                           {item.moduleName || item.moduleType}
                         </strong>
-                        <span style={{ fontSize: '0.75rem', color: '#a5b4fc', fontFamily: 'monospace', background: 'rgba(255,255,255,0.08)', padding: '1px 6px', borderRadius: 4 }}>
+                        <span style={{ fontSize: '0.75rem', color: '#fda4af', fontFamily: 'monospace', background: 'rgba(255,255,255,0.08)', padding: '1px 6px', borderRadius: 4 }}>
                           {item.variant || 'default'}
                         </span>
                       </div>

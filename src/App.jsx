@@ -1,5 +1,6 @@
 import React from 'react';
 import { useHashRoute } from './router/useHashRoute.js';
+import { WelcomeIntro } from './components/welcome/WelcomeIntro.jsx';
 import { HomeDashboard } from './components/home/HomeDashboard.jsx';
 import { StudioLayout } from './components/studio/StudioLayout.jsx';
 import { PublicLandingPage } from './components/public/PublicLandingPage.jsx';
@@ -10,6 +11,10 @@ export default function App() {
 
   return (
     <ErrorBoundary>
+      {route.page === 'welcome' && (
+        <WelcomeIntro onNavigate={navigate} />
+      )}
+
       {route.page === 'home' && (
         <HomeDashboard onNavigate={navigate} />
       )}

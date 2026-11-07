@@ -59,7 +59,7 @@
 }
 
 .confirmBtn {
-  background: var(--accent, #4f46e5);
+  background: var(--accent, #e11d48);
   color: #fff;
   border: none;
   border-radius: var(--radius-sm, 8px);
@@ -82,5 +82,3 @@
 .dangerBtn:hover {
   background-color: #b91c1c !important;
 }
-
-

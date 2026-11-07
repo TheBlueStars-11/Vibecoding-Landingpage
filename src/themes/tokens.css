@@ -14,18 +14,23 @@
   --radius-2xl: 28px;
   --radius-full: 9999px;
 
-  /* Bóng đổ phân lớp sâu và mịn đặc trưng của giao diện Resolvo */
+  /* Bóng đổ phân lớp sâu và mịn đặc trưng của giao diện Resolvo Luxury Rose */
   --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 12px -2px rgba(99, 102, 241, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 12px 30px -4px rgba(99, 102, 241, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 40px -6px rgba(99, 102, 241, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.05);
-  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.35);
-  --shadow-glow-purple: 0 0 30px rgba(139, 92, 246, 0.3);
+  --shadow-md: 0 4px 12px -2px rgba(225, 29, 72, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 12px 30px -4px rgba(225, 29, 72, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 40px -6px rgba(225, 29, 72, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.05);
+  --shadow-glow: 0 0 25px rgba(225, 29, 72, 0.35);
+  --shadow-glow-rose: 0 0 30px rgba(244, 63, 94, 0.3);
+  --shadow-glow-purple: 0 0 30px rgba(225, 29, 72, 0.3);
 
   /* Bảng màu thẻ mềm Pastel (Pastel Tint Cards) */
-  --pastel-purple-bg: #faf5ff;
-  --pastel-purple-border: #f3e8ff;
-  --pastel-purple-icon: #7c3aed;
+  --pastel-rose-bg: #fff1f2;
+  --pastel-rose-border: #ffe4e6;
+  --pastel-rose-icon: #e11d48;
+
+  --pastel-purple-bg: #fff1f2;
+  --pastel-purple-border: #ffe4e6;
+  --pastel-purple-icon: #e11d48;
   
   --pastel-cyan-bg: #f0f9ff;
   --pastel-cyan-border: #e0f2fe;
@@ -43,15 +48,15 @@
   --pastel-coral-border: #ffe4e6;
   --pastel-coral-icon: #e11d48;
 
-  /* Hệ thống Panel màu nền Tím chủ đạo (Tasteful Lilac / Violet Panels) */
-  --panel-bg: linear-gradient(165deg, #ffffff 0%, #f7f4ff 100%);
-  --panel-bg-alt: linear-gradient(135deg, #f7f3ff 0%, #eee6ff 100%);
-  --panel-bg-card: linear-gradient(160deg, #ffffff 0%, #faf7ff 100%);
-  --panel-bg-subtle: #f9f7ff;
-  --panel-border: rgba(139, 92, 246, 0.18);
-  --panel-border-hover: rgba(124, 58, 237, 0.35);
-  --panel-shadow: 0 4px 20px -2px rgba(124, 58, 237, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-  --panel-shadow-hover: 0 12px 32px -4px rgba(124, 58, 237, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
+  /* Hệ thống Panel màu nền Đỏ Hồng Cao Cấp (Tasteful Velvet Rose & Ruby Panels) */
+  --panel-bg: linear-gradient(165deg, #ffffff 0%, #fff5f7 100%);
+  --panel-bg-alt: linear-gradient(135deg, #fff1f3 0%, #ffe4e8 100%);
+  --panel-bg-card: linear-gradient(160deg, #ffffff 0%, #fff8f9 100%);
+  --panel-bg-subtle: #fff6f8;
+  --panel-border: rgba(225, 29, 72, 0.16);
+  --panel-border-hover: rgba(190, 18, 60, 0.35);
+  --panel-shadow: 0 4px 20px -2px rgba(225, 29, 72, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  --panel-shadow-hover: 0 12px 32px -4px rgba(225, 29, 72, 0.14), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
 
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);

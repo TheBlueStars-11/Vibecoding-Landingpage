@@ -400,7 +400,7 @@ export function QrCheckInModal({ isOpen, onClose, project, onShowToast }) {
                     <button
                       type="button"
                       className={styles.btnRetryCamera}
-                      style={{ background: '#4f46e5', borderColor: '#4f46e5', color: '#ffffff' }}
+                      style={{ background: '#e11d48', borderColor: '#e11d48', color: '#ffffff' }}
                       onClick={() => setActiveTab('upload')}
                     >
                       <UploadIcon size={14} /> Tải ảnh QR

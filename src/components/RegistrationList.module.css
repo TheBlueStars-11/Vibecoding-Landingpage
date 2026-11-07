@@ -104,13 +104,13 @@
 
 .tab:hover {
   color: var(--text, #0f172a);
-  border-color: var(--accent, #4f46e5);
+  border-color: var(--accent, #e11d48);
 }
 
 .activeTab {
-  background: var(--accent, #4f46e5);
+  background: var(--accent, #e11d48);
   color: #ffffff !important;
-  border-color: var(--accent, #4f46e5);
+  border-color: var(--accent, #e11d48);
 }
 
 .toolbar {

@@ -46,7 +46,7 @@
 }
 
 .reloadBtn {
-  background: #4f46e5;
+  background: linear-gradient(135deg, #e11d48, #be123c);
   color: #ffffff;
   border: none;
   border-radius: 8px;

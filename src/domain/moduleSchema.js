@@ -30,7 +30,7 @@ export const COLOR_THEMES = [
   { id: 'dark', name: 'Đen Huyền Bí', hex: '#0f172a', primary: '#1e293b', tint: '#f8fafc', desc: 'Đẳng cấp, huyền bí, phong cách Tech Dark' },
 ];
 
-export const DEFAULT_COLOR_THEME = 'purple';
+export const DEFAULT_COLOR_THEME = 'rose';
 
 export const MODULE_CATEGORIES = {
   INTRO: 'Mở đầu & Nổi bật',
@@ -303,39 +303,100 @@ export const MODULE_CATALOG = {
   },
 };
 
+/**
+ * Danh sách đen vĩnh viễn các module và biến thể đã bị loại bỏ/xóa bỏ vĩnh viễn khỏi hệ thống app
+ * (Theo nhật ký đánh giá thực tế MODULE_DEV_REVIEW_LOG và yêu cầu xóa vĩnh viễn)
+ */
+export const PERMANENT_DELETED_MODULE_TYPES = ['announcement_bar'];
+
+export const PERMANENT_DELETED_VARIANTS = {
+  hero: ['image-left', 'poster-fullbleed'],
+  agenda: ['timeline-compact'],
+  speakers: ['cast-credits'],
+  benefits: ['cinema-trio'],
+};
+
 export const STORAGE_DELETED_MODULE_TYPES = 'ELS_DELETED_MODULE_TYPES';
 export const STORAGE_DELETED_VARIANTS = 'ELS_DELETED_VARIANTS';
 
 export function getDeletedModuleTypes() {
-  if (typeof window === 'undefined' || !window.localStorage) return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_DELETED_MODULE_TYPES);
-    const parsed = raw ? JSON.parse(raw) : [];
-    // Chỉ giữ lại những loại module hiện đang tồn tại trong MODULE_CATALOG
-    return parsed.filter((t) => MODULE_CATALOG[t]);
-  } catch {
-    return [];
+  let list = [...PERMANENT_DELETED_MODULE_TYPES];
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = localStorage.getItem(STORAGE_DELETED_MODULE_TYPES);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) {
+        for (const t of parsed) {
+          if (!list.includes(t)) list.push(t);
+        }
+      }
+    } catch {
+      // Bỏ qua lỗi truy cập localStorage
+    }
   }
+  // Chỉ giữ lại những loại module hiện đang tồn tại trong MODULE_CATALOG và không phải bắt buộc
+  return list.filter((t) => MODULE_CATALOG[t] && !MODULE_CATALOG[t].isMandatory);
+}
+
+export function isModuleTypeDeleted(type) {
+  return getDeletedModuleTypes().includes(type);
 }
 
 export function getDeletedVariants() {
-  if (typeof window === 'undefined' || !window.localStorage) return {};
-  try {
-    const raw = localStorage.getItem(STORAGE_DELETED_VARIANTS);
-    const parsed = raw ? JSON.parse(raw) : {};
-    const cleaned = {};
-    for (const [type, variants] of Object.entries(parsed)) {
-      if (!MODULE_CATALOG[type] || !Array.isArray(variants)) continue;
-      const validVariantIds = (MODULE_CATALOG[type].variants || []).map((v) => v.id);
-      const remainingDeleted = variants.filter((vId) => validVariantIds.includes(vId));
-      if (remainingDeleted.length > 0) {
-        cleaned[type] = remainingDeleted;
+  let local = {};
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const raw = localStorage.getItem(STORAGE_DELETED_VARIANTS);
+      local = raw ? JSON.parse(raw) : {};
+    } catch {
+      local = {};
+    }
+  }
+
+  // Hợp nhất danh sách đen vĩnh viễn với các biến thể xóa trong localStorage
+  const merged = {};
+  for (const [type, variants] of Object.entries(PERMANENT_DELETED_VARIANTS)) {
+    merged[type] = [...variants];
+  }
+
+  for (const [type, variants] of Object.entries(local)) {
+    if (!MODULE_CATALOG[type] || !Array.isArray(variants)) continue;
+    if (!merged[type]) merged[type] = [];
+    for (const v of variants) {
+      if (!merged[type].includes(v)) {
+        merged[type].push(v);
       }
     }
-    return cleaned;
-  } catch {
-    return {};
   }
+
+  return merged;
+}
+
+export function isVariantDeleted(type, variantId) {
+  const deleted = getDeletedVariants();
+  return Array.isArray(deleted[type]) && deleted[type].includes(variantId);
+}
+
+/**
+ * Tìm biến thể an toàn, tự động loại bỏ biến thể đã bị xóa và thay thế bằng biến thể khả dụng
+ */
+export function getSafeVariant(type, desiredVariant) {
+  const cat = MODULE_CATALOG[type];
+  if (!cat) return desiredVariant || 'default';
+
+  const deleted = getDeletedVariants()[type] || [];
+
+  // Nếu biến thể mong muốn nằm trong danh sách ĐÃ BỊ XÓA -> Chặn và chuyển sang fallback an toàn
+  if (desiredVariant && deleted.includes(desiredVariant)) {
+    const availableVariants = (cat.variants || []).filter((v) => !deleted.includes(v.id));
+    if (cat.defaultVariant && !deleted.includes(cat.defaultVariant)) {
+      return cat.defaultVariant;
+    }
+    return availableVariants[0]?.id || 'default';
+  }
+
+  // Nếu không bị xóa, cho phép sử dụng desiredVariant hoặc defaultVariant
+  return desiredVariant || cat.defaultVariant || 'default';
 }
 
 export function saveDeletedModuleType(type) {
@@ -367,7 +428,7 @@ export function restoreDefaultCatalog() {
 }
 
 /**
- * Khởi tạo một đối tượng Module chuẩn
+ * Khởi tạo một đối tượng Module chuẩn (luôn kiểm tra và chặn biến thể bị xóa)
  */
 export function createModuleInstance(type, customProps = {}) {
   const catalogItem = MODULE_CATALOG[type];
@@ -375,11 +436,13 @@ export function createModuleInstance(type, customProps = {}) {
     throw new Error(`Loại module "${type}" không tồn tại trong danh mục.`);
   }
 
+  const requestedVariant = customProps.variant || catalogItem.defaultVariant;
+  const safeVariant = getSafeVariant(type, requestedVariant);
+
   return {
     id: generateId(`mod_${type}`),
     type,
     name: catalogItem.name,
-    variant: catalogItem.defaultVariant,
     hidden: false,
     locked: false,
     isMandatory: catalogItem.isMandatory || false,
@@ -396,6 +459,7 @@ export function createModuleInstance(type, customProps = {}) {
       align: 'default',
     },
     ...customProps,
+    variant: safeVariant, // Bắt buộc ghi đè bằng biến thể an toàn không bị xóa
   };
 }
 
@@ -415,47 +479,60 @@ export function createDefaultModuleTree() {
 
 /**
  * Công thức preset landing page theo loại sự kiện (theo mục 6.2 MODULE_DESIGN_REVIEW_AND_UPGRADE)
+ * Được thiết kế để tận dụng hài hòa tối đa nhiều module cùng lúc (14-16 modules phối hợp)
  */
 export const PRESET_TEMPLATES = {
   workshop: {
     id: 'workshop',
     name: 'Hội thảo / Workshop (Đầy đủ tiêu chuẩn)',
-    description: 'Bố cục cân đối tối ưu cho hội thảo học thuật và chuyên môn',
+    description: 'Bố cục toàn diện kết hợp 15 module chuẩn mực cho hội thảo học thuật, đào tạo chuyên sâu và chuyển giao tri thức',
+    useCase: 'Hội thảo chuyên môn, khóa đào tạo thực chiến, workshop kỹ năng, chuyển giao công nghệ',
     modules: [
       { type: 'nav', variant: 'bar' },
       { type: 'hero', variant: 'image-right' },
       { type: 'countdown', variant: 'boxes' },
+      { type: 'offer_banner', variant: 'ribbon' },
+      { type: 'stats', variant: 'row' },
       { type: 'benefits', variant: 'cards' },
       { type: 'agenda', variant: 'timeline' },
       { type: 'speakers', variant: 'portrait-cards' },
       { type: 'venue', variant: 'image-left' },
       { type: 'faq', variant: 'accordion' },
-      { type: 'form', variant: 'card' },
+      { type: 'form', variant: 'split-offer' },
+      { type: 'organizer', variant: 'card' },
       { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
+      { type: 'sticky_cta', variant: 'bar' },
     ],
   },
   techtalk: {
     id: 'techtalk',
     name: 'Tech Talk / Dev Summit (Hiện đại Bento)',
-    description: 'Phong cách công nghệ cao cấp với lưới Bento và số liệu nổi bật',
+    description: 'Phong cách công nghệ cao cấp kết hợp 15 module với Bento Grid, số liệu ấn tượng, chuyên đề và nhà tài trợ',
+    useCase: 'Hội nghị công nghệ, Hackathon, Dev Summit, AI Developer Day, ra mắt sản phẩm số',
     modules: [
       { type: 'nav', variant: 'bar' },
-      { type: 'hero', variant: 'image-right' },
+      { type: 'hero', variant: 'split-card' },
       { type: 'countdown', variant: 'boxes' },
       { type: 'stats', variant: 'row' },
-      { type: 'agenda', variant: 'timeline' },
-      { type: 'speakers', variant: 'portrait-cards' },
       { type: 'bento', variant: 'grid-asymmetric' },
+      { type: 'benefits', variant: 'numbered-rows' },
+      { type: 'speakers', variant: 'portrait-cards' },
+      { type: 'agenda', variant: 'timeline' },
+      { type: 'venue', variant: 'image-left' },
+      { type: 'sponsors', variant: 'grid-tiered' },
       { type: 'faq', variant: 'accordion' },
       { type: 'form', variant: 'split-benefit' },
+      { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
+      { type: 'sticky_cta', variant: 'rail-card' },
     ],
   },
   community: {
     id: 'community',
     name: 'Cộng đồng / Giao lưu mở',
-    description: 'Thân thiện, nhiều ưu đãi và khối phân loại đối tượng',
+    description: 'Thân thiện, nhiều ưu đãi kết hợp 16 module với phân loại đối tượng, lộ trình hoạt động và mạng lưới kết nối',
+    useCase: 'Ngày hội sinh viên, câu lạc bộ, Open Day, networking mở, giao lưu cựu thành viên',
     modules: [
       { type: 'nav', variant: 'bar' },
       { type: 'hero', variant: 'center' },
@@ -464,43 +541,67 @@ export const PRESET_TEMPLATES = {
       { type: 'audience', variant: 'chips' },
       { type: 'benefits', variant: 'cards' },
       { type: 'agenda', variant: 'timeline' },
+      { type: 'speakers', variant: 'portrait-cards' },
       { type: 'venue', variant: 'image-left' },
+      { type: 'sponsors', variant: 'grid-tiered' },
+      { type: 'organizer', variant: 'card' },
+      { type: 'faq', variant: 'accordion' },
       { type: 'form', variant: 'card' },
+      { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
+      { type: 'sticky_cta', variant: 'bar' },
     ],
   },
   gala: {
     id: 'gala',
     name: 'Gala VIP / Lễ kỷ niệm',
-    description: 'Trang trọng, kiểu chữ tạp chí với tiêu điểm diễn giả và đối tác',
+    description: 'Trang trọng, quý phái kết hợp 15 module với tâm điểm diễn giả danh dự, đơn vị bảo trợ và thiệp mời dạ tiệc',
+    useCase: 'Lễ kỷ niệm thành lập, dạ tiệc vinh danh, trao giải thưởng, khai trương trang trọng',
     modules: [
+      { type: 'nav', variant: 'bar' },
       { type: 'hero', variant: 'center' },
       { type: 'countdown', variant: 'circles' },
+      { type: 'benefits', variant: 'cards' },
       { type: 'speakers', variant: 'portrait-cards' },
       { type: 'agenda', variant: 'timeline' },
-      { type: 'sponsors', variant: 'grid-tiered' },
       { type: 'venue', variant: 'image-left' },
+      { type: 'sponsors', variant: 'grid-tiered' },
+      { type: 'organizer', variant: 'card' },
+      { type: 'faq', variant: 'accordion' },
       { type: 'form', variant: 'card' },
+      { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
+      { type: 'sticky_cta', variant: 'rail-card' },
     ],
   },
   compact: {
     id: 'compact',
     name: 'Rút gọn (Live Demo cấp tốc)',
-    description: 'Tập trung tối đa vào 4 khu vực bắt buộc cho đánh giá nhanh',
+    description: 'Tập trung tối đa vào 4 khu vực bắt buộc kết hợp các tiện ích chốt đơn cấp tốc',
+    useCase: 'Sự kiện cấp tốc, chiến dịch chuyển đổi nhanh, kiểm thử nhanh trong vòng chung khảo',
     modules: [
+      { type: 'nav', variant: 'bar' },
       { type: 'hero', variant: 'image-right' },
       { type: 'countdown', variant: 'boxes' },
+      { type: 'benefits', variant: 'cards' },
       { type: 'agenda', variant: 'timeline' },
       { type: 'form', variant: 'card' },
+      { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
+      { type: 'sticky_cta', variant: 'bar' },
     ],
   },
 };
 
 export function createPresetModuleTree(presetId = 'workshop') {
   const preset = PRESET_TEMPLATES[presetId] || PRESET_TEMPLATES.workshop;
-  return preset.modules.map((m) => createModuleInstance(m.type, { variant: m.variant }));
+  const deletedTypes = getDeletedModuleTypes();
+  return preset.modules
+    .filter((m) => !deletedTypes.includes(m.type))
+    .map((m) => {
+      const safeVariant = getSafeVariant(m.type, m.variant);
+      return createModuleInstance(m.type, { variant: safeVariant });
+    });
 }
 
 /**
@@ -724,9 +825,9 @@ export const DEV_SAMPLE_HERO_SVG = `data:image/svg+xml;charset=utf-8,${encodeURI
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="540" viewBox="0 0 900 540">
   <defs>
     <linearGradient id="gHero" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4f46e5"/>
-      <stop offset="50%" stop-color="#7c3aed"/>
-      <stop offset="100%" stop-color="#06b6d4"/>
+      <stop offset="0%" stop-color="#e11d48"/>
+      <stop offset="50%" stop-color="#be123c"/>
+      <stop offset="100%" stop-color="#fb7185"/>
     </linearGradient>
   </defs>
   <rect width="900" height="540" rx="20" fill="url(#gHero)"/>
@@ -735,7 +836,7 @@ export const DEV_SAMPLE_HERO_SVG = `data:image/svg+xml;charset=utf-8,${encodeURI
   <rect x="70" y="70" width="130" height="36" rx="18" fill="rgba(255,255,255,0.2)"/>
   <text x="135" y="94" font-family="system-ui, sans-serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">LIVE DEMO 2026</text>
   <text x="450" y="240" font-family="system-ui, sans-serif" font-size="42" font-weight="800" fill="#ffffff" text-anchor="middle">AI &amp; VIBE CODING SUMMIT</text>
-  <text x="450" y="295" font-family="system-ui, sans-serif" font-size="22" font-weight="500" fill="#e0e7ff" text-anchor="middle">Kiến tạo tương lai với Lập trình trực quan &amp; Generative AI</text>
+  <text x="450" y="295" font-family="system-ui, sans-serif" font-size="22" font-weight="500" fill="#ffe4e8" text-anchor="middle">Kiến tạo tương lai với Lập trình trực quan &amp; Generative AI</text>
   <rect x="330" y="340" width="240" height="50" rx="25" fill="#ffffff" fill-opacity="0.25"/>
   <text x="450" y="372" font-family="system-ui, sans-serif" font-size="17" font-weight="600" fill="#ffffff" text-anchor="middle">Hội trường NIC · 15/11/2026</text>
 </svg>
@@ -747,9 +848,9 @@ export const DEV_SAMPLE_VENUE_SVG = `data:image/svg+xml;charset=utf-8,${encodeUR
   <path d="M0 120 Q200 160 400 110 T800 150" stroke="#cbd5e1" stroke-width="24" fill="none"/>
   <path d="M250 0 L280 460" stroke="#e2e8f0" stroke-width="16" fill="none"/>
   <path d="M520 0 L500 460" stroke="#e2e8f0" stroke-width="16" fill="none"/>
-  <rect x="340" y="160" width="160" height="120" rx="12" fill="#4f46e5" opacity="0.9"/>
+  <rect x="340" y="160" width="160" height="120" rx="12" fill="#e11d48" opacity="0.9"/>
   <text x="420" y="215" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">NIC Innovation Hub</text>
-  <text x="420" y="240" font-family="system-ui, sans-serif" font-size="13" fill="#e0e7ff" text-anchor="middle">Tòa nhà HITC, Tầng 3</text>
+  <text x="420" y="240" font-family="system-ui, sans-serif" font-size="13" fill="#ffe4e8" text-anchor="middle">Tòa nhà HITC, Tầng 3</text>
   <circle cx="420" cy="140" r="14" fill="#ef4444"/>
   <circle cx="420" cy="140" r="6" fill="#ffffff"/>
 </svg>
@@ -759,17 +860,17 @@ export const DEV_SAMPLE_CONTENT_SVG = `data:image/svg+xml;charset=utf-8,${encode
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
   <defs>
     <linearGradient id="gContent" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0284c7"/>
-      <stop offset="100%" stop-color="#6366f1"/>
+      <stop offset="0%" stop-color="#be123c"/>
+      <stop offset="100%" stop-color="#e11d48"/>
     </linearGradient>
   </defs>
   <rect width="800" height="500" rx="16" fill="url(#gContent)"/>
   <text x="400" y="230" font-family="system-ui, sans-serif" font-size="32" font-weight="800" fill="#ffffff" text-anchor="middle">KHÔNG GIAN TRẢI NGHIỆM AI</text>
-  <text x="400" y="280" font-family="system-ui, sans-serif" font-size="18" fill="#e0e7ff" text-anchor="middle">Khu vực Demo &amp; Networking công nghệ tương tác cao</text>
+  <text x="400" y="280" font-family="system-ui, sans-serif" font-size="18" fill="#ffe4e8" text-anchor="middle">Khu vực Demo &amp; Networking công nghệ tương tác cao</text>
 </svg>
 `)}`;
 
-export const makeSpeakerAvatarSvg = (name, color1 = '#4f46e5', color2 = '#7c3aed') => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+export const makeSpeakerAvatarSvg = (name, color1 = '#e11d48', color2 = '#be123c') => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
   <defs>
     <linearGradient id="gSpk_${name.length}" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -809,7 +910,7 @@ export const DEV_SAMPLE_QR_SVG = `data:image/svg+xml;charset=utf-8,${encodeURICo
   <rect x="25" y="85" width="10" height="10" fill="#1e293b"/>
   <rect x="45" y="95" width="10" height="10" fill="#1e293b"/>
   <rect x="65" y="85" width="10" height="10" fill="#1e293b"/>
-  <rect x="85" y="85" width="30" height="30" rx="4" fill="#6366f1"/>
+  <rect x="85" y="85" width="30" height="30" rx="4" fill="#e11d48"/>
   <rect x="125" y="85" width="10" height="10" fill="#1e293b"/>
   <rect x="145" y="95" width="10" height="10" fill="#1e293b"/>
   <rect x="165" y="85" width="10" height="10" fill="#1e293b"/>

@@ -83,7 +83,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
           <button
             type="button"
             className={styles.btnBackHome}
-            onClick={() => onNavigate('')}
+            onClick={() => onNavigate('dashboard')}
           >
             Quay lại trang chủ
           </button>
@@ -124,7 +124,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
           <button
             type="button"
             className={styles.btnBack}
-            onClick={() => onNavigate('')}
+            onClick={() => onNavigate('dashboard')}
             title="Quay lại danh sách dự án"
             aria-label="Quay lại danh sách dự án"
           >

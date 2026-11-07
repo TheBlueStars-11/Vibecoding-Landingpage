@@ -1,26 +1,26 @@
-/* ── THEME 1: CLASSIC / RESOLVO (Mặc định: Hiện đại, Tinh tế, Lavender & Royal Indigo) ── */
+/* ── THEME 1: CLASSIC / RESOLVO (Mặc định: Hiện đại, Đỏ Hồng Cao Cấp, Velvet Rose & Royal Ruby) ── */
 [data-theme="classic"], :root {
-  --bg: #fbf9ff;
-  --bg-mesh: radial-gradient(circle at 50% 0%, rgba(124, 58, 237, 0.1) 0%, rgba(245, 240, 255, 0.5) 45%, #faf8ff 100%);
-  --surface: #faf7ff;
-  --surface-alt: #f3edff;
-  --surface-card: linear-gradient(165deg, #ffffff 0%, #f7f3ff 100%);
-  --text: #0b0f19;
+  --bg: #fffbfb;
+  --bg-mesh: radial-gradient(circle at 50% 0%, rgba(225, 29, 72, 0.08) 0%, rgba(255, 241, 243, 0.55) 45%, #fffbfa 100%);
+  --surface: #fff8f9;
+  --surface-alt: #fff1f3;
+  --surface-card: linear-gradient(165deg, #ffffff 0%, #fff5f7 100%);
+  --text: #0f172a;
   --text-muted: #64748b;
-  --accent: #4f46e5;
-  --accent-2: #7c3aed;
-  --accent-dark: #3730a3;
-  --accent-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  --hero-bg: radial-gradient(120% 120% at 50% 0%, #f5f0ff 0%, #ffffff 70%, #f8f6ff 100%);
-  --hero-text: #0b0f19;
+  --accent: #e11d48;
+  --accent-2: #be123c;
+  --accent-dark: #9f1239;
+  --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%);
+  --hero-bg: radial-gradient(120% 120% at 50% 0%, #fff1f3 0%, #ffffff 70%, #fff8f9 100%);
+  --hero-text: #0f172a;
   --hero-muted: #64748b;
-  --border: #e6dcfa;
-  --border-subtle: #f0e9fe;
-  --badge-bg: #f5f0ff;
-  --badge-text: #6d28d9;
-  --badge-border: #ddd1fe;
-  --card-shadow: 0 4px 24px -2px rgba(124, 58, 237, 0.08), 0 10px 30px -4px rgba(15, 23, 42, 0.04);
-  --footer-bg: #070a1e;
+  --border: #fecdd3;
+  --border-subtle: #ffe4e6;
+  --badge-bg: #fff1f3;
+  --badge-text: #be123c;
+  --badge-border: #fecdd3;
+  --card-shadow: 0 4px 24px -2px rgba(225, 29, 72, 0.08), 0 10px 30px -4px rgba(15, 23, 42, 0.04);
+  --footer-bg: #1c0a0f;
   --footer-text: #ffffff;
   --footer-muted: #94a3b8;
 }

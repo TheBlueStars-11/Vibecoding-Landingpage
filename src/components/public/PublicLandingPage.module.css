@@ -33,7 +33,7 @@
 
 .spinIcon {
   animation: spin 1.2s linear infinite;
-  color: #4f46e5;
+  color: #e11d48;
 }
 
 @keyframes spin {
@@ -55,7 +55,7 @@
 .eventName {
   font-size: 1.15rem;
   font-weight: 600;
-  color: #4f46e5;
+  color: #e11d48;
   margin: 0 0 16px 0;
 }
 
@@ -74,18 +74,19 @@
   padding: 12px 24px;
   border-radius: 8px;
   border: none;
-  background-color: #4f46e5;
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   color: #ffffff;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
-  transition: background-color 0.15s;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
+  transition: all 0.15s ease;
   min-height: 44px;
 }
 
 .btnHome:hover {
-  background-color: #4338ca;
+  background: linear-gradient(135deg, #be123c 0%, #9f1239 100%);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.35);
 }
 
 .publishedLanding {
@@ -95,7 +96,7 @@
 }
 
 .draftBanner {
-  background: linear-gradient(90deg, #4338ca 0%, #6366f1 100%);
+  background: linear-gradient(90deg, #881337 0%, #be123c 50%, #e11d48 100%);
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;

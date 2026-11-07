@@ -278,7 +278,7 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
       {/* 2. Thẻ thống kê tổng quan (Stats Row) */}
       <div className={styles.statsRow}>
         <div className={styles.statCard}>
-          <div className={styles.statIconWrap} style={{ background: '#ede9fe', color: '#6366f1' }}>
+          <div className={styles.statIconWrap} style={{ background: '#fff1f3', color: '#e11d48' }}>
             <TerminalIcon size={20} />
           </div>
           <div>
@@ -652,9 +652,8 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
                       <div className={styles.logTopRow}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                           <span
-                            className={`${styles.logStatusBadge} ${
-                              isSuccess ? styles.statusSuccess : isMock ? styles.statusMock : styles.statusError
-                            }`}
+                            className={`${styles.logStatusBadge} ${isSuccess ? styles.statusSuccess : isMock ? styles.statusMock : styles.statusError
+                              }`}
                           >
                             {isSuccess ? '● 200 OK' : isMock ? '● MOCK' : `● ${log.statusCode || 'ERR'}`}
                           </span>
@@ -670,7 +669,7 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
                       </div>
 
                       <p className={styles.logPurpose}>
-                        <SparklesIcon size={13} style={{ color: '#6366f1', flexShrink: 0 }} />
+                        <SparklesIcon size={13} style={{ color: '#e11d48', flexShrink: 0 }} />
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.purpose}</span>
                       </p>
                     </div>

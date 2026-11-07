@@ -5,7 +5,7 @@ import { calculateCountdown } from '../../domain/time.js';
 import { validateRegistrationSubmission } from '../../domain/validators.js';
 import { elsRepository } from '../../services/elsRepository.js';
 import { downloadIcsFile } from '../../domain/calendar.js';
-import { createPresetModuleTree } from '../../domain/moduleSchema.js';
+import { createPresetModuleTree, getDeletedModuleTypes, getDeletedVariants, getSafeVariant } from '../../domain/moduleSchema.js';
 import { ModuleRenderer } from '../studio/devmode/ModuleRenderer.jsx';
 import { submitRegistrationToSync } from '../../services/realtimeSync.js';
 import { fireDoubleConfetti } from '../../lib/confetti.js';
@@ -169,7 +169,7 @@ export function LandingView({
       // Nền gradient công nghệ sang trọng
       const grad = ctx.createLinearGradient(0, 0, 0, 760);
       grad.addColorStop(0, '#0f172a');
-      grad.addColorStop(1, '#1e1b4b');
+      grad.addColorStop(1, '#4c0519');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 600, 760);
 
@@ -181,8 +181,8 @@ export function LandingView({
 
       // Dải màu thương hiệu trên đầu thẻ
       const barGrad = ctx.createLinearGradient(40, 40, 560, 40);
-      barGrad.addColorStop(0, '#4f46e5');
-      barGrad.addColorStop(1, '#7c3aed');
+      barGrad.addColorStop(0, '#e11d48');
+      barGrad.addColorStop(1, '#be123c');
       ctx.fillStyle = barGrad;
       ctx.beginPath();
       ctx.roundRect(40, 40, 520, 90, [24, 24, 0, 0]);
@@ -224,7 +224,7 @@ export function LandingView({
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
-        ctx.fillStyle = '#4f46e5';
+        ctx.fillStyle = '#e11d48';
         ctx.font = 'bold 24px monospace';
         ctx.fillText(submitSuccessRecord.code, 300, 600);
 
@@ -280,12 +280,24 @@ export function LandingView({
     },
   };
 
-  // Áp dụng các bố cục trong module dev mode vào Landing Page
+  // Áp dụng các bố cục vào Landing Page (tự động loại bỏ vĩnh viễn các module và biến thể đã bị xóa)
   const moduleTree = useMemo(() => {
-    if (Array.isArray(project.moduleLayout) && project.moduleLayout.length > 0) {
-      return project.moduleLayout;
-    }
-    return createPresetModuleTree(project.modulePreset || 'workshop');
+    const raw = Array.isArray(project.moduleLayout) && project.moduleLayout.length > 0
+      ? project.moduleLayout
+      : createPresetModuleTree(project.modulePreset || 'workshop');
+
+    const deletedTypes = getDeletedModuleTypes();
+    const deletedVariants = getDeletedVariants();
+
+    return raw
+      .filter((m) => !deletedTypes.includes(m.type) && !m.hidden)
+      .map((m) => {
+        const delList = deletedVariants[m.type] || [];
+        if (delList.includes(m.variant)) {
+          return { ...m, variant: getSafeVariant(m.type, m.variant) };
+        }
+        return m;
+      });
   }, [project.moduleLayout, project.modulePreset]);
 
   const hasStickyCta = useMemo(() => {
@@ -303,7 +315,7 @@ export function LandingView({
           key={m.id}
           module={m}
           index={index}
-          themeColor={project.colorTheme || 'purple'}
+          themeColor={project.colorTheme || 'rose'}
           isAlternating={project.alternatingBg !== false}
           eventData={event}
           aiData={ai}

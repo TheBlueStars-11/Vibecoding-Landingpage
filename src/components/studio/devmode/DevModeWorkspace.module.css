@@ -101,9 +101,9 @@
 }
 
 .toolBtnActive {
-  background-color: #4f46e5 !important;
+  background-color: #e11d48 !important;
   color: #ffffff !important;
-  border-color: #6366f1 !important;
+  border-color: #f43f5e !important;
 }
 
 .toolBtnDanger {
@@ -196,12 +196,12 @@
   padding: 6px 12px;
   border-radius: 6px;
   border: none;
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   color: #ffffff;
   font-size: 0.775rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.3);
 }
 
 .btnScanSweep:hover {
@@ -213,7 +213,7 @@
   border-radius: 6px;
   border: 1px solid #475569;
   background-color: #0f172a;
-  color: #a5b4fc;
+  color: #fda4af;
   font-family: monospace;
   font-size: 0.85rem;
   cursor: pointer;
@@ -305,7 +305,7 @@
   padding: 4px 10px;
   border-radius: 6px;
   border: none;
-  background-color: #4f46e5;
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
@@ -339,9 +339,9 @@
 }
 
 .activeTreeItem {
-  border-color: #6366f1 !important;
-  background-color: #2e1065 !important;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+  border-color: #f43f5e !important;
+  background-color: #4c0519 !important;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.3);
 }
 
 .hiddenTreeItem {
@@ -380,7 +380,7 @@
 .treeItemVariant {
   font-size: 0.675rem;
   font-family: monospace;
-  color: #a5b4fc;
+  color: #fda4af;
 }
 
 .treeItemActions {
@@ -469,8 +469,8 @@
 }
 
 .catalogItemActive {
-  background-color: rgba(79, 70, 229, 0.22);
-  border-color: #6366f1;
+  background-color: rgba(225, 29, 72, 0.22);
+  border-color: #f43f5e;
 }
 
 .catalogItemLeft {
@@ -538,9 +538,9 @@
 
 .catalogBtnAdd:hover {
   opacity: 1;
-  background-color: #4f46e5;
+  background-color: #e11d48;
   color: #ffffff;
-  border-color: #4f46e5;
+  border-color: #e11d48;
 }
 
 .btnClearCanvas {
@@ -589,9 +589,9 @@
   gap: 6px;
   padding: 4px 12px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(168, 85, 247, 0.25) 100%);
-  border: 1px solid rgba(168, 85, 247, 0.4);
-  color: #c084fc;
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.25) 0%, rgba(190, 18, 60, 0.25) 100%);
+  border: 1px solid rgba(225, 29, 72, 0.4);
+  color: #fecdd3;
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -634,9 +634,9 @@
 
 .sandboxGridCard:hover {
   background: rgba(30, 41, 59, 0.9);
-  border-color: #6366f1;
+  border-color: #f43f5e;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.25);
 }
 
 .sandboxCardTop {
@@ -657,7 +657,7 @@
 
 .sandboxVariantCount {
   font-size: 0.7rem;
-  color: #818cf8;
+  color: #fb7185;
   font-weight: 600;
 }
 
@@ -686,12 +686,12 @@
 .btnLaunchSandbox {
   font-size: 0.775rem;
   font-weight: 700;
-  color: #818cf8;
+  color: #fb7185;
   transition: color 0.15s;
 }
 
 .sandboxGridCard:hover .btnLaunchSandbox {
-  color: #a5b4fc;
+  color: #fda4af;
 }
 
 /* Floating active banner on canvas */
@@ -815,8 +815,8 @@
 }
 
 .bpCategoryBadge {
-  background-color: rgba(99, 102, 241, 0.2);
-  color: #a5b4fc;
+  background-color: rgba(225, 29, 72, 0.2);
+  color: #fda4af;
   font-size: 0.7rem;
   font-weight: 700;
   padding: 2px 6px;
@@ -850,11 +850,11 @@
 }
 
 .btnPresetActive {
-  background: #4f46e5 !important;
+  background: #e11d48 !important;
   color: #ffffff !important;
-  border-color: #6366f1 !important;
+  border-color: #f43f5e !important;
   font-weight: 700;
-  box-shadow: 0 0 6px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 6px rgba(225, 29, 72, 0.4);
 }
 
 .btnFitTag {
@@ -891,7 +891,7 @@
   background: #334155;
   outline: none;
   cursor: pointer;
-  accent-color: #4f46e5;
+  accent-color: #e11d48;
   transition: opacity 0.15s ease;
 }
 
@@ -951,10 +951,10 @@
 }
 
 .devThemeColorBtnActive {
-  background: #312e81;
-  border-color: #6366f1;
+  background: #4c0519;
+  border-color: #e11d48;
   color: #ffffff;
-  box-shadow: 0 0 0 1px #6366f1;
+  box-shadow: 0 0 0 1px #e11d48;
 }
 
 .devThemeDot {
@@ -982,7 +982,7 @@
 .devAlternatingToggle input {
   width: 14px;
   height: 14px;
-  accent-color: #6366f1;
+  accent-color: #e11d48;
   cursor: pointer;
 }
 
@@ -1067,7 +1067,7 @@
   width: 4px;
   height: 36px;
   border-radius: 2px;
-  background-color: #6366f1;
+  background-color: #e11d48;
 }
 
 .handleBottom {
@@ -1089,7 +1089,7 @@
   width: 36px;
   height: 4px;
   border-radius: 2px;
-  background-color: #6366f1;
+  background-color: #e11d48;
 }
 
 .handleCorner {
@@ -1156,7 +1156,7 @@
 .inspTypeBadge {
   font-size: 0.725rem;
   font-family: monospace;
-  color: #818cf8;
+  color: #fb7185;
 }
 
 .propSection {
@@ -1193,13 +1193,13 @@
 }
 
 .variantCard:hover {
-  border-color: #6366f1;
+  border-color: #e11d48;
   background-color: #182234;
 }
 
 .activeVariantCard {
-  border-color: #6366f1 !important;
-  background-color: #312e81 !important;
+  border-color: #f43f5e !important;
+  background-color: #4c0519 !important;
   color: #ffffff !important;
 }
 
@@ -1257,7 +1257,7 @@
 .input:focus,
 .textarea:focus,
 .select:focus {
-  border-color: #6366f1;
+  border-color: #e11d48;
 }
 
 .emptyInspector {
@@ -1352,7 +1352,7 @@
 
 .activeAuditTab {
   background-color: #0f172a;
-  color: #a5b4fc;
+  color: #fda4af;
   font-weight: 700;
 }
 
@@ -1426,7 +1426,7 @@
 
 .fixHint {
   font-size: 0.725rem;
-  color: #a5b4fc;
+  color: #fda4af;
 }
 
 /* Scan report */
@@ -1545,7 +1545,7 @@
   padding: 4px 10px;
   border-radius: 6px;
   border: none;
-  background-color: #4f46e5;
+  background-color: #e11d48;
   color: #ffffff;
   font-size: 0.75rem;
   cursor: pointer;
@@ -1556,7 +1556,7 @@
   font-family: monospace;
   font-size: 0.75rem;
   background-color: #0b1120;
-  color: #a5b4fc;
+  color: #fda4af;
   border: 1px solid #334155;
   border-radius: 6px;
   padding: 10px;
@@ -1676,8 +1676,8 @@
 }
 
 .catalogCard:hover {
-  border-color: #6366f1;
-  background-color: #1e1b4b;
+  border-color: #f43f5e;
+  background-color: #4c0519;
   transform: translateY(-2px);
 }
 
@@ -1689,7 +1689,7 @@
 
 .catalogCategoryBadge {
   font-size: 0.65rem;
-  color: #a5b4fc;
+  color: #fda4af;
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -1854,8 +1854,8 @@
 }
 
 .reviewCommentTextarea:focus {
-  border-color: #818cf8;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  border-color: #fb7185;
+  box-shadow: 0 0 0 2px rgba(225, 29, 72, 0.2);
 }
 
 .quickTagChips {
@@ -1975,8 +1975,8 @@
 }
 
 .reviewFilterPillActive {
-  background: #4f46e5;
-  border-color: #6366f1;
+  background: #e11d48;
+  border-color: #f43f5e;
   color: #ffffff;
 }
 
@@ -2011,7 +2011,7 @@
   background: rgba(255, 255, 255, 0.04);
   padding: 8px 12px;
   border-radius: 6px;
-  border-left: 3px solid #818cf8;
+  border-left: 3px solid #fb7185;
 }
 
 .reviewActionsFooter {
@@ -2125,7 +2125,7 @@
 }
 
 .btnApplyToLandingAction {
-  background: #4f46e5;
+  background: #e11d48;
   color: #ffffff;
   border: none;
   padding: 8px 16px;
@@ -2137,7 +2137,7 @@
 }
 
 .btnApplyToLandingAction:hover:not(:disabled) {
-  background: #6366f1;
+  background: #be123c;
 }
 
 .btnApplyToLandingAction:disabled {

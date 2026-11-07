@@ -6,7 +6,7 @@ import { validateProjectInfo, validateFormFields } from '../../domain/validators
 import { generateMockContent } from '../../services/mockAi.js';
 import { generateAiContent } from '../../services/aiClient.js';
 import { PROJECT_STATUS } from '../../domain/elsSchema.js';
-import { createPresetModuleTree, PRESET_TEMPLATES, COLOR_THEMES, inferPresetAndTheme, MODULE_CATALOG } from '../../domain/moduleSchema.js';
+import { createPresetModuleTree, PRESET_TEMPLATES, COLOR_THEMES, inferPresetAndTheme, getSafeVariant, getDeletedModuleTypes } from '../../domain/moduleSchema.js';
 import { LandingView } from '../landing/LandingView.jsx';
 import {
   SparklesIcon,
@@ -18,7 +18,6 @@ import {
   AlertCircleIcon,
   CopyIcon,
   CodeIcon,
-  LightbulbIcon,
   PaletteIcon,
   RocketIcon,
   PencilIcon,
@@ -122,8 +121,6 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
   }, [project.event, project.name]);
 
   const activePresetId = project.modulePreset || autoRecommendation.presetId;
-  const activePresetTemplate = PRESET_TEMPLATES[activePresetId] || PRESET_TEMPLATES.workshop;
-  const activeDesignReasoning = project.ai?.designReasoning || autoRecommendation.reasoning;
 
   // Pre-flight check: Kiểm tra dữ liệu đầu vào WS1 + WS2
   const preflight = useMemo(() => {
@@ -237,38 +234,41 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
     const chosenColorTheme = aiResult.colorTheme || project.colorTheme || inferredDesign.colorTheme;
     const chosenReasoning = aiResult.designReasoning || inferredDesign.reasoning;
     const speakerCount = (project.event?.speakers || []).length;
-    const chosenSpeakerVariant = aiResult.recommendedSpeakerVariant ||
-      (speakerCount === 1 ? 'solo-spotlight' : 'portrait-cards');
+    const chosenSpeakerVariant = getSafeVariant('speakers', aiResult.recommendedSpeakerVariant ||
+      (speakerCount === 1 ? 'solo-spotlight' : 'portrait-cards'));
 
     const baseTree = createPresetModuleTree(chosenPreset);
-    const enrichedTree = baseTree.map((m) => {
-      const enriched = { ...m };
-      if (m.type === 'speakers') {
-        enriched.variant = chosenSpeakerVariant;
-      } else if (m.type === 'hero' && aiResult.imageAssignments?.heroImageId) {
-        enriched.customContent = { ...enriched.customContent, heroImageId: aiResult.imageAssignments.heroImageId };
-      } else if (m.type === 'venue' && aiResult.imageAssignments?.venueImageId) {
-        enriched.customContent = { ...enriched.customContent, venueImageId: aiResult.imageAssignments.venueImageId };
-      } else if (m.type === 'offer_banner') {
-        if (aiResult.imageAssignments?.giftImageId) {
-          enriched.customContent = { ...enriched.customContent, giftImageId: aiResult.imageAssignments.giftImageId };
+    const deletedTypes = getDeletedModuleTypes();
+    const enrichedTree = baseTree
+      .filter((m) => !deletedTypes.includes(m.type))
+      .map((m) => {
+        const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
+        if (m.type === 'speakers') {
+          enriched.variant = chosenSpeakerVariant;
+        } else if (m.type === 'hero' && aiResult.imageAssignments?.heroImageId) {
+          enriched.customContent = { ...enriched.customContent, heroImageId: aiResult.imageAssignments.heroImageId };
+        } else if (m.type === 'venue' && aiResult.imageAssignments?.venueImageId) {
+          enriched.customContent = { ...enriched.customContent, venueImageId: aiResult.imageAssignments.venueImageId };
+        } else if (m.type === 'offer_banner') {
+          if (aiResult.imageAssignments?.giftImageId) {
+            enriched.customContent = { ...enriched.customContent, giftImageId: aiResult.imageAssignments.giftImageId };
+          }
+          if (aiResult.earlyBirdOffer || aiResult.couponCode) {
+            enriched.customContent = {
+              ...enriched.customContent,
+              offer: aiResult.earlyBirdOffer || project.event?.earlyBirdOffer,
+              code: aiResult.couponCode || 'VIBE2026',
+            };
+          }
+        } else if (m.type === 'faq' && Array.isArray(aiResult.faq) && aiResult.faq.length > 0) {
+          enriched.customContent = { ...enriched.customContent, items: aiResult.faq };
+        } else if (m.type === 'stats' && Array.isArray(aiResult.stats) && aiResult.stats.length > 0) {
+          enriched.customContent = { ...enriched.customContent, stats: aiResult.stats };
+        } else if (m.type === 'image_content' && aiResult.imageAssignments?.contentImageId) {
+          enriched.customContent = { ...enriched.customContent, contentImageId: aiResult.imageAssignments.contentImageId };
         }
-        if (aiResult.earlyBirdOffer || aiResult.couponCode) {
-          enriched.customContent = {
-            ...enriched.customContent,
-            offer: aiResult.earlyBirdOffer || project.event?.earlyBirdOffer,
-            code: aiResult.couponCode || 'VIBE2026',
-          };
-        }
-      } else if (m.type === 'faq' && Array.isArray(aiResult.faq) && aiResult.faq.length > 0) {
-        enriched.customContent = { ...enriched.customContent, items: aiResult.faq };
-      } else if (m.type === 'stats' && Array.isArray(aiResult.stats) && aiResult.stats.length > 0) {
-        enriched.customContent = { ...enriched.customContent, stats: aiResult.stats };
-      } else if (m.type === 'image_content' && aiResult.imageAssignments?.contentImageId) {
-        enriched.customContent = { ...enriched.customContent, contentImageId: aiResult.imageAssignments.contentImageId };
-      }
-      return enriched;
-    });
+        return enriched;
+      });
 
     const updatedProject = {
       ...project,
@@ -301,6 +301,39 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
     onSaveStatusChange?.('saved', timeStr);
   };
 
+  // Người dùng chủ động chọn Mẫu bố cục & Trường hợp sử dụng
+  const handleSelectPreset = (presetId) => {
+    const template = PRESET_TEMPLATES[presetId];
+    if (!template) return;
+    const baseTree = createPresetModuleTree(presetId);
+    const deletedTypes = getDeletedModuleTypes();
+    const enrichedTree = baseTree
+      .filter((m) => !deletedTypes.includes(m.type))
+      .map((m) => {
+        const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
+        if (m.type === 'hero' && project.ai?.imageAssignments?.heroImageId) {
+          enriched.customContent = { ...enriched.customContent, heroImageId: project.ai.imageAssignments.heroImageId };
+        } else if (m.type === 'venue' && project.ai?.imageAssignments?.venueImageId) {
+          enriched.customContent = { ...enriched.customContent, venueImageId: project.ai.imageAssignments.venueImageId };
+        } else if (m.type === 'offer_banner' && project.ai?.imageAssignments?.giftImageId) {
+          enriched.customContent = { ...enriched.customContent, giftImageId: project.ai.imageAssignments.giftImageId };
+        } else if (m.type === 'image_content' && project.ai?.imageAssignments?.contentImageId) {
+          enriched.customContent = { ...enriched.customContent, contentImageId: project.ai.imageAssignments.contentImageId };
+        }
+        return enriched;
+      });
+
+    const updated = {
+      ...project,
+      modulePreset: presetId,
+      moduleLayout: enrichedTree,
+    };
+    elsRepository.saveProject(updated);
+    onUpdateProject?.(updated);
+    setPreviewKey((k) => k + 1);
+    onShowToast?.(`Đã kích hoạt trường hợp sử dụng: ${template.name}`, 'success');
+  };
+
   // Tự động phân tích lại bố cục và phương pháp thiết kế theo chủ đề sự kiện
   const handleAutoReanalyzeLayout = () => {
     const eventInfo = {
@@ -310,19 +343,22 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
     };
     const inferred = inferPresetAndTheme(eventInfo);
     const baseTree = createPresetModuleTree(inferred.presetId);
-    const enrichedTree = baseTree.map((m) => {
-      const enriched = { ...m };
-      if (m.type === 'hero' && project.ai?.imageAssignments?.heroImageId) {
-        enriched.customContent = { ...enriched.customContent, heroImageId: project.ai.imageAssignments.heroImageId };
-      } else if (m.type === 'venue' && project.ai?.imageAssignments?.venueImageId) {
-        enriched.customContent = { ...enriched.customContent, venueImageId: project.ai.imageAssignments.venueImageId };
-      } else if (m.type === 'offer_banner' && project.ai?.imageAssignments?.giftImageId) {
-        enriched.customContent = { ...enriched.customContent, giftImageId: project.ai.imageAssignments.giftImageId };
-      } else if (m.type === 'image_content' && project.ai?.imageAssignments?.contentImageId) {
-        enriched.customContent = { ...enriched.customContent, contentImageId: project.ai.imageAssignments.contentImageId };
-      }
-      return enriched;
-    });
+    const deletedTypes = getDeletedModuleTypes();
+    const enrichedTree = baseTree
+      .filter((m) => !deletedTypes.includes(m.type))
+      .map((m) => {
+        const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
+        if (m.type === 'hero' && project.ai?.imageAssignments?.heroImageId) {
+          enriched.customContent = { ...enriched.customContent, heroImageId: project.ai.imageAssignments.heroImageId };
+        } else if (m.type === 'venue' && project.ai?.imageAssignments?.venueImageId) {
+          enriched.customContent = { ...enriched.customContent, venueImageId: project.ai.imageAssignments.venueImageId };
+        } else if (m.type === 'offer_banner' && project.ai?.imageAssignments?.giftImageId) {
+          enriched.customContent = { ...enriched.customContent, giftImageId: project.ai.imageAssignments.giftImageId };
+        } else if (m.type === 'image_content' && project.ai?.imageAssignments?.contentImageId) {
+          enriched.customContent = { ...enriched.customContent, contentImageId: project.ai.imageAssignments.contentImageId };
+        }
+        return enriched;
+      });
 
     const updated = {
       ...project,
@@ -772,58 +808,44 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
             </div>
           </div>
 
-          {/* HÀNG 2: BỐ CỤC LANDING PAGE (NẰM RIÊNG 1 CỘT TRONG 1 HÀNG NGANG) */}
-          <div className={`${styles.sidebarCard} ${styles.cardFullWidth}`}>
-            <div className={styles.cardHeader}>
+          {/* HÀNG 2: MẪU BỐ CỤC (GỌN GÀNG, 3 BIẾN THỂ NGẮN GỌN) */}
+          <div className={`${styles.sidebarCard} ${styles.cardFullWidth}`} style={{ padding: '16px 20px' }}>
+            <div className={styles.cardHeader} style={{ marginBottom: 10 }}>
               <div className={styles.cardHeaderTitleWrap}>
                 <span className={styles.autoAiBadge} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                  <SparklesIcon size={12} /> Tự động theo chủ đề
+                  <SparklesIcon size={12} /> Tự động tối ưu
                 </span>
-                <h3 className={styles.cardTitle}>Bố cục Landing Page</h3>
+                <h3 className={styles.cardTitle}>Mẫu bố cục</h3>
               </div>
               <span className={styles.moduleCountBadge}>
                 {(project.moduleLayout || createPresetModuleTree(activePresetId)).length} modules
               </span>
             </div>
 
-            <div className={styles.autoPresetCard}>
-              <div className={styles.autoPresetHeader}>
-                <div className={styles.autoPresetIcon} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <SparklesIcon size={18} />
-                </div>
-                <div className={styles.autoPresetMeta}>
-                  <strong className={styles.autoPresetName}>{activePresetTemplate.name}</strong>
-                  <span className={styles.autoPresetTag}>{autoRecommendation.category}</span>
-                </div>
-              </div>
-
-              <p className={styles.autoPresetDesc}>
-                {activePresetTemplate.description}
-              </p>
-
-              <div className={styles.designMethodBox}>
-                <div className={styles.designMethodTitle} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <LightbulbIcon size={14} />
-                  <span>Phương pháp thiết kế phù hợp nhu cầu:</span>
-                </div>
-                <p className={styles.designMethodText}>
-                  {activeDesignReasoning}
-                </p>
-              </div>
-
-              <div className={styles.presetModulesSummary}>
-                <span className={styles.summaryLabel}>Cấu trúc module tự động gồm:</span>
-                <div className={styles.moduleChipsRow}>
-                  {activePresetTemplate.modules.map((m, idx) => (
-                    <span key={idx} className={styles.moduleChip}>
-                      {MODULE_CATALOG[m.type]?.name || m.type}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            {/* 3 Biến thể ngắn gọn theo yêu cầu */}
+            <div className={styles.compactPresetPillRow}>
+              {[
+                { id: 'workshop', label: 'Hội thảo', icon: '🎓' },
+                { id: 'techtalk', label: 'Tech Talk', icon: '⚡' },
+                { id: 'gala', label: 'Gala VIP', icon: '👑' },
+              ].map((opt) => {
+                const isSelected = activePresetId === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={`${styles.btnCompactPresetPill} ${isSelected ? styles.btnCompactPresetPillActive : ''}`}
+                    onClick={() => handleSelectPreset(opt.id)}
+                  >
+                    <span className={styles.compactPresetPillIcon}>{opt.icon}</span>
+                    <span className={styles.compactPresetPillLabel}>{opt.label}</span>
+                    {isSelected && <span className={styles.compactPresetActiveDot}>✓</span>}
+                  </button>
+                );
+              })}
             </div>
 
-            <div className={styles.autoPresetActions}>
+            <div className={styles.autoPresetActions} style={{ marginTop: 8 }}>
               <button
                 type="button"
                 className={styles.btnReanalyze}
@@ -831,7 +853,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
                 title="Tự động phân tích lại thông tin chủ đề để cập nhật bố cục và màu sắc phù hợp nhất"
               >
                 <RefreshCwIcon size={14} />
-                <span>Cập nhật bố cục theo chủ đề</span>
+                <span>Cập nhật theo chủ đề</span>
               </button>
 
               <button
@@ -867,7 +889,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
 
               {!project.ai?.headline && (
                 <div style={{ marginBottom: 14, padding: '10px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <SparklesIcon size={16} style={{ color: 'var(--theme-primary, #6366f1)', flexShrink: 0 }} />
+                  <SparklesIcon size={16} style={{ color: 'var(--theme-primary, #e11d48)', flexShrink: 0 }} />
                   <span>Nội dung đang tạo tự động từ thông tin sự kiện. Bạn có thể nhấn <strong>&ldquo;Tạo nội dung bằng AI&rdquo;</strong> ở trên hoặc chỉnh sửa trực tiếp bên dưới rồi bấm <strong>&ldquo;Áp dụng vào Preview&rdquo;</strong>.</span>
                 </div>
               )}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ModuleRenderer.module.css';
 import { calculateCountdown } from '../../../domain/time.js';
-import { STANDALONE_DEV_MOCK_DATA } from '../../../domain/moduleSchema.js';
+import { STANDALONE_DEV_MOCK_DATA, getSafeVariant } from '../../../domain/moduleSchema.js';
 import {
   CalendarIcon,
   ClockIcon,
@@ -32,8 +32,8 @@ import {
 } from '../../ui/Icons.jsx';
 
 const AVATAR_GRADIENTS = [
-  'linear-gradient(135deg, #4f46e5, #06b6d4)',
-  'linear-gradient(135deg, #7c3aed, #ec4899)',
+  'linear-gradient(135deg, #e11d48, #fb7185)',
+  'linear-gradient(135deg, #be123c, #f43f5e)',
   'linear-gradient(135deg, #2563eb, #10b981)',
   'linear-gradient(135deg, #d97706, #ef4444)',
   'linear-gradient(135deg, #059669, #14b8a6)',
@@ -286,7 +286,7 @@ export function ModuleRenderer({
 
   const countdown = externalCountdown || localCountdown;
 
-  const variant = module.variant || 'default';
+  const variant = getSafeVariant(module.type, module.variant);
   const paddingClass = styles[`padding_${module.styles?.padding || 'normal'}`] || '';
   
   // Tính toán màu nền xen kẽ và màu chủ đạo (Theme)
@@ -487,9 +487,7 @@ export function ModuleRenderer({
     const isBenefitsBand = variant === 'benefits-band';
     const isStackCards = variant === 'stack-cards';
     const isSplitCard = variant === 'split-card';
-    const isImageLeft = variant === 'image-left';
     const isCinemaLetterbox = variant === 'cinema-letterbox';
-    const isPosterFullbleed = variant === 'poster-fullbleed';
 
     // Trang trí hình học trừu tượng (abstract SVG circles) cho Hero
     const renderHeroAbstractDecor = () => (
@@ -502,10 +500,10 @@ export function ModuleRenderer({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <circle cx="140" cy="140" r="130" stroke="var(--theme-primary, #6366f1)" strokeWidth="1.2" strokeDasharray="4 6" opacity="0.22" />
-          <circle cx="140" cy="140" r="95" stroke="var(--theme-primary, #6366f1)" strokeWidth="1" opacity="0.18" />
+          <circle cx="140" cy="140" r="130" stroke="var(--theme-primary, #e11d48)" strokeWidth="1.2" strokeDasharray="4 6" opacity="0.22" />
+          <circle cx="140" cy="140" r="95" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.18" />
           <circle cx="140" cy="140" r="60" stroke="var(--theme-accent, #a855f7)" strokeWidth="1.2" opacity="0.22" />
-          <circle cx="235" cy="140" r="3.5" fill="var(--theme-primary, #6366f1)" opacity="0.45" />
+          <circle cx="235" cy="140" r="3.5" fill="var(--theme-primary, #e11d48)" opacity="0.45" />
           <circle cx="100" cy="50" r="2.5" fill="var(--theme-accent, #a855f7)" opacity="0.4" />
         </svg>
         <svg
@@ -516,10 +514,10 @@ export function ModuleRenderer({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <circle cx="110" cy="110" r="100" stroke="var(--theme-primary, #6366f1)" strokeWidth="1" opacity="0.18" />
+          <circle cx="110" cy="110" r="100" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.18" />
           <circle cx="110" cy="110" r="70" stroke="var(--theme-accent, #a855f7)" strokeWidth="1.2" strokeDasharray="3 5" opacity="0.2" />
-          <circle cx="110" cy="110" r="40" stroke="var(--theme-primary, #6366f1)" strokeWidth="1" opacity="0.16" />
-          <circle cx="160" cy="75" r="3" fill="var(--theme-primary, #6366f1)" opacity="0.4" />
+          <circle cx="110" cy="110" r="40" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.16" />
+          <circle cx="160" cy="75" r="3" fill="var(--theme-primary, #e11d48)" opacity="0.4" />
         </svg>
       </div>
     );
@@ -571,41 +569,6 @@ export function ModuleRenderer({
           <div className={styles.heroCinemaBarBottom}>
             <span>DIRECTED BY {eventData.organizerName || 'ORGANIZING TEAM'}</span>
             <span>ALL RIGHTS RESERVED</span>
-          </div>
-        </div>
-      );
-    }
-
-    // Biến thể: poster-fullbleed (Poster sân khấu toàn cảnh)
-    if (isPosterFullbleed) {
-      return renderContainer(
-        <div className={styles.heroPosterFullbleedWrap}>
-          {renderHeroAbstractDecor()}
-          <div className={styles.heroCinemaEyebrow} style={{ justifyContent: 'center' }}>
-            <SparklesIcon size={14} />
-            <span>OFFICIAL WORKSHOP POSTER</span>
-          </div>
-          <h1 className={styles.heroCinemaHeadline} style={{ fontSize: 'clamp(2.2rem, 5cqi, 4.2rem)', maxWidth: '900px', margin: '0 auto 20px auto' }}>
-            {headline}
-          </h1>
-          <p className={styles.heroCinemaDesc} style={{ maxWidth: '720px', margin: '0 auto 32px auto' }}>
-            {description}
-          </p>
-          <div className={styles.heroCinemaActions} style={{ justifyContent: 'center', marginBottom: 36 }}>
-            <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
-              Nhận vé tham dự ngay ↗
-            </button>
-          </div>
-          <div className={styles.heroMetaBarCenter} style={{ borderTop: '1px solid rgba(255,255,255,0.12)', paddingTop: 20 }}>
-            <span className={styles.metaPill} style={{ background: 'rgba(255,255,255,0.06)', color: '#f8fafc' }}>
-              <CalendarIcon size={14} /> {eventData.eventDate || '20/11/2026'}
-            </span>
-            <span className={styles.metaPill} style={{ background: 'rgba(255,255,255,0.06)', color: '#f8fafc' }}>
-              <ClockIcon size={14} /> {eventData.eventTime || '08:30'}
-            </span>
-            <span className={styles.metaPill} style={{ background: 'rgba(255,255,255,0.06)', color: '#f8fafc' }}>
-              <MapPinIcon size={14} /> {eventData.venue || 'Innovation Hub NIC'}
-            </span>
           </div>
         </div>
       );
@@ -680,7 +643,7 @@ export function ModuleRenderer({
           <div className={styles.heroStackCardsGrid}>
             {benefits.slice(0, 3).map((b, idx) => (
               <div key={idx} className={styles.heroStackCardItem}>
-                <span style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', marginBottom: 8, color: 'var(--theme-primary, #4f46e5)' }}>
+                <span style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', marginBottom: 8, color: 'var(--theme-primary, #e11d48)' }}>
                   {idx === 0 ? <RocketIcon size={24} /> : idx === 1 ? <LightbulbIcon size={24} /> : <GraduationCapIcon size={24} />}
                 </span>
                 <strong style={{ display: 'block', fontSize: '1rem', color: '#0f172a', marginBottom: 4 }}>
@@ -745,45 +708,6 @@ export function ModuleRenderer({
               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginTop: 4 }}>
                 {String(countdown.d).padStart(2, '0')}d : {String(countdown.h).padStart(2, '0')}h : {String(countdown.m).padStart(2, '0')}m : {String(countdown.s).padStart(2, '0')}s
               </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Biến thể: image-left (Ảnh bên trái, nội dung bên phải)
-    if (isImageLeft) {
-      return renderContainer(
-        <div className={styles.heroImageLeftWrap}>
-          {renderHeroAbstractDecor()}
-          {heroAsset ? (
-            <div className={styles.heroRightVisual}>
-              <img src={getAssetSrc(heroAsset)} alt={heroAsset.caption || 'Hero'} className={styles.heroImg} />
-              {heroAsset.caption && <span className={styles.captionTag}>{heroAsset.caption}</span>}
-            </div>
-          ) : (
-            <div className={styles.heroRightVisual} style={{ background: 'linear-gradient(135deg, #4f46e5, #06b6d4)', minHeight: 240, borderRadius: 16 }} />
-          )}
-          <div className={styles.heroLeftContent}>
-            <h1 className={styles.heroTitle} style={{ textAlign: 'left' }}>{renderEditorialHeadline(headline, { addNewline: true })}</h1>
-            <p className={styles.heroDesc}>{description}</p>
-            <ul className={styles.heroBullets}>
-              {benefits.slice(0, 3).map((b, idx) => (
-                <li key={idx} className={styles.bulletItem}>
-                  <span className={styles.checkIcon}><CheckIcon size={12} /></span>
-                  <span>{b}</span>
-                </li>
-              ))}
-            </ul>
-            <div className={styles.heroMetaBar}>
-              <span className={styles.metaPill}><CalendarIcon size={14} /> {eventData.eventDate || 'Ngày công bố sớm'}</span>
-              <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime || '09:00'} (UTC+7)</span>
-              <span className={styles.metaPill}><MapPinIcon size={14} /> {eventData.venue || 'Địa điểm công bố sớm'}</span>
-            </div>
-            <div className={styles.heroCtaRow}>
-              <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
-                Đăng ký tham gia ngay
-              </button>
             </div>
           </div>
         </div>
@@ -1260,7 +1184,7 @@ export function ModuleRenderer({
                 <MicIcon size={12} /> Diễn giả chính (Keynote)
               </span>
               <h3 style={{ margin: '0 0 6px 0', fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' }}>{spk.name}</h3>
-              <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--theme-primary, #4f46e5)', fontWeight: 600 }}>{spk.title}</p>
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--theme-primary, #e11d48)', fontWeight: 600 }}>{spk.title}</p>
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>
                 Hơn 15 năm kinh nghiệm nghiên cứu và triển khai các hệ thống trí tuệ nhân tạo quy mô lớn. Tác giả nhiều công trình khoa học quốc tế.
               </p>
@@ -1316,7 +1240,6 @@ export function ModuleRenderer({
     ];
 
     const isRunofshowSticky = variant === 'runofshow-sticky';
-    const isTimelineCompact = variant === 'timeline-compact';
     const isGlance = variant === 'agenda-glance';
     const isSectioned = variant === 'timeline-sectioned';
     const isSpeakerTimeline = variant === 'timeline-speaker';
@@ -1391,27 +1314,6 @@ export function ModuleRenderer({
       );
     }
 
-    // Biến thể P1: timeline-compact (Thanh thời gian gọn nhẹ)
-    if (isTimelineCompact) {
-      return renderContainer(
-        <div>
-          <div className={styles.blockTitleCenter}>
-            <h2 className={styles.secTitle}>Lịch trình rút gọn</h2>
-            <p className={styles.secDesc}>Các mốc thời gian sự kiện theo thứ tự</p>
-          </div>
-          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {rawAgenda.map((item, idx) => (
-              <div key={item.id || idx} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#38bdf8', minWidth: '100px' }}>{item.time}</span>
-                <span style={{ height: '16px', width: '1px', background: 'rgba(255,255,255,0.15)' }} />
-                <span style={{ fontSize: '0.92rem', color: '#f8fafc', fontWeight: 600 }}>{item.title}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
     if (isGlance) {
       return renderContainer(
         <div className={styles.agendaGlanceWrap}>
@@ -1423,17 +1325,17 @@ export function ModuleRenderer({
           </div>
           <div className={styles.agendaGlanceMilestones}>
             <div className={styles.agendaGlanceStep}>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #4f46e5)', marginBottom: 4 }}>08:30 - 09:00</strong>
+              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #e11d48)', marginBottom: 4 }}>08:30 - 09:00</strong>
               <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a' }}>Check-in & Khởi động</h4>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Đón tiếp và nhận bộ công cụ</p>
             </div>
             <div className={styles.agendaGlanceStep}>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #4f46e5)', marginBottom: 4 }}>09:00 - 10:30</strong>
+              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #e11d48)', marginBottom: 4 }}>09:00 - 10:30</strong>
               <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a' }}>Live Demo Hands-on</h4>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Dựng landing page đa màn hình</p>
             </div>
             <div className={styles.agendaGlanceStep}>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #4f46e5)', marginBottom: 4 }}>10:30 - 12:00</strong>
+              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #e11d48)', marginBottom: 4 }}>10:30 - 12:00</strong>
               <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a' }}>Hỏi đáp & Trao giải</h4>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Giao lưu cùng diễn giả</p>
             </div>
@@ -1450,7 +1352,7 @@ export function ModuleRenderer({
           </div>
           <div className={styles.agendaSectionBlock}>
             <div className={styles.agendaSectionHeader}>
-              <strong style={{ fontSize: '1rem', color: 'var(--theme-primary, #4f46e5)' }}>PHẦN 1: NỀN TẢNG & KHỞI ĐỘNG</strong>
+              <strong style={{ fontSize: '1rem', color: 'var(--theme-primary, #e11d48)' }}>PHẦN 1: NỀN TẢNG & KHỞI ĐỘNG</strong>
               <span style={{ fontSize: '0.8rem', color: '#64748b' }}>60 phút</span>
             </div>
             <div className={styles.agendaTimeline}>
@@ -1515,7 +1417,7 @@ export function ModuleRenderer({
           <div className={styles.agendaStepsHorizontalWrap}>
             {rawAgenda.slice(0, 4).map((item, idx) => (
               <div key={item.id || idx} className={styles.agendaStepHorizontalItem}>
-                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--theme-primary, #4f46e5)', display: 'block', marginBottom: 4 }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--theme-primary, #e11d48)', display: 'block', marginBottom: 4 }}>
                   0{idx + 1}
                 </span>
                 <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
@@ -1732,7 +1634,7 @@ export function ModuleRenderer({
             <div className={styles.formHeader}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
                 <h3 className={styles.formHeading} style={{ margin: 0 }}>Đăng ký tham gia</h3>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', fontWeight: 600, color: 'var(--theme-primary, #6366f1)', background: 'rgba(99, 102, 241, 0.08)', padding: '3px 10px', borderRadius: 9999 }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', fontWeight: 600, color: 'var(--theme-primary, #e11d48)', background: 'rgba(225, 29, 72, 0.08)', padding: '3px 10px', borderRadius: 9999 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
                   <span><strong>{regCount}</strong> người đã đăng ký</span>
                 </div>
@@ -1792,7 +1694,7 @@ export function ModuleRenderer({
           <div className={styles.formHeader}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>
               <h3 className={styles.formHeading} style={{ margin: 0 }}>Đăng ký tham gia</h3>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', fontWeight: 600, color: 'var(--theme-primary, #6366f1)', background: 'rgba(99, 102, 241, 0.08)', padding: '3px 10px', borderRadius: 9999 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', fontWeight: 600, color: 'var(--theme-primary, #e11d48)', background: 'rgba(225, 29, 72, 0.08)', padding: '3px 10px', borderRadius: 9999 }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
                 <span><strong>{regCount}</strong> người đã đăng ký</span>
               </div>
@@ -1826,7 +1728,7 @@ export function ModuleRenderer({
             {heroAsset ? (
               <img src={getAssetSrc(heroAsset)} alt="Sự kiện" />
             ) : (
-              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #4f46e5, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', padding: 24, textAlign: 'center' }}>
+              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #e11d48, #fb7185)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', padding: 24, textAlign: 'center' }}>
                 <div>
                   <h3 style={{ margin: '0 0 8px 0', fontSize: '1.25rem' }}>{headline}</h3>
                   <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.9 }}>Tham gia cùng cộng đồng công nghệ</p>
@@ -1858,7 +1760,7 @@ export function ModuleRenderer({
             <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6 }}>
               Chỉ áp dụng cho những người đăng ký trước hạn chót. Đừng bỏ lỡ quyền lợi độc quyền này!
             </p>
-            <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--theme-primary, #4f46e5)', fontWeight: 700 }}>
+            <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--theme-primary, #e11d48)', fontWeight: 700 }}>
               <ClockIcon size={16} />
               <span>Chỉ còn {countdown.d} ngày {countdown.h} giờ cuối cùng</span>
             </div>
@@ -1930,7 +1832,7 @@ export function ModuleRenderer({
     if (isTextOnly) {
       return renderContainer(
         <div className={styles.venueTextOnlyWrap}>
-          <MapPinIcon size={32} style={{ color: 'var(--theme-primary, #4f46e5)', margin: '0 auto 12px auto' }} />
+          <MapPinIcon size={32} style={{ color: 'var(--theme-primary, #e11d48)', margin: '0 auto 12px auto' }} />
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 8px 0' }}>{venueName}</h2>
           <p style={{ fontSize: '0.95rem', color: '#64748b', maxWidth: 500, margin: '0 auto 18px auto' }}>{venueAddress}</p>
           <a
@@ -1971,7 +1873,7 @@ export function ModuleRenderer({
           </div>
           <div className={styles.venueHybridDualWrap}>
             <div className={styles.venueHybridCard}>
-              <strong style={{ fontSize: '1rem', color: 'var(--theme-primary, #4f46e5)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <strong style={{ fontSize: '1rem', color: 'var(--theme-primary, #e11d48)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <MapPinIcon size={14} /> Trực tiếp tại Hội trường
               </strong>
               <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem' }}>{venueName}</h4>
@@ -2027,34 +1929,10 @@ export function ModuleRenderer({
   // 7. BENEFITS MODULE (Expanded: cinema-trio, cards-image, recap-strip, recap-chips, numbered-rows, cards)
   // ================================================================
   if (module.type === 'benefits') {
-    const isCinemaTrio = variant === 'cinema-trio';
     const isCardsImage = variant === 'cards-image';
     const isRecapStrip = variant === 'recap-strip';
     const isRecapChips = variant === 'recap-chips';
     const isNumberedRows = variant === 'numbered-rows';
-
-    // Biến thể P0: cinema-trio (3 cột hoành tráng, số viền khổng lồ 01/02/03)
-    if (isCinemaTrio) {
-      return renderContainer(
-        <div>
-          <div className={styles.blockTitleCenter}>
-            <h2 className={styles.secTitle} style={{ color: '#ffffff' }}>3 Quyền lợi Đột phá</h2>
-            <p className={styles.secDesc} style={{ color: '#94a3b8' }}>Những giá trị cốt lõi bạn sẽ gặt hái sau buổi workshop</p>
-          </div>
-          <div className={styles.benefitsCinemaTrioGrid}>
-            {benefits.slice(0, 3).map((b, idx) => (
-              <div key={idx} className={styles.benefitsCinemaTrioCard}>
-                <div className={styles.benefitsCinemaBigNum}>0{idx + 1}</div>
-                <h3 className={styles.benefitsCinemaTitle}>
-                  {idx === 0 ? 'Làm chủ công nghệ mới' : idx === 1 ? 'Thực hành dự án thực chiến' : 'Kết nối mạng lưới chuyên gia'}
-                </h3>
-                <p className={styles.benefitsCinemaDesc}>{b}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
 
     if (isCardsImage) {
       return renderContainer(
@@ -2070,7 +1948,7 @@ export function ModuleRenderer({
                   {idx === 0 ? <TargetIcon size={32} /> : idx === 1 ? <ZapIcon size={32} /> : <TrophyIcon size={32} />}
                 </div>
                 <div style={{ padding: 20 }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--theme-primary, #4f46e5)' }}>0{idx + 1}</span>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--theme-primary, #e11d48)' }}>0{idx + 1}</span>
                   <p style={{ margin: '8px 0 0 0', fontSize: '0.95rem', fontWeight: 600, color: '#0f172a' }}>{b}</p>
                 </div>
               </div>
@@ -2083,7 +1961,7 @@ export function ModuleRenderer({
     if (isRecapStrip) {
       return renderContainer(
         <div className={styles.benefitsRecapStripWrap}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--theme-primary, #4f46e5)', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--theme-primary, #e11d48)', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
             Quyền lợi trọn vẹn dành cho bạn
           </div>
           <div className={styles.recapStripList}>
@@ -2163,7 +2041,7 @@ export function ModuleRenderer({
     if (isPriceCompare) {
       return renderContainer(
         <div className={styles.offerPriceCompareWrap}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--theme-primary, #4f46e5)' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--theme-primary, #e11d48)' }}>
             Ưu đãi đặt chỗ sớm (Early Bird)
           </span>
           <div className={styles.priceCompareBox}>
@@ -2209,7 +2087,7 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.offerTiersTimelineWrap}>
           <div className={`${styles.tiersTimelineStep} ${styles.tiersTimelineActive}`}>
-            <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--theme-primary, #4f46e5)' }}>Đợt 1: Early Bird</strong>
+            <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--theme-primary, #e11d48)' }}>Đợt 1: Early Bird</strong>
             <span style={{ fontSize: '0.8rem', color: '#1e293b' }}>Miễn phí 100%</span>
             <small style={{ display: 'block', fontSize: '0.7rem', color: '#059669', fontWeight: 700 }}>Đang mở</small>
           </div>
@@ -2484,7 +2362,7 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.navPillFloatWrap}>
           <div className={styles.navPillFloatBar}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--theme-primary, #4f46e5)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--theme-primary, #e11d48)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <SparklesIcon size={14} />
               <span>{brand.slice(0, 16)}</span>
             </span>
@@ -2510,7 +2388,7 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.navChipsScrollWrap}>
           <div className={styles.navChipsList}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 800, padding: '6px 12px', color: 'var(--theme-primary, #4f46e5)' }}>{brand}</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 800, padding: '6px 12px', color: 'var(--theme-primary, #e11d48)' }}>{brand}</span>
             <button type="button" className={styles.quickPillBtn} onClick={() => scrollToTarget('agenda')}>
               <CalendarIcon size={12} />
               <span>Lịch trình</span>
@@ -2626,7 +2504,7 @@ export function ModuleRenderer({
     if (isInlineText) {
       return renderContainer(
         <div className={styles.statsInlineTextWrap}>
-          <SparklesIcon size={14} style={{ color: 'var(--theme-primary, #4f46e5)', display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }} />
+          <SparklesIcon size={14} style={{ color: 'var(--theme-primary, #e11d48)', display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }} />
           <strong>3+ Giờ thực chiến</strong> · <strong>3 Diễn giả</strong> · <strong>150 Chỗ ngồi</strong> · <strong>100% Miễn phí</strong>
         </div>
       );
@@ -2792,7 +2670,7 @@ export function ModuleRenderer({
           </div>
           <div className={styles.bentoDarkGlassWrap}>
             <div className={`${styles.bentoDarkItem} ${styles.bentoSpan8}`}>
-              <span style={{ color: '#818cf8', fontSize: '0.8rem', fontWeight: 700 }}>AI ARCHITECTURE</span>
+              <span style={{ color: '#fb7185', fontSize: '0.8rem', fontWeight: 700 }}>AI ARCHITECTURE</span>
               <h3 style={{ fontSize: '1.25rem', margin: '8px 0' }}>Container Query & Fact Guard Engine</h3>
               <p style={{ fontSize: '0.85rem', opacity: 0.8, lineHeight: 1.5 }}>
                 Bảo vệ toàn vẹn bố cục và dữ liệu với công nghệ quét tự động đa kích thước.
@@ -2816,7 +2694,7 @@ export function ModuleRenderer({
         <div className={styles.bentoGrid}>
           <div className={`${styles.bentoItem} ${styles.bentoSpan8}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--theme-primary, #4f46e5)' }}>01 / THỰC CHIẾN</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--theme-primary, #e11d48)' }}>01 / THỰC CHIẾN</span>
               <h3 className={styles.bentoItemTitle}>Lộ trình từ ý tưởng đến Landing Page hoàn chỉnh</h3>
               <p className={styles.bentoItemDesc}>Làm chủ các công cụ hỗ trợ AI coding và phương pháp xây dựng giao diện chuẩn tương thích trong vòng 15 phút.</p>
             </div>

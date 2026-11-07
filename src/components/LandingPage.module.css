@@ -37,7 +37,7 @@
 }
 
 .topNavBtn {
-  background: var(--accent, #4f46e5);
+  background: var(--accent, #e11d48);
   color: #fff;
   border: none;
   border-radius: var(--radius-sm, 8px);
@@ -54,7 +54,7 @@
 
 /* ── HERO ─── */
 .hero {
-  background: var(--hero-bg, linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%));
+  background: var(--hero-bg, linear-gradient(135deg, #4c0519 0%, #881337 40%, #be123c 100%));
   color: var(--hero-text, #ffffff);
   padding: 4.5rem 1.5rem 4rem;
   position: relative;
@@ -181,7 +181,7 @@
 }
 
 .chipIcon {
-  color: var(--badge-text, #818cf8);
+  color: var(--badge-text, #fb7185);
 }
 
 .heroCtaRow {
@@ -194,7 +194,7 @@
 
 .mainCtaBtn {
   background: var(--surface, #ffffff);
-  color: var(--accent, #4f46e5);
+  color: var(--accent, #e11d48);
   font-weight: 800;
   font-size: 1.05rem;
   padding: 0.9rem 1.8rem;
@@ -217,7 +217,7 @@
   left: -100%;
   width: 60%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.25), transparent);
+  background: linear-gradient(90deg, transparent, rgba(225, 29, 72, 0.25), transparent);
   transform: skewX(-20deg);
   animation: ctaShimmer 3.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: none;
@@ -348,8 +348,8 @@
   width: 52px;
   height: 52px;
   border-radius: var(--radius-md, 12px);
-  background: var(--badge-bg, rgba(99, 102, 241, 0.15));
-  color: var(--accent, #4f46e5);
+  background: var(--badge-bg, rgba(225, 29, 72, 0.12));
+  color: var(--accent, #e11d48);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -387,7 +387,7 @@
   width: 72px;
   height: 72px;
   border-radius: var(--radius-full, 9999px);
-  background: var(--accent-gradient, linear-gradient(135deg, #4f46e5, #7c3aed));
+  background: var(--accent-gradient, linear-gradient(135deg, #e11d48, #be123c));
   color: #fff;
   font-size: 1.75rem;
   font-weight: 800;
@@ -438,15 +438,15 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--accent, #4f46e5);
+  background: var(--accent, #e11d48);
   border: 3px solid var(--surface, #ffffff);
-  box-shadow: 0 0 0 2px var(--accent, #4f46e5);
+  box-shadow: 0 0 0 2px var(--accent, #e11d48);
 }
 
 .agendaTime {
   font-size: 0.85rem;
   font-weight: 700;
-  color: var(--accent, #4f46e5);
+  color: var(--accent, #e11d48);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -471,7 +471,7 @@
 
 /* ── REGISTER SECTION ─── */
 .registerSection {
-  background: var(--hero-bg, linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%));
+  background: var(--hero-bg, linear-gradient(135deg, #4c0519 0%, #881337 40%, #be123c 100%));
   color: #fff;
 }
 
