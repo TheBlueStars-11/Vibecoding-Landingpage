@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import styles from './WorkspaceLanding.module.css';
+import { copyToClipboard } from '../../lib/clipboard.js';
 import { elsRepository } from '../../services/elsRepository.js';
 import { validateProjectInfo, validateFormFields } from '../../domain/validators.js';
 import { generateMockContent } from '../../services/mockAi.js';
@@ -27,6 +28,28 @@ import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
 import { DevModeWorkspace } from './devmode/DevModeWorkspace.jsx';
 import { publishProjectToSync } from '../../services/realtimeSync.js';
 
+// Trợ giúp khởi tạo giá trị nội dung AI với fallback thông minh
+function getInitialAiValues(project) {
+  const rawBenefits = Array.isArray(project?.ai?.benefits) ? project.ai.benefits : [];
+  const hasValidBenefits = rawBenefits.some((b) => typeof b === 'string' && b.trim().length > 0);
+  const defaultBenefits = [
+    project?.event?.earlyBirdOffer
+      ? `Ưu đãi đăng ký sớm: ${project.event.earlyBirdOffer}`
+      : 'Tiếp cận tri thức và kinh nghiệm thực chiến từ chuyên gia.',
+    Array.isArray(project?.event?.speakers) && project.event.speakers.length > 0
+      ? `Giao lưu và kết nối trực tiếp cùng ${project.event.speakers.map((s) => s.name).filter(Boolean).slice(0, 2).join(', ')}.`
+      : 'Mở rộng mạng lưới quan hệ chất lượng cao trong ngành.',
+    'Nhận trọn bộ tài liệu chuyên sâu và chứng nhận tham gia.',
+  ];
+  return {
+    headline: project?.ai?.headline || project?.event?.eventName || project?.name || '',
+    description: project?.ai?.description || 'Tham gia cùng chúng tôi để kết nối và tiếp cận những nội dung giá trị nhất.',
+    benefits: hasValidBenefits
+      ? rawBenefits.map((b, idx) => (b && typeof b === 'string' && b.trim() ? b.trim() : defaultBenefits[idx] || ''))
+      : defaultBenefits,
+  };
+}
+
 export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange, onShowToast, onNavigate }) {
   const [isDevMode, setIsDevMode] = useState(false);
   const [deviceMode, setDeviceMode] = useState('laptop'); // 'laptop' (1280px) | 'phone' (375px)
@@ -35,14 +58,17 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
   const [aiError, setAiError] = useState(null);
 
   // Trạng thái chỉnh sửa AI thủ công
-  const [editableAi, setEditableAi] = useState(() => ({
-    headline: project.ai?.headline || '',
-    description: project.ai?.description || '',
-    benefits: Array.isArray(project.ai?.benefits) && project.ai.benefits.length === 3
-      ? project.ai.benefits
-      : ['', '', ''],
-  }));
+  const [editableAi, setEditableAi] = useState(() => getInitialAiValues(project));
   const [hasUnappliedEdits, setHasUnappliedEdits] = useState(false);
+  const [prevProject, setPrevProject] = useState(project);
+
+  // Đồng bộ lại khi project prop thay đổi mà không có chỉnh sửa dở dang (pattern React chuẩn)
+  if (project !== prevProject) {
+    setPrevProject(project);
+    if (!hasUnappliedEdits) {
+      setEditableAi(getInitialAiValues(project));
+    }
+  }
 
   // Dialog Xuất bản / Chia sẻ link
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -389,10 +415,13 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
     ? `${window.location.origin}${window.location.pathname}#/e/${project.slug}`
     : `#/e/${project.slug}`;
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(publicUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+  const handleCopyLink = async () => {
+    const ok = await copyToClipboard(publicUrl);
+    if (ok) {
+      setCopiedLink(true);
+      onShowToast?.('Đã sao chép link Landing Page!', 'info');
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
   };
 
   const isMock = project.ai?.source === 'mock' || !project.ai?.source;
@@ -836,73 +865,67 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
                 </h3>
               </div>
 
-              {project.ai?.headline ? (
-                <>
-                  <div className={styles.editGroup}>
-                    <label className={styles.editLabel}>Tiêu đề (Headline)</label>
-                    <input
-                      type="text"
-                      className={styles.editInput}
-                      value={editableAi.headline}
-                      onChange={(e) => {
-                        setEditableAi((p) => ({ ...p, headline: e.target.value }));
-                        setHasUnappliedEdits(true);
-                      }}
-                    />
-                  </div>
-
-                  <div className={styles.editGroup}>
-                    <label className={styles.editLabel}>Đoạn mô tả ngắn</label>
-                    <textarea
-                      rows={3}
-                      className={styles.editTextarea}
-                      value={editableAi.description}
-                      onChange={(e) => {
-                        setEditableAi((p) => ({ ...p, description: e.target.value }));
-                        setHasUnappliedEdits(true);
-                      }}
-                    />
-                  </div>
-
-                  <div className={styles.editGroup}>
-                    <label className={styles.editLabel}>3 Lợi ích cốt lõi</label>
-                    {editableAi.benefits.map((b, idx) => (
-                      <input
-                        key={idx}
-                        type="text"
-                        className={`${styles.editInput} ${styles.benefitInput}`}
-                        placeholder={`Lợi ích ${idx + 1}`}
-                        value={b}
-                        onChange={(e) => {
-                          const copy = [...editableAi.benefits];
-                          copy[idx] = e.target.value;
-                          setEditableAi((p) => ({ ...p, benefits: copy }));
-                          setHasUnappliedEdits(true);
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {hasUnappliedEdits && (
-                    <button
-                      type="button"
-                      className={styles.btnApplyEdits}
-                      onClick={handleApplyEdits}
-                    >
-                      <CheckIcon size={16} />
-                      <span>Áp dụng vào Preview</span>
-                    </button>
-                  )}
-                </>
-              ) : (
-                <div className={styles.emptyAiBox}>
-                  <div className={styles.emptyAiIcon}>
-                    <SparklesIcon size={24} />
-                  </div>
-                  <p className={styles.emptyAiText}>
-                    Nội dung sự kiện chưa được sinh bởi AI. Nhấn <strong>&ldquo;Tạo Landing Page bằng AI&rdquo;</strong> ở bảng phía trên để tự động phân tích và tạo nội dung.
-                  </p>
+              {!project.ai?.headline && (
+                <div style={{ marginBottom: 14, padding: '10px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <SparklesIcon size={16} style={{ color: 'var(--theme-primary, #6366f1)', flexShrink: 0 }} />
+                  <span>Nội dung đang tạo tự động từ thông tin sự kiện. Bạn có thể nhấn <strong>&ldquo;Tạo nội dung bằng AI&rdquo;</strong> ở trên hoặc chỉnh sửa trực tiếp bên dưới rồi bấm <strong>&ldquo;Áp dụng vào Preview&rdquo;</strong>.</span>
                 </div>
+              )}
+
+              <div className={styles.editGroup}>
+                <label className={styles.editLabel}>Tiêu đề (Headline)</label>
+                <input
+                  type="text"
+                  className={styles.editInput}
+                  value={editableAi.headline}
+                  onChange={(e) => {
+                    setEditableAi((p) => ({ ...p, headline: e.target.value }));
+                    setHasUnappliedEdits(true);
+                  }}
+                />
+              </div>
+
+              <div className={styles.editGroup}>
+                <label className={styles.editLabel}>Đoạn mô tả ngắn</label>
+                <textarea
+                  rows={3}
+                  className={styles.editTextarea}
+                  value={editableAi.description}
+                  onChange={(e) => {
+                    setEditableAi((p) => ({ ...p, description: e.target.value }));
+                    setHasUnappliedEdits(true);
+                  }}
+                />
+              </div>
+
+              <div className={styles.editGroup}>
+                <label className={styles.editLabel}>3 Lợi ích cốt lõi</label>
+                {editableAi.benefits.map((b, idx) => (
+                  <input
+                    key={idx}
+                    type="text"
+                    className={`${styles.editInput} ${styles.benefitInput}`}
+                    placeholder={`Lợi ích ${idx + 1}`}
+                    value={b}
+                    onChange={(e) => {
+                      const copy = [...editableAi.benefits];
+                      copy[idx] = e.target.value;
+                      setEditableAi((p) => ({ ...p, benefits: copy }));
+                      setHasUnappliedEdits(true);
+                    }}
+                  />
+                ))}
+              </div>
+
+              {hasUnappliedEdits && (
+                <button
+                  type="button"
+                  className={styles.btnApplyEdits}
+                  onClick={handleApplyEdits}
+                >
+                  <CheckIcon size={16} />
+                  <span>Áp dụng vào Preview</span>
+                </button>
               )}
             </div>
 

@@ -31,15 +31,34 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
   const [saveStatus, setSaveStatus] = useState({ state: 'saved', time: 'vừa xong' });
   const [toast, setToast] = useState(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [newEventName, setNewEventName] = useState('Sự kiện mới 2026');
+  const [createNameError, setCreateNameError] = useState('');
   const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
 
+  const handleOpenResetModal = () => {
+    setNewEventName('Sự kiện mới 2026');
+    setCreateNameError('');
+    setIsResetModalOpen(true);
+  };
+
   const handleConfirmReset = () => {
+    const trimmed = (newEventName || '').trim();
+    if (!trimmed || trimmed.length < 3) {
+      setCreateNameError('Tên sự kiện phải từ 3 đến 120 ký tự.');
+      return;
+    }
     setIsResetModalOpen(false);
     const newPrj = elsRepository.createProject({
-      name: 'Sự kiện mới 2026',
+      name: trimmed,
+      event: {
+        eventName: trimmed,
+      },
     });
     elsRepository.setLastOpenProjectId(newPrj.id);
+    setProject(newPrj);
+    setRegCount(0);
     onNavigate?.(`p/${newPrj.id}/info`);
+    showToast('Đã khởi tạo trang sự kiện mới!', 'success');
   };
 
   // Tải lại dự án và lắng nghe realtime
@@ -137,7 +156,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
           <button
             type="button"
             className={styles.btnNewPage}
-            onClick={() => setIsResetModalOpen(true)}
+            onClick={handleOpenResetModal}
             title="Khởi tạo landing page sự kiện mới (Đặt lại trạng thái)"
           >
             <PlusIcon size={14} />
@@ -246,7 +265,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
 
         {/* Vùng nội dung Workspace */}
         <main className={`${styles.mainViewport} ${activeWorkspace === 'devmode' ? styles.mainViewportDev : ''} ${(activeWorkspace === 'ai' || activeWorkspace === 'ai-control') ? styles.mainViewportAi : ''}`} id="main-content">
-          <div key={activeWorkspace} className={styles.workspaceTransition}>
+          <div key={`${project.id}-${activeWorkspace}`} className={styles.workspaceTransition}>
             {activeWorkspace === 'info' && (
               <WorkspaceInfo
                 project={project}
@@ -374,13 +393,54 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
       {/* Dialog Xác nhận Tạo trang mới (Tính năng #5 - Đề 08) */}
       <ConfirmDialog
         isOpen={isResetModalOpen}
-        title="Tạo Landing Page mới?"
-        message="Hành động này sẽ khởi tạo một sự kiện mới và đưa bạn về màn hình nhập thông tin (Golden Path). Dự án hiện tại vẫn được bảo toàn trong danh sách dự án. Bạn có muốn tiếp tục?"
+        title="Tạo Landing Page mới"
+        message="Nhập tên sự kiện để khởi tạo một trang mới. Dự án hiện tại vẫn được bảo toàn trong danh sách dự án."
         confirmLabel="Tạo trang mới"
         cancelLabel="Hủy"
         onConfirm={handleConfirmReset}
         onCancel={() => setIsResetModalOpen(false)}
-      />
+      >
+        <div style={{ marginTop: 12, marginBottom: 16 }}>
+          <label
+            htmlFor="input-modal-new-event-name"
+            style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#475569', marginBottom: 6 }}
+          >
+            Tên sự kiện <span style={{ color: '#ef4444' }}>*</span>
+          </label>
+          <input
+            id="input-modal-new-event-name"
+            type="text"
+            value={newEventName}
+            onChange={(e) => {
+              setNewEventName(e.target.value);
+              if (createNameError) setCreateNameError('');
+            }}
+            placeholder="Ví dụ: Workshop AI & Vibe Coding 2026"
+            maxLength={120}
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              borderRadius: 8,
+              border: createNameError ? '1.5px solid #ef4444' : '1px solid #cbd5e1',
+              fontSize: '0.95rem',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleConfirmReset();
+              }
+            }}
+          />
+          {createNameError && (
+            <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: 4, margin: '4px 0 0 0' }}>
+              {createNameError}
+            </p>
+          )}
+        </div>
+      </ConfirmDialog>
 
       {/* Modal Quét QR Check-in vé sự kiện */}
       <QrCheckInModal

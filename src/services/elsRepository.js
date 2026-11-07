@@ -183,6 +183,12 @@ export const elsRepository = {
     return safeGetItem(ELS_STORAGE_KEYS.PROJECTS, []) || [];
   },
 
+  createProject(initialData = {}) {
+    const project = createProject(initialData);
+    this.saveProject(project);
+    return project;
+  },
+
   getProjectById(id) {
     const projects = this.getProjects();
     return projects.find((p) => p.id === id) || null;

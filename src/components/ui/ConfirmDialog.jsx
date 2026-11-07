@@ -10,6 +10,7 @@ export function ConfirmDialog({
   isDanger = false,
   onConfirm,
   onCancel,
+  children,
 }) {
   if (!isOpen) return null;
 
@@ -17,13 +18,14 @@ export function ConfirmDialog({
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
       <div className={styles.dialog}>
         <h3 id="confirm-dialog-title" className={styles.title}>{title}</h3>
-        <p className={styles.message}>{message}</p>
+        {message && <p className={styles.message}>{message}</p>}
+        {children}
         <div className={styles.actions}>
           <button
             type="button"
             className={styles.cancelBtn}
             onClick={onCancel}
-            autoFocus
+            autoFocus={!children}
           >
             {cancelLabel}
           </button>

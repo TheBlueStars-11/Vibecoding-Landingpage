@@ -61,9 +61,8 @@ export function useHashRoute() {
     const target = hash.startsWith('#') ? hash : `#/${hash.replace(/^\//, '')}`;
     if (window.location.hash !== target) {
       window.location.hash = target;
-    } else {
-      setRoute(parseHash(target));
     }
+    setRoute(parseHash(target));
   }, []);
 
   return { route, navigate };

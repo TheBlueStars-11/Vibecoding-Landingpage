@@ -15,7 +15,6 @@ import {
   CheckIcon,
   CodeIcon,
   SparklesIcon,
-  LockIcon,
 } from '../ui/Icons.jsx';
 
 export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, onShowToast }) {
@@ -92,7 +91,6 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
 
   // Xử lý thay đổi trường đơn
   const handleFieldChange = (field, value) => {
-    if (field === 'eventName') return; // Tên sự kiện không được thay đổi
     setEventData((prev) => ({ ...prev, [field]: value }));
     setIsDirty(true);
     if (errors[field]) {
@@ -437,27 +435,29 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
               <span className={styles.badgeRequired}>* Bắt buộc</span>
             </div>
 
-            {/* 1. Tên sự kiện (Cố định theo dự án, không được thay đổi) */}
+            {/* 1. Tên sự kiện */}
             <div className={styles.formGroup} id="field-eventName">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <label htmlFor="input-eventName" className={styles.label} style={{ margin: 0 }}>
-                  Tên sự kiện <span className={styles.required}>*</span>
-                </label>
-                <span className={styles.badgeLocked}>
-                  <LockIcon size={12} /> Cố định theo dự án
-                </span>
-              </div>
+              <label htmlFor="input-eventName" className={styles.label}>
+                Tên sự kiện <span className={styles.required}>*</span>
+              </label>
               <input
                 id="input-eventName"
                 type="text"
-                className={`${styles.input} ${styles.inputLocked}`}
-                placeholder="Tên sự kiện"
+                className={`${styles.input} ${errors.eventName ? styles.inputError : ''}`}
+                placeholder="Nhập tên sự kiện (ví dụ: Workshop AI & Vibe Coding 2026)"
                 value={eventData.eventName}
-                readOnly
-                disabled
-                title="Tên sự kiện được cố định theo tên dự án ban đầu và không được thay đổi."
+                onChange={(e) => handleFieldChange('eventName', e.target.value)}
+                maxLength={120}
               />
-              <span className={styles.helperText}>Tên sự kiện được khóa cố định theo dự án để đảm bảo tính nhất quán trên toàn bộ landing page.</span>
+              {errors.eventName ? (
+                <span className={styles.errorMessage}>
+                  <AlertCircleIcon size={14} /> {errors.eventName}
+                </span>
+              ) : (
+                <span className={styles.helperText}>
+                  Tên sự kiện chính thức, sẽ hiển thị trên banner và toàn bộ landing page.
+                </span>
+              )}
             </div>
 
             {/* 2 & 3. Ngày và Giờ */}

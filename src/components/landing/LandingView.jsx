@@ -9,6 +9,7 @@ import { createPresetModuleTree } from '../../domain/moduleSchema.js';
 import { ModuleRenderer } from '../studio/devmode/ModuleRenderer.jsx';
 import { submitRegistrationToSync } from '../../services/realtimeSync.js';
 import { fireDoubleConfetti } from '../../lib/confetti.js';
+import { copyToClipboard } from '../../lib/clipboard.js';
 
 export function LandingView({
   project,
@@ -137,11 +138,13 @@ export function LandingView({
     }
   };
 
-  const handleCopyCode = () => {
+  const handleCopyCode = async () => {
     if (!submitSuccessRecord?.code) return;
-    navigator.clipboard.writeText(submitSuccessRecord.code);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+    const ok = await copyToClipboard(submitSuccessRecord.code);
+    if (ok) {
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
   };
 
   const handleDownloadCalendar = () => {

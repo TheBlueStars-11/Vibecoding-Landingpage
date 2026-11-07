@@ -140,6 +140,47 @@ export function QrCheckInModal({ isOpen, onClose, project, onShowToast }) {
     }
   }, []);
 
+  // Khởi động luồng camera an toàn
+  const startCameraStream = useCallback(async () => {
+    stopCameraStream();
+
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setCameraError('Không thể mở camera trực tiếp (Trình duyệt chặn camera qua kết nối HTTP mạng LAN, hoặc máy tính không có webcam). Bạn có thể dùng tab "Tải ảnh QR" hoặc "Nhập mã vé" bên dưới.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: cameraFacing },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true');
+        await videoRef.current.play();
+        setCameraError(null);
+        setIsScanning(true);
+      }
+    } catch (err) {
+      console.warn('Không thể mở camera:', err);
+      let errMsg = 'Không thể kết nối với máy ảnh.';
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errMsg = 'Vui lòng cấp quyền truy cập máy ảnh trong cài đặt trình duyệt để quét QR.';
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        errMsg = 'Không tìm thấy máy ảnh trên thiết bị này. Bạn có thể tải ảnh QR hoặc nhập mã vé thủ công.';
+      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+        errMsg = 'Máy ảnh đang bị ứng dụng khác sử dụng.';
+      }
+      setCameraError(errMsg);
+    }
+  }, [cameraFacing, stopCameraStream]);
+
   // Khởi động luồng camera khi mở tab Camera
   useEffect(() => {
     if (!isOpen || activeTab !== 'camera') {
@@ -147,63 +188,19 @@ export function QrCheckInModal({ isOpen, onClose, project, onShowToast }) {
       return;
     }
 
-    let isCancelled = false;
-
-    const startCamera = async () => {
-      stopCameraStream();
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        if (!isCancelled) setCameraError('Trình duyệt của bạn không hỗ trợ truy cập máy ảnh trực tiếp.');
-        return;
+    let isMounted = true;
+    Promise.resolve().then(() => {
+      if (isMounted) {
+        startCameraStream();
       }
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: cameraFacing },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-          audio: false,
-        });
-
-        if (isCancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.setAttribute('playsinline', 'true');
-          await videoRef.current.play();
-          if (!isCancelled) {
-            setCameraError(null);
-            setIsScanning(true);
-          }
-        }
-      } catch (err) {
-        if (isCancelled) return;
-        console.warn('Không thể mở camera:', err);
-        let errMsg = 'Không thể kết nối với máy ảnh.';
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          errMsg = 'Vui lòng cấp quyền truy cập máy ảnh trong cài đặt trình duyệt để quét QR.';
-        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-          errMsg = 'Không tìm thấy máy ảnh trên thiết bị này. Bạn có thể tải ảnh QR hoặc nhập mã vé thủ công.';
-        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-          errMsg = 'Máy ảnh đang bị ứng dụng khác sử dụng.';
-        }
-        setCameraError(errMsg);
-      }
-    };
-
-    startCamera();
+    });
 
     return () => {
-      isCancelled = true;
+      isMounted = false;
       stopCameraStream();
       if (cooldownTimeoutRef.current) clearTimeout(cooldownTimeoutRef.current);
     };
-  }, [isOpen, activeTab, cameraFacing, stopCameraStream]);
+  }, [isOpen, activeTab, startCameraStream, stopCameraStream]);
 
   // Vòng lặp giải mã QR từ video qua jsQR
   useEffect(() => {
@@ -396,9 +393,27 @@ export function QrCheckInModal({ isOpen, onClose, project, onShowToast }) {
                 <div className={styles.cameraErrorBox}>
                   <AlertCircleIcon size={36} className={styles.cameraErrorIcon} />
                   <p className={styles.cameraErrorText}>{cameraError}</p>
-                  <button type="button" className={styles.btnRetryCamera} onClick={startCameraStream}>
-                    <RefreshCwIcon size={14} /> Thử kết nối lại
-                  </button>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 12 }}>
+                    <button type="button" className={styles.btnRetryCamera} onClick={startCameraStream}>
+                      <RefreshCwIcon size={14} /> Thử kết nối lại
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnRetryCamera}
+                      style={{ background: '#4f46e5', borderColor: '#4f46e5', color: '#ffffff' }}
+                      onClick={() => setActiveTab('upload')}
+                    >
+                      <UploadIcon size={14} /> Tải ảnh QR
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnRetryCamera}
+                      style={{ background: '#f1f5f9', color: '#334155', borderColor: '#cbd5e1' }}
+                      onClick={() => setActiveTab('manual')}
+                    >
+                      <QrCodeIcon size={14} /> Nhập mã vé
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className={styles.videoWrapper}>

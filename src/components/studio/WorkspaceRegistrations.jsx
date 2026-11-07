@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import QRCode from 'qrcode';
 import styles from './WorkspaceRegistrations.module.css';
+import { copyToClipboard } from '../../lib/clipboard.js';
 import { elsRepository } from '../../services/elsRepository.js';
 import { PROJECT_STATUS } from '../../domain/elsSchema.js';
 import {
@@ -336,19 +337,28 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
   };
 
   // 7. Thao tác tiện ích
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (!activeUrl) return;
-    navigator.clipboard.writeText(activeUrl);
-    setCopiedLink(true);
-    onShowToast?.('Đã sao chép link Landing Page!', 'info');
-    setTimeout(() => setCopiedLink(false), 2000);
+    const ok = await copyToClipboard(activeUrl);
+    if (ok) {
+      setCopiedLink(true);
+      onShowToast?.('Đã sao chép link Landing Page!', 'info');
+      setTimeout(() => setCopiedLink(false), 2000);
+    } else {
+      onShowToast?.('Không thể sao chép link.', 'error');
+    }
   };
 
-  const handleCopyCode = (code) => {
+  const handleCopyCode = async (code) => {
     if (!code) return;
-    navigator.clipboard.writeText(code);
-    setCopiedCodeId(code);
-    setTimeout(() => setCopiedCodeId(null), 1500);
+    const ok = await copyToClipboard(code);
+    if (ok) {
+      setCopiedCodeId(code);
+      onShowToast?.(`Đã sao chép mã vé: ${code}`, 'success');
+      setTimeout(() => setCopiedCodeId(null), 1500);
+    } else {
+      onShowToast?.(`Không thể sao chép mã vé: ${code}`, 'error');
+    }
   };
 
   const handleDownloadQr = () => {

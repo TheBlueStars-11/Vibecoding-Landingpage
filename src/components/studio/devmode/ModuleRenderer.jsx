@@ -260,11 +260,29 @@ export function ModuleRenderer({
   // 2. Nội dung tổng hợp
   const headline = isCustom && custom.headline !== undefined ? custom.headline : (aiData.headline || eventData.eventName || 'Sự kiện 2026');
   const description = isCustom && custom.description !== undefined ? custom.description : (aiData.description || 'Tham gia cùng chúng tôi để kết nối và tiếp cận những nội dung giá trị nhất.');
-  const benefits = isCustom && custom.benefits ? custom.benefits : (aiData.benefits?.length ? aiData.benefits : [
-    'Tiếp cận tri thức và kinh nghiệm thực chiến.',
-    'Mở rộng mối quan hệ trong mạng lưới chất lượng cao.',
-    'Nhận bộ tài liệu và chứng chỉ sau sự kiện.',
-  ]);
+
+  // Lấy danh sách benefits thực tế (ưu tiên custom -> aiData -> thông tin sự kiện -> mặc định)
+  const candidateBenefits = (isCustom && Array.isArray(custom.benefits))
+    ? custom.benefits
+    : (Array.isArray(aiData.benefits) ? aiData.benefits : []);
+
+  // Kiểm tra xem candidateBenefits có thực sự chứa nội dung (không phải toàn chuỗi rỗng ['','',''])
+  const hasValidCandidates = candidateBenefits.some((b) => typeof b === 'string' && b.trim().length > 0);
+
+  // Tạo 3 lợi ích mặc định thông minh dựa trên thông tin sự kiện đã điền
+  const smartDefaultBenefits = [
+    eventData.earlyBirdOffer
+      ? `Ưu đãi đăng ký sớm: ${eventData.earlyBirdOffer}`
+      : 'Tiếp cận tri thức và kinh nghiệm thực chiến từ chuyên gia.',
+    Array.isArray(eventData.speakers) && eventData.speakers.length > 0
+      ? `Giao lưu và kết nối trực tiếp cùng ${eventData.speakers.map((s) => s.name).filter(Boolean).slice(0, 2).join(', ')}.`
+      : 'Mở rộng mạng lưới quan hệ chất lượng cao trong ngành.',
+    'Nhận trọn bộ tài liệu chuyên sâu và chứng nhận tham gia.',
+  ];
+
+  const benefits = hasValidCandidates
+    ? candidateBenefits.map((b, idx) => (b && typeof b === 'string' && b.trim() ? b.trim() : smartDefaultBenefits[idx] || ''))
+    : smartDefaultBenefits;
 
   const countdown = externalCountdown || localCountdown;
 

@@ -25,6 +25,7 @@ import {
   AUDIT_LEVELS,
 } from '../../../domain/moduleAuditor.js';
 import { ModuleRenderer } from './ModuleRenderer.jsx';
+import { copyToClipboard } from '../../../lib/clipboard.js';
 import {
   PlusIcon,
   CopyIcon,
@@ -2137,10 +2138,14 @@ export function DevModeWorkspace({
                 <button
                   type="button"
                   className={styles.btnCopyReviewLog}
-                  onClick={() => {
+                  onClick={async () => {
                     const markdown = generateReviewMarkdown(Object.values(reviews));
-                    navigator.clipboard.writeText(markdown);
-                    onShowToast?.('Đã sao chép nội dung Markdown vào clipboard!', 'success');
+                    const ok = await copyToClipboard(markdown);
+                    if (ok) {
+                      onShowToast?.('Đã sao chép nội dung Markdown vào clipboard!', 'success');
+                    } else {
+                      onShowToast?.('Không thể sao chép nội dung.', 'error');
+                    }
                   }}
                   disabled={Object.keys(reviews).length === 0}
                 >

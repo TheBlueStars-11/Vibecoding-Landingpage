@@ -16,6 +16,7 @@ export default function App() {
 
       {route.page === 'studio' && (
         <StudioLayout
+          key={route.projectId}
           projectId={route.projectId}
           activeWorkspace={route.workspace}
           onNavigate={navigate}

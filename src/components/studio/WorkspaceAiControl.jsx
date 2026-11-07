@@ -19,6 +19,7 @@ import {
   testAiConnection,
   executePlaygroundCall,
 } from '../../services/aiLogger.js';
+import { copyToClipboard as safeCopy } from '../../lib/clipboard.js';
 import {
   CpuIcon,
   PlayIcon,
@@ -200,12 +201,15 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
     }
   };
 
-  const copyToClipboard = (text, keyName) => {
+  const copyToClipboard = async (text, keyName) => {
     if (!text) return;
-    navigator.clipboard?.writeText(typeof text === 'string' ? text : JSON.stringify(text, null, 2));
-    setCopiedKey(keyName);
-    onShowToast?.('Đã sao chép vào bộ nhớ tạm!', 'success');
-    setTimeout(() => setCopiedKey(null), 2000);
+    const content = typeof text === 'string' ? text : JSON.stringify(text, null, 2);
+    const ok = await safeCopy(content);
+    if (ok) {
+      setCopiedKey(keyName);
+      onShowToast?.('Đã sao chép vào bộ nhớ tạm!', 'success');
+      setTimeout(() => setCopiedKey(null), 2000);
+    }
   };
 
   return (
