@@ -21,9 +21,12 @@ import { WorkspaceInfo } from './WorkspaceInfo.jsx';
 import { WorkspaceForm } from './WorkspaceForm.jsx';
 import { WorkspaceLanding } from './WorkspaceLanding.jsx';
 import { WorkspaceRegistrations } from './WorkspaceRegistrations.jsx';
-import { DevModeWorkspace } from './devmode/DevModeWorkspace.jsx';
 import { WorkspaceAiControl } from './WorkspaceAiControl.jsx';
 import { QrCheckInModal } from './QrCheckInModal.jsx';
+
+const DevModeWorkspace = React.lazy(() =>
+  import('./devmode/DevModeWorkspace.jsx').then((m) => ({ default: m.DevModeWorkspace }))
+);
 
 export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }) {
   const [project, setProject] = useState(() => elsRepository.getProjectById(projectId));
@@ -303,12 +306,14 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
             )}
 
             {activeWorkspace === 'devmode' && (
-              <DevModeWorkspace
-                project={project}
-                onUpdateProject={handleUpdateProject}
-                onShowToast={showToast}
-                onExitDevMode={() => onNavigate(`p/${project.id}/landing`)}
-              />
+              <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Đang tải công cụ Dev Mode...</div>}>
+                <DevModeWorkspace
+                  project={project}
+                  onUpdateProject={handleUpdateProject}
+                  onShowToast={showToast}
+                  onExitDevMode={() => onNavigate(`p/${project.id}/landing`)}
+                />
+              </React.Suspense>
             )}
 
             {(activeWorkspace === 'ai' || activeWorkspace === 'ai-control') && (

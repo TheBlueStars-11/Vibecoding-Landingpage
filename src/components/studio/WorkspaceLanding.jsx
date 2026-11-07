@@ -24,8 +24,11 @@ import {
   PlusIcon,
 } from '../ui/Icons.jsx';
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
-import { DevModeWorkspace } from './devmode/DevModeWorkspace.jsx';
 import { publishProjectToSync } from '../../services/realtimeSync.js';
+
+const DevModeWorkspace = React.lazy(() =>
+  import('./devmode/DevModeWorkspace.jsx').then((m) => ({ default: m.DevModeWorkspace }))
+);
 
 // Trợ giúp khởi tạo giá trị nội dung AI với fallback thông minh
 function getInitialAiValues(project) {
@@ -464,12 +467,14 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
 
   if (isDevMode) {
     return (
-      <DevModeWorkspace
-        project={project}
-        onUpdateProject={onUpdateProject}
-        onShowToast={onShowToast}
-        onExitDevMode={() => setIsDevMode(false)}
-      />
+      <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Đang tải công cụ Dev Mode...</div>}>
+        <DevModeWorkspace
+          project={project}
+          onUpdateProject={onUpdateProject}
+          onShowToast={onShowToast}
+          onExitDevMode={() => setIsDevMode(false)}
+        />
+      </React.Suspense>
     );
   }
 

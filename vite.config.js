@@ -415,5 +415,20 @@ export default defineConfig(({ mode }) => {
       cors: true,
     },
     plugins: [react(), devApiProxyPlugin()],
+    build: {
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+              return 'vendor-react';
+            }
+            if (id.includes('node_modules/qrcode/') || id.includes('node_modules/jsqr/')) {
+              return 'vendor-qr';
+            }
+          },
+        },
+      },
+    },
   };
 });
