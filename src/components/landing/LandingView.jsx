@@ -269,6 +269,7 @@ export function LandingView({
     submitSuccessRecord,
     copiedCode,
     ticketQrUrl,
+    isPast: countdown.isPast,
     onInputChange: handleInputChange,
     onSubmit: handleSubmit,
     onCopyCode: handleCopyCode,
@@ -310,6 +311,28 @@ export function LandingView({
       data-device={deviceMode}
       style={hasStickyCta ? { paddingBottom: '92px' } : undefined}
     >
+      {countdown.isPast && (
+        <div style={{
+          background: 'linear-gradient(90deg, #9f1239, #881337)',
+          color: '#ffffff',
+          padding: '12px 20px',
+          textAlign: 'center',
+          fontWeight: 600,
+          fontSize: '13px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 99,
+          borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+        }}>
+          <span>⏰</span>
+          <span>Sự kiện đã kết thúc — Cổng đăng ký trực tuyến chính thức đóng. Cảm ơn sự quan tâm của bạn!</span>
+        </div>
+      )}
       {moduleTree.map((m, index) => (
         <ModuleRenderer
           key={m.id}

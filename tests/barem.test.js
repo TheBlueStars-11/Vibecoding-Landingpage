@@ -716,5 +716,70 @@ describe('BẢNG KIỂM THỬ C: STRESS TESTING & BẢO MẬT CHUYÊN SÂU', () 
       assert.ok(sanitized.startsWith('"\''), `Ký tự "${prefix[0]}" phải được chèn nháy đơn bảo vệ`);
     }
   });
+
+  // SEC-07: Tính toàn vẹn của elsRepository.addRegistration (SYS-06)
+  it('SEC-07: elsRepository.addRegistration từ chối displayName rỗng, identityKey rỗng và trim sạch sẽ', () => {
+    const prj = elsRepository.createProject({ name: 'Dự án test kho' });
+
+    // 1. Từ chối displayName rỗng
+    assert.throws(() => {
+      elsRepository.addRegistration(prj.id, {
+        displayName: '   ',
+        identityKey: 'test@example.com',
+        values: { fld_name: '   ' },
+      });
+    }, /Họ và tên người đăng ký không được để trống/);
+
+    // 2. Từ chối identityKey rỗng
+    assert.throws(() => {
+      elsRepository.addRegistration(prj.id, {
+        displayName: 'Nguyễn Văn Test',
+        identityKey: '',
+        values: { fld_name: 'Nguyễn Văn Test' },
+      });
+    }, /Thiếu thông tin định danh/);
+
+    // 3. Trim sạch sẽ các trường
+    const record = elsRepository.addRegistration(prj.id, {
+      displayName: '  Lê Văn C  ',
+      identityKey: '  levanc@example.com  ',
+      values: { fld_name: '  Lê Văn C  ', fld_note: '  Ghi chú có khoảng trắng  ' },
+    });
+    assert.equal(record.displayName, 'Lê Văn C');
+    assert.equal(record.identityKey, 'levanc@example.com');
+    assert.equal(record.values.fld_note, 'Ghi chú có khoảng trắng');
+  });
+
+  // SEC-08: Phân biệt rõ ngày quá khứ vs giờ quá khứ trong ngày (SYS-08)
+  it('SEC-08: checkPastDateTime phân biệt chính xác ngày quá khứ vs giờ đã qua trong ngày', async () => {
+    const { checkPastDateTime } = await import('../src/domain/time.js');
+
+    // Ngày hôm qua -> isPastDate = true
+    const pastDay = checkPastDateTime('2020-01-01', '10:00');
+    assert.equal(pastDay.isPast, true);
+    assert.equal(pastDay.isPastDate, true);
+    assert.equal(pastDay.isPastHourToday, false);
+
+    // Ngày tương lai xa -> isPast = false
+    const futureDay = checkPastDateTime('2099-12-31', '23:59');
+    assert.equal(futureDay.isPast, false);
+    assert.equal(futureDay.isPastDate, false);
+    assert.equal(futureDay.isPastHourToday, false);
+  });
+
+  // SEC-09: Cấu trúc lỗi ElsError chuẩn hóa miền (Domain Error)
+  it('SEC-09: ElsError chuẩn hóa phân loại lỗi, mã lỗi và gợi ý khắc phục', async () => {
+    const { ElsError, ERROR_CODES, ERROR_CATEGORIES, isElsError } = await import('../src/domain/errors.js');
+    const err = new ElsError(
+      'Mô tả lỗi người dùng',
+      ERROR_CODES.CAPACITY_EXCEEDED,
+      ERROR_CATEGORIES.BUSINESS,
+      'Gợi ý khắc phục lỗi'
+    );
+    assert.ok(isElsError(err));
+    assert.equal(err.code, 'ERR_CAPACITY_FULL');
+    assert.equal(err.category, 'business');
+    assert.equal(err.recoveryAction, 'Gợi ý khắc phục lỗi');
+  });
 });
 

@@ -48,6 +48,38 @@ export function isFutureDateTime(dateStr, timeStr, minMinutes = 0) {
 }
 
 /**
+ * Phân định chi tiết trạng thái quá khứ: ngày đã qua hay cùng ngày nhưng giờ đã qua (SYS-08)
+ */
+export function checkPastDateTime(dateStr, timeStr) {
+  if (!dateStr) return { isPast: false, isPastDate: false, isPastHourToday: false };
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(new Date());
+  const map = {};
+  for (const p of parts) map[p.type] = p.value;
+  const todayStr = `${map.year}-${map.month}-${map.day}`;
+  const nowTime = `${map.hour}:${map.minute}`;
+
+  if (dateStr < todayStr) {
+    return { isPast: true, isPastDate: true, isPastHourToday: false };
+  }
+  if (dateStr === todayStr) {
+    const cleanTime = (timeStr || '00:00').trim().slice(0, 5);
+    if (cleanTime <= nowTime) {
+      return { isPast: true, isPastDate: false, isPastHourToday: true };
+    }
+  }
+  return { isPast: false, isPastDate: false, isPastHourToday: false };
+}
+
+/**
  * Định dạng ngày giờ thân thiện theo tiếng Việt và múi giờ GMT+7
  */
 export function formatVietnameseDateTime(isoOrDate) {

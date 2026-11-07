@@ -10,6 +10,7 @@ import {
   createProject,
   createRegistrationRecord,
 } from '../domain/elsSchema.js';
+import { ElsError, ERROR_CODES, ERROR_CATEGORIES } from '../domain/errors.js';
 
 // Kênh BroadcastChannel để đồng bộ realtime giữa các tab cùng trình duyệt
 const CHANNEL_NAME = 'els-registrations';
@@ -300,25 +301,72 @@ export const elsRepository = {
   },
 
   /**
-   * Thêm đơn đăng ký mới (nguyên tử và chống trùng lặp tại kho)
+   * Thêm đơn đăng ký mới (nguyên tử và chống trùng lặp tại kho - SYS-06)
    */
   addRegistration(projectId, regData) {
-    if (!projectId) throw new Error('Thiếu projectId khi lưu đơn đăng ký.');
+    if (!projectId) {
+      throw new ElsError('Thiếu projectId khi lưu đơn đăng ký.', ERROR_CODES.VALIDATION_FAILED, ERROR_CATEGORIES.VALIDATION);
+    }
+
+    // Làm sạch và trim mọi giá trị text
+    const cleanedValues = {};
+    if (regData.values && typeof regData.values === 'object') {
+      for (const [k, v] of Object.entries(regData.values)) {
+        cleanedValues[k] = typeof v === 'string' ? v.trim() : v;
+      }
+    }
+
+    // 1. Kiểm tra Display Name bắt buộc
+    const displayName = (regData.displayName || '').trim();
+    if (!displayName) {
+      throw new ElsError(
+        'Họ và tên người đăng ký không được để trống.',
+        ERROR_CODES.VALIDATION_FAILED,
+        ERROR_CATEGORIES.VALIDATION,
+        'Vui lòng nhập họ và tên của bạn trước khi nhấn Gửi đăng ký.'
+      );
+    }
+
+    // 2. Kiểm tra Identity Key bắt buộc (ít nhất 1 định danh email hoặc sđt)
+    const identityKey = (regData.identityKey || '').trim().toLowerCase();
+    if (!identityKey) {
+      throw new ElsError(
+        'Thiếu thông tin định danh (email hoặc số điện thoại) bắt buộc.',
+        ERROR_CODES.VALIDATION_FAILED,
+        ERROR_CATEGORIES.VALIDATION,
+        'Vui lòng điền email hoặc số điện thoại hợp lệ để hoàn tất đăng ký.'
+      );
+    }
+
     const registrations = this.getRegistrations(projectId);
 
-    // Chống trùng identityKey
-    const identityKey = (regData.identityKey || '').trim().toLowerCase();
-    if (identityKey) {
-      const isDuplicate = registrations.some((r) => r.identityKey === identityKey);
-      if (isDuplicate) {
-        throw new Error(`Thông tin định danh "${identityKey}" đã được sử dụng để đăng ký.`);
-      }
+    // 3. Kiểm tra sức chứa (Capacity check)
+    const project = this.getProjectById(projectId);
+    const capacity = Number(project?.event?.capacity || project?.capacity || 0);
+    if (capacity > 0 && registrations.length >= capacity) {
+      throw new ElsError(
+        `Sự kiện đã đạt giới hạn sức chứa tối đa (${capacity} người tham dự). Đăng ký hiện đã đóng.`,
+        ERROR_CODES.CAPACITY_EXCEEDED,
+        ERROR_CATEGORIES.BUSINESS,
+        'Vui lòng theo dõi các đợt mở đăng ký tiếp theo hoặc liên hệ ban tổ chức.'
+      );
+    }
+
+    // 4. Chống trùng identityKey
+    const isDuplicate = registrations.some((r) => r.identityKey === identityKey);
+    if (isDuplicate) {
+      throw new ElsError(
+        `Thông tin định danh "${identityKey}" đã được sử dụng để đăng ký sự kiện này.`,
+        ERROR_CODES.DUPLICATE_REGISTRATION,
+        ERROR_CATEGORIES.VALIDATION,
+        'Mỗi người tham dự chỉ đăng ký 1 lần với 1 email hoặc số điện thoại.'
+      );
     }
 
     const newRecord = createRegistrationRecord({
       projectId,
-      values: regData.values || {},
-      displayName: regData.displayName || 'Người tham dự',
+      values: cleanedValues,
+      displayName,
       identityKey,
       source: regData.source || 'landing',
     });
@@ -327,7 +375,6 @@ export const elsRepository = {
     safeSetItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${projectId}`, nextRegistrations);
 
     // Cập nhật updatedAt của dự án
-    const project = this.getProjectById(projectId);
     if (project) {
       this.saveProject({ ...project, updatedAt: new Date().toISOString() });
     }

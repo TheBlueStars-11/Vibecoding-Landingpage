@@ -4,7 +4,7 @@
  */
 
 import { normalizeText, normalizeEmail, normalizePhone, isValidVietnamesePhone, normalizeSpeakers } from './normalize.js';
-import { isFutureDateTime } from './time.js';
+import { isFutureDateTime, checkPastDateTime } from './time.js';
 import { FIELD_ROLES, FIELD_TYPES } from './elsSchema.js';
 
 /**
@@ -45,10 +45,15 @@ export function validateProjectInfo(eventData = {}, assets = []) {
     errors.eventTime = 'Vui lòng chọn giờ bắt đầu sự kiện.';
   }
 
-  // Chặn thời gian quá khứ
+  // Chặn thời gian quá khứ (phân định rõ ngày quá khứ vs giờ quá khứ trong ngày - SYS-08)
   if (eventData.eventDate && eventData.eventTime) {
-    if (!isFutureDateTime(eventData.eventDate, eventData.eventTime, 0)) {
-      errors.eventDate = 'Ngày diễn ra đã qua. Vui lòng chọn ngày từ hôm nay trở đi.';
+    const pastCheck = checkPastDateTime(eventData.eventDate, eventData.eventTime);
+    if (pastCheck.isPastDate) {
+      errors.eventDate = 'Ngày diễn ra đã qua. Vui lòng chọn một ngày từ hôm nay trở đi.';
+    } else if (pastCheck.isPastHourToday) {
+      errors.eventTime = 'Giờ bắt đầu sự kiện hôm nay đã trôi qua. Vui lòng chọn giờ sau thời điểm hiện tại.';
+    } else if (!isFutureDateTime(eventData.eventDate, eventData.eventTime, 0)) {
+      errors.eventDate = 'Thời gian sự kiện đã qua. Vui lòng chọn thời điểm trong tương lai.';
     }
   }
 
@@ -301,7 +306,12 @@ export function validateEventInput(formData) {
   }
 
   if (formData.date && formData.time) {
-    if (!isFutureDateTime(formData.date, formData.time, 0)) {
+    const pastCheck = checkPastDateTime(formData.date, formData.time);
+    if (pastCheck.isPastDate) {
+      errors.date = 'Ngày diễn ra đã qua. Vui lòng chọn một ngày từ hôm nay trở đi.';
+    } else if (pastCheck.isPastHourToday) {
+      errors.time = 'Giờ bắt đầu sự kiện hôm nay đã trôi qua. Vui lòng chọn giờ sau thời điểm hiện tại.';
+    } else if (!isFutureDateTime(formData.date, formData.time, 0)) {
       errors.date = 'Thời gian sự kiện đã qua. Vui lòng chọn ngày giờ sau thời điểm hiện tại.';
     }
   }

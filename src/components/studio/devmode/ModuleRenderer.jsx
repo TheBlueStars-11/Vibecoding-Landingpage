@@ -1646,6 +1646,11 @@ export function ModuleRenderer({
                 Sự kiện đã đạt số lượng người tham dự tối đa ({maxCapacity} người). Cổng đăng ký tạm thời đóng.
               </div>
             )}
+            {countdown.isPast && (
+              <div className={styles.formGeneralError} style={{ background: '#fff1f2', color: '#be123c', borderColor: '#fecdd3', marginBottom: 12, fontWeight: 600 }}>
+                ⏰ Sự kiện đã diễn ra và kết thúc. Cổng đăng ký trực tuyến đã đóng.
+              </div>
+            )}
             <form onSubmit={formProps.onSubmit} className={styles.renderedForm}>
               {formProps.formErrors?.general && (
                 <div className={styles.formGeneralError}>{formProps.formErrors.general}</div>
@@ -1661,7 +1666,7 @@ export function ModuleRenderer({
                     placeholder={f.hint || `Nhập ${f.label.toLowerCase()}...`}
                     value={formProps.formValues?.[f.key] || ''}
                     onChange={(e) => formProps.onInputChange?.(f.key, e.target.value)}
-                    disabled={formProps.isSubmitting || isCapacityFull}
+                    disabled={formProps.isSubmitting || isCapacityFull || countdown.isPast}
                   />
                   {formProps.formErrors?.[f.key] && (
                     <span className={styles.fieldErrorText}>{formProps.formErrors[f.key]}</span>

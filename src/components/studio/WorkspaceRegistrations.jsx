@@ -521,6 +521,40 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
         </div>
       </header>
 
+      {/* Kiến trúc lưu trữ an toàn: LocalStorage là Single Source of Truth (SYS-04) */}
+      <div style={{
+        background: 'rgba(225, 29, 72, 0.05)',
+        border: '1px solid rgba(225, 29, 72, 0.2)',
+        borderRadius: '12px',
+        padding: '10px 16px',
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        fontSize: '13px',
+        color: '#f43f5e',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '16px' }}>🛡️</span>
+          <span>
+            <strong>Lưu trữ độc lập:</strong> Trình duyệt lưu dữ liệu vào <strong>LocalStorage (Source of Truth)</strong>, đảm bảo bền vững 100% không mất khi ngắt mạng hoặc tải lại. Đồng bộ đa thiết bị qua Cloudflare/SSE là kênh truyền bổ trợ thời gian thực.
+          </span>
+        </div>
+        <span style={{
+          background: 'rgba(16, 185, 129, 0.1)',
+          color: '#10b981',
+          padding: '2px 8px',
+          borderRadius: '9999px',
+          fontWeight: 600,
+          fontSize: '11px',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+        }}>
+          ✓ Sẵn sàng Offline & F5
+        </span>
+      </div>
+
       {/* 2. KHU VỰC CHIA SẺ MÃ QR TRỰC TIẾP */}
       <section className={styles.shareCard} aria-labelledby="qr-sharing-heading">
         <div className={styles.shareCardHeader}>
