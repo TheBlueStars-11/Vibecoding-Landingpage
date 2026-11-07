@@ -7,6 +7,8 @@ import {
   createDefaultFormFields,
   createProject,
   createRegistrationRecord,
+  EVENT_FIELDS,
+  normalizeEventInput,
   FIELD_ROLES,
   ASSET_ROLES,
 } from '../src/domain/elsSchema.js';
@@ -64,6 +66,32 @@ describe('6. ELS Domain: Schema & Generators', () => {
     assert.equal(reg.displayName, 'Nguyễn Văn A');
     assert.equal(reg.identityKey, 'a@example.com');
     assert.match(reg.code, /^DK-/);
+  });
+
+  it('EVENT_FIELDS & normalizeEventInput: Single Source of Truth cho toàn bộ trường sự kiện (SYS-05)', () => {
+    assert.equal(EVENT_FIELDS.NAME, 'eventName');
+    assert.equal(EVENT_FIELDS.DATE, 'eventDate');
+    assert.equal(EVENT_FIELDS.TIME, 'eventTime');
+    assert.equal(EVENT_FIELDS.VENUE, 'venue');
+    assert.equal(EVENT_FIELDS.SPEAKERS, 'speakers');
+    assert.equal(EVENT_FIELDS.EARLY_BIRD, 'earlyBirdOffer');
+
+    const rawLegacy = {
+      name: '  Hội Thảo Công Nghệ Cao  ',
+      date: '2026-12-15',
+      time: '14:30',
+      location: '  Hà Nội  ',
+      speakers: 'Nguyễn Văn A, Trần Thị B',
+      earlyBird: 'Giảm 25%',
+    };
+    const normalized = normalizeEventInput(rawLegacy);
+    assert.equal(normalized.eventName, 'Hội Thảo Công Nghệ Cao');
+    assert.equal(normalized.eventDate, '2026-12-15');
+    assert.equal(normalized.eventTime, '14:30');
+    assert.equal(normalized.venue, 'Hà Nội');
+    assert.equal(normalized.earlyBirdOffer, 'Giảm 25%');
+    assert.equal(normalized.speakers.length, 2);
+    assert.equal(normalized.speakers[0].name, 'Nguyễn Văn A');
   });
 });
 

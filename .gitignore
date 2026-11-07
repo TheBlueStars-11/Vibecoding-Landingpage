@@ -31,4 +31,10 @@ dist-ssr
 # Internal markdown documentation, reports & plans
 *.md
 !README.md
+!docs/*.md
 module_reports/
+
+# Submission archives and temp folders
+*.zip
+temp_package_stage/
+temp_verify_submission/

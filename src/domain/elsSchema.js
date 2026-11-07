@@ -37,6 +37,79 @@ export const ASSET_ROLES = {
 };
 
 /**
+ * ĐỊNH DANH TRƯỜNG DỮ LIỆU SỰ KIỆN DUY NHẤT (Single Source of Truth - SYS-05)
+ */
+export const EVENT_FIELDS = {
+  NAME: 'eventName',
+  DATE: 'eventDate',
+  TIME: 'eventTime',
+  VENUE: 'venue',
+  SPEAKERS: 'speakers',
+  EARLY_BIRD: 'earlyBirdOffer',
+  EARLY_BIRD_DEADLINE: 'earlyBirdDeadline',
+  AGENDA: 'agenda',
+  CAPACITY: 'capacity',
+};
+
+/**
+ * Chuẩn hóa đối tượng thông tin sự kiện từ các nguồn khác nhau (Form, AI output, Legacy input)
+ * về cấu trúc chuẩn hóa duy nhất của ELS (Single Source of Truth - SYS-05).
+ */
+export function normalizeEventInput(raw = {}) {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      [EVENT_FIELDS.NAME]: '',
+      [EVENT_FIELDS.DATE]: '',
+      [EVENT_FIELDS.TIME]: '09:00',
+      [EVENT_FIELDS.VENUE]: '',
+      [EVENT_FIELDS.SPEAKERS]: [],
+      [EVENT_FIELDS.EARLY_BIRD]: '',
+      [EVENT_FIELDS.EARLY_BIRD_DEADLINE]: '',
+      [EVENT_FIELDS.AGENDA]: [],
+      [EVENT_FIELDS.CAPACITY]: 0,
+    };
+  }
+
+  const eventName = (raw.eventName || raw.name || raw.title || '').trim();
+
+  let eventDate = (raw.eventDate || raw.date || '').trim();
+  let eventTime = (raw.eventTime || raw.time || '09:00').trim();
+  if (raw.datetime && typeof raw.datetime === 'string' && raw.datetime.includes('T')) {
+    const parts = raw.datetime.split('T');
+    eventDate = eventDate || parts[0];
+    eventTime = eventTime || parts[1].slice(0, 5);
+  }
+
+  const venue = (raw.venue || raw.location || '').trim();
+  const earlyBirdOffer = (raw.earlyBirdOffer || raw.earlyBird || '').trim();
+
+  let speakers = raw.speakers;
+  if (typeof speakers === 'string') {
+    speakers = speakers
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((name, idx) => ({ id: `spk_${idx + 1}`, name, title: '', assetId: null }));
+  } else if (!Array.isArray(speakers)) {
+    speakers = [];
+  }
+
+  let agenda = Array.isArray(raw.agenda) ? raw.agenda : [];
+
+  return {
+    [EVENT_FIELDS.NAME]: eventName,
+    [EVENT_FIELDS.DATE]: eventDate,
+    [EVENT_FIELDS.TIME]: eventTime,
+    [EVENT_FIELDS.VENUE]: venue,
+    [EVENT_FIELDS.SPEAKERS]: speakers,
+    [EVENT_FIELDS.EARLY_BIRD]: earlyBirdOffer,
+    [EVENT_FIELDS.EARLY_BIRD_DEADLINE]: raw.earlyBirdDeadline || '',
+    [EVENT_FIELDS.AGENDA]: agenda,
+    [EVENT_FIELDS.CAPACITY]: Number(raw.capacity || 0),
+  };
+}
+
+/**
  * Sinh ID duy nhất với tiền tố
  */
 export function generateId(prefix = 'id') {
