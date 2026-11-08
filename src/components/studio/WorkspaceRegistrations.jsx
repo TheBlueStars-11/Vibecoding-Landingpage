@@ -47,7 +47,6 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
   const [checkInFilter, setCheckInFilter] = useState('all'); // 'all' | 'checked_in' | 'pending'
   const [deletingRecord, setDeletingRecord] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState('Vừa xong');
   const qrImageRef = useRef(null);
 
   const isVercel = useMemo(() => {
@@ -237,9 +236,7 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
 
     // Xuất bản dữ liệu dự án lên dev sync server để thiết bị khác quét QR có dữ liệu ngay
     const assets = elsRepository.getAssets(project.id);
-    publishProjectToSync(project, assets).then(() => {
-      setLastSyncTime(new Date().toLocaleTimeString('vi-VN'));
-    });
+    publishProjectToSync(project, assets);
 
     // Tải danh sách đơn đã có trên máy chủ (nếu có từ phiên trước)
     getRemoteRegistrations(project.id).then((remotes) => {
@@ -400,7 +397,6 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
       });
       setRegistrations(elsRepository.getRegistrations(project.id));
     }
-    setLastSyncTime(new Date().toLocaleTimeString('vi-VN'));
     setIsSyncing(false);
     onShowToast?.('Đã đồng bộ lại dữ liệu với máy chủ!', 'success');
   };
@@ -796,9 +792,6 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
               </span>
             </div>
             <div className={styles.statNumber}>{stats.total}</div>
-            <div className={styles.statDesc}>
-              {stats.total > 0 ? 'Dữ liệu đã đồng bộ an toàn' : 'Đang chờ lượt đăng ký đầu tiên'}
-            </div>
           </div>
 
           {/* Card 2: Đơn hôm nay */}
@@ -808,7 +801,6 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
               <span className={styles.badgeNew}>Hôm nay</span>
             </div>
             <div className={styles.statNumber}>{stats.todayCount}</div>
-            <div className={styles.statDesc}>Cập nhật theo múi giờ GMT+7</div>
           </div>
 
           {/* Card 3: Đơn mới nhất */}
@@ -819,9 +811,6 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
             </div>
             <div className={styles.statNumberSmall}>
               {stats.latest ? stats.latest.displayName : '—'}
-            </div>
-            <div className={styles.statDesc}>
-              {stats.latest ? `Mã: ${stats.latest.code}` : 'Chưa có dữ liệu'}
             </div>
           </div>
 
@@ -834,7 +823,6 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
             <div className={styles.statNumberSmall} style={{ color: '#16a34a' }}>
               Trực tuyến
             </div>
-            <div className={styles.statDesc}>Đồng bộ lúc: {lastSyncTime}</div>
           </div>
 
           {/* Card 5: Thống kê Check-in vé sự kiện */}
@@ -844,12 +832,7 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
               <span className={styles.badgeNew}>{stats.checkInRate}%</span>
             </div>
             <div className={styles.statNumber} style={{ color: '#059669' }}>
-              {stats.checkedInCount} <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 500 }}>/ {stats.total}</span>
-            </div>
-            <div className={styles.statDesc}>
-              {stats.checkedInCount === stats.total && stats.total > 0
-                ? 'Đã check-in đủ 100%'
-                : `Còn ${stats.total - stats.checkedInCount} vé chưa quét`}
+              {stats.checkedInCount}
             </div>
           </div>
         </div>
