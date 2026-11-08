@@ -549,6 +549,29 @@ export const elsRepository = {
     safeSetItem(ELS_STORAGE_KEYS.META, meta);
   },
 
+  /**
+   * Khôi phục kho dữ liệu về trạng thái sạch ban đầu (dùng cho ErrorBoundary hoặc khôi phục khẩn cấp)
+   */
+  resetAllStorage() {
+    if (typeof window === 'undefined' || !window.localStorage) return false;
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && (k.startsWith('els:v1:') || k.startsWith('epb:v1:'))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => window.localStorage.removeItem(k));
+      safeSetItem(ELS_STORAGE_KEYS.PROJECTS, []);
+      safeSetItem(ELS_STORAGE_KEYS.META, { schemaVersion: ELS_SCHEMA_VERSION });
+      return true;
+    } catch (err) {
+      console.warn('Không thể xóa sạch bộ nhớ cục bộ:', err);
+      return false;
+    }
+  },
+
   _notifyChannel(type, payload) {
     if (broadcastChannel) {
       try {

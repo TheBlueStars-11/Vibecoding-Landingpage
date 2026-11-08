@@ -263,4 +263,23 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
     assert.ok(xml.includes('Nguyễn Văn Excel'));
     assert.ok(xml.includes('excel@vibecoding.vn'));
   });
+
+  it('elsRepository: bắt lỗi QuotaExceededError khi localStorage đầy và báo thông điệp tiếng Việt rõ ràng [SYS-06]', () => {
+    globalThis.window = {
+      localStorage: {
+        getItem: () => '[]',
+        setItem: () => {
+          const err = new Error('Storage full');
+          err.name = 'QuotaExceededError';
+          throw err;
+        },
+        removeItem: () => {},
+      },
+    };
+
+    assert.throws(
+      () => elsRepository.createProject({ name: 'Dự án tràn bộ nhớ' }),
+      (err) => err.message.includes('Bộ nhớ trình duyệt (localStorage) đã đầy')
+    );
+  });
 });

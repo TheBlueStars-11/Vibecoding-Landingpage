@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { ShieldIcon, RefreshCwIcon, TrashIcon } from './Icons.jsx';
+import { elsRepository } from '../../services/elsRepository.js';
 import styles from './ErrorBoundary.module.css';
 
 export class ErrorBoundary extends Component {
@@ -21,10 +22,7 @@ export class ErrorBoundary extends Component {
   };
 
   handleResetStorage = () => {
-    try {
-      localStorage.removeItem('epb:v1:active');
-      localStorage.removeItem('epb:v1:draft');
-    } catch {}
+    elsRepository.resetAllStorage();
     window.location.reload();
   };
 

@@ -54,6 +54,28 @@ describe('2. Domain: Time & Timezone (GMT+7)', () => {
     assert.equal(res.d, 0);
     assert.equal(res.h, 0);
   });
+
+  it('formatToISOWithOffset & checkPastDateTime: nhất quán múi giờ GMT+7 bất kể TZ máy khách (UTC, America/New_York, Asia/Tokyo) [SYS-08]', async () => {
+    const { checkPastDateTime } = await import('../src/domain/time.js');
+    const origTz = process.env.TZ;
+    try {
+      for (const tz of ['UTC', 'America/New_York', 'Asia/Tokyo']) {
+        process.env.TZ = tz;
+        const iso = formatToISOWithOffset('2030-05-15', '09:30');
+        assert.equal(iso, '2030-05-15T09:30:00+07:00');
+        assert.equal(new Date(iso).toISOString(), '2030-05-15T02:30:00.000Z');
+        const pastCheck = checkPastDateTime('2020-01-01', '10:00');
+        assert.equal(pastCheck.isPast, true);
+        assert.equal(pastCheck.isPastDate, true);
+      }
+    } finally {
+      if (origTz === undefined) {
+        delete process.env.TZ;
+      } else {
+        process.env.TZ = origTz;
+      }
+    }
+  });
 });
 
 describe('3. Domain: Validators', () => {
