@@ -5,7 +5,7 @@ import { calculateCountdown } from '../../domain/time.js';
 import { validateRegistrationSubmission } from '../../domain/validators.js';
 import { elsRepository } from '../../services/elsRepository.js';
 import { downloadIcsFile } from '../../domain/calendar.js';
-import { createPresetModuleTree, getDeletedModuleTypes, getDeletedVariants, getSafeVariant } from '../../domain/moduleSchema.js';
+import { createPresetModuleTree, adaptModuleTreeToEventData } from '../../domain/moduleSchema.js';
 import { ModuleRenderer } from './ModuleRenderer.jsx';
 import { submitRegistrationToSync } from '../../services/realtimeSync.js';
 import { fireDoubleConfetti } from '../../lib/confetti.js';
@@ -281,38 +281,14 @@ export function LandingView({
     },
   };
 
-  // Áp dụng các bố cục vào Landing Page (tự động loại bỏ vĩnh viễn các module và biến thể đã bị xóa, đồng thời dùng Hero không ảnh nếu không có ảnh sự kiện)
-  const hasEventHeroAsset = useMemo(
-    () => assets.some((a) => a.role === 'hero' || a.role === 'other'),
-    [assets]
-  );
-
+  // Áp dụng các bố cục vào Landing Page theo 3 tiêu chí: Không bịa đặt - Tận dụng thông tin - Tận dụng module
   const moduleTree = useMemo(() => {
     const raw = Array.isArray(project.moduleLayout) && project.moduleLayout.length > 0
       ? project.moduleLayout
       : createPresetModuleTree(project.modulePreset || 'workshop');
 
-    const deletedTypes = getDeletedModuleTypes();
-    const deletedVariants = getDeletedVariants();
-
-    return raw
-      .filter((m) => !deletedTypes.includes(m.type) && !m.hidden)
-      .map((m) => {
-        const delList = deletedVariants[m.type] || [];
-        let nextVariant = delList.includes(m.variant) ? getSafeVariant(m.type, m.variant) : m.variant;
-        if (
-          m.type === 'hero' &&
-          !hasEventHeroAsset &&
-          (nextVariant === 'image-right' || nextVariant === 'image-left' || nextVariant === 'center' || nextVariant === 'poster-fullbleed')
-        ) {
-          nextVariant = 'split-card';
-        }
-        if (nextVariant !== m.variant) {
-          return { ...m, variant: nextVariant };
-        }
-        return m;
-      });
-  }, [project.moduleLayout, project.modulePreset, hasEventHeroAsset]);
+    return adaptModuleTreeToEventData(raw, project.event || {}, assets, project.ai || {}, { expandWhenRich: false });
+  }, [project.moduleLayout, project.modulePreset, project.event, assets, project.ai]);
 
   return (
     <div

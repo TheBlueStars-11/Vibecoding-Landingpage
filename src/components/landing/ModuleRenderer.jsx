@@ -1275,30 +1275,26 @@ export function ModuleRenderer({
             <h2 className={styles.secTitle}>Chương trình tóm lược</h2>
           </div>
           <div className={styles.agendaGlanceHeader}>
-            ⏱ 3.5 Giờ thực chiến · 08:30 – 12:00 · 3 Chặng trọng tâm
+            ⏱ {rawAgenda.length} Phiên nội dung · Khai mạc {eventData.eventTime || rawAgenda[0]?.time || '08:30'} · Ngày {eventData.eventDate || 'theo thông báo'}
           </div>
           <div className={styles.agendaGlanceMilestones}>
-            <div className={styles.agendaGlanceStep}>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #e11d48)', marginBottom: 4 }}>08:30 - 09:00</strong>
-              <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a' }}>Check-in & Khởi động</h4>
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Đón tiếp và nhận bộ công cụ</p>
-            </div>
-            <div className={styles.agendaGlanceStep}>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #e11d48)', marginBottom: 4 }}>09:00 - 10:30</strong>
-              <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a' }}>Live Demo Hands-on</h4>
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Dựng landing page đa màn hình</p>
-            </div>
-            <div className={styles.agendaGlanceStep}>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #e11d48)', marginBottom: 4 }}>10:30 - 12:00</strong>
-              <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a' }}>Hỏi đáp & Trao giải</h4>
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>Giao lưu cùng diễn giả</p>
-            </div>
+            {rawAgenda.map((item, idx) => (
+              <div key={item.id || idx} className={styles.agendaGlanceStep}>
+                <strong style={{ display: 'block', fontSize: '0.85rem', color: 'var(--theme-primary, #e11d48)', marginBottom: 4 }}>
+                  {item.time}
+                </strong>
+                <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#0f172a' }}>{item.title}</h4>
+              </div>
+            ))}
           </div>
         </div>
       );
     }
 
     if (isSectioned) {
+      const splitPoint = Math.ceil(rawAgenda.length / 2);
+      const part1 = rawAgenda.slice(0, splitPoint);
+      const part2 = rawAgenda.slice(splitPoint);
       return renderContainer(
         <div className={styles.agendaTimelineSectionedWrap}>
           <div className={styles.blockTitleCenter}>
@@ -1306,11 +1302,11 @@ export function ModuleRenderer({
           </div>
           <div className={styles.agendaSectionBlock}>
             <div className={styles.agendaSectionHeader}>
-              <strong style={{ fontSize: '1rem', color: 'var(--theme-primary, #e11d48)' }}>PHẦN 1: NỀN TẢNG & KHỞI ĐỘNG</strong>
-              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>60 phút</span>
+              <strong style={{ fontSize: '1rem', color: 'var(--theme-primary, #e11d48)' }}>PHẦN 1: KHỞI ĐỘNG & PHIÊN TRỌNG TÂM</strong>
+              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{part1.length} phiên</span>
             </div>
             <div className={styles.agendaTimeline}>
-              {rawAgenda.slice(0, 2).map((item, idx) => (
+              {part1.map((item, idx) => (
                 <div key={item.id || idx} className={styles.timelineItem}>
                   {renderTimelineTime(item.time)}
                   <span className={styles.timelineDot} />
@@ -1319,44 +1315,62 @@ export function ModuleRenderer({
               ))}
             </div>
           </div>
-          <div className={styles.agendaSectionBlock}>
-            <div className={styles.agendaSectionHeader}>
-              <strong style={{ fontSize: '1rem', color: '#059669' }}>PHẦN 2: THỰC HÀNH LIVE DEMO</strong>
-              <span style={{ fontSize: '0.8rem', color: '#64748b' }}>90 phút</span>
+          {part2.length > 0 && (
+            <div className={styles.agendaSectionBlock}>
+              <div className={styles.agendaSectionHeader}>
+                <strong style={{ fontSize: '1rem', color: '#059669' }}>PHẦN 2: CHUYÊN ĐỀ CHUYÊN SÂU & KẾT NỐI</strong>
+                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{part2.length} phiên</span>
+              </div>
+              <div className={styles.agendaTimeline}>
+                {part2.map((item, idx) => (
+                  <div key={item.id || idx} className={styles.timelineItem}>
+                    {renderTimelineTime(item.time)}
+                    <span className={styles.timelineDot} />
+                    <div className={styles.timelineCard}><p className={styles.agendaItemTitle}>{item.title}</p></div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className={styles.agendaTimeline}>
-              {rawAgenda.slice(2, 4).map((item, idx) => (
-                <div key={item.id || idx} className={styles.timelineItem}>
-                  {renderTimelineTime(item.time)}
-                  <span className={styles.timelineDot} />
-                  <div className={styles.timelineCard}><p className={styles.agendaItemTitle}>{item.title}</p></div>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       );
     }
 
     if (isSpeakerTimeline) {
+      const knownSpeakers = Array.isArray(eventData.speakers) ? eventData.speakers : [];
+      const resolveAgendaSpeaker = (item) => {
+        if (item.speaker) return item.speaker;
+        const titleStr = String(item.title || '');
+        const matched = knownSpeakers.find((s) => s?.name && titleStr.toLowerCase().includes(s.name.toLowerCase()));
+        if (matched) return matched.name;
+        const parenMatch = titleStr.match(/\(([^)]+)\)\s*$/);
+        if (parenMatch) return parenMatch[1];
+        return null;
+      };
+
       return renderContainer(
         <div className={styles.agendaTimelineSpeakerWrap}>
           <div className={styles.blockTitleCenter}>
             <h2 className={styles.secTitle}>Chương trình chi tiết</h2>
           </div>
           <div className={styles.agendaTimeline}>
-            {rawAgenda.map((item, idx) => (
-              <div key={item.id || idx} className={styles.timelineItem}>
-                {renderTimelineTime(item.time)}
-                <span className={styles.timelineDot} />
-                <div className={styles.timelineCard}>
-                  <p className={styles.agendaItemTitle}>{item.title}</p>
-                  <span className={styles.agendaSpeakerBadge} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    <MicIcon size={12} /> Diễn giả TS. Nguyễn Văn An phụ trách
-                  </span>
+            {rawAgenda.map((item, idx) => {
+              const matchedSpeaker = resolveAgendaSpeaker(item);
+              return (
+                <div key={item.id || idx} className={styles.timelineItem}>
+                  {renderTimelineTime(item.time)}
+                  <span className={styles.timelineDot} />
+                  <div className={styles.timelineCard}>
+                    <p className={styles.agendaItemTitle}>{item.title}</p>
+                    {matchedSpeaker && (
+                      <span className={styles.agendaSpeakerBadge} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <MicIcon size={12} /> Diễn giả: {matchedSpeaker}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );
@@ -2249,7 +2263,7 @@ export function ModuleRenderer({
             <div>
               <h4 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', fontWeight: 800 }}>{eventData.eventName || 'Sự kiện 2026'}</h4>
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>
-                Không gian kết nối những tài năng sáng tạo công nghệ và lan tỏa giải pháp kiến trúc hiện đại.
+                {description}
               </p>
             </div>
             <div>
@@ -2261,10 +2275,12 @@ export function ModuleRenderer({
               </ul>
             </div>
             <div>
-              <div className={styles.footerColTitle}>Hỗ trợ</div>
+              <div className={styles.footerColTitle}>Thông tin tổ chức</div>
               <ul className={styles.footerColLinks}>
-                <li><span>contact@vibecoding.vn</span></li>
-                <li><span>Hotline: 024 3999 8888</span></li>
+                {aiData?.organizer?.email && <li><span>Email: {aiData.organizer.email}</span></li>}
+                {aiData?.organizer?.hotline && <li><span>Hotline: {aiData.organizer.hotline}</span></li>}
+                <li><span>Thời gian: {eventData.eventTime || '08:30'} · {eventData.eventDate || '2026'}</span></li>
+                <li><span>Địa điểm: {eventData.venue || 'Theo thông báo'}</span></li>
               </ul>
             </div>
           </div>
@@ -2273,11 +2289,13 @@ export function ModuleRenderer({
         {isTwoColumns && (
           <div className={styles.footerTwoColumnsWrap}>
             <div>
-              <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{eventData.eventName || 'Vibe Coding 2026'}</strong>
-              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>Hội thảo & Workshop công nghệ</p>
+              <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{eventData.eventName || 'Sự kiện 2026'}</strong>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
+                {eventData.eventTime || '08:30'} · {eventData.eventDate || '2026'} · {eventData.venue || 'Địa điểm sự kiện'}
+              </p>
             </div>
             <button type="button" className={styles.scBtn} onClick={scrollToForm}>
-              Giữ chỗ miễn phí
+              Đăng ký tham dự
             </button>
           </div>
         )}
@@ -2514,11 +2532,36 @@ export function ModuleRenderer({
   // 16. AUDIENCE MODULE (Expanded: persona-cards, checklist, yes-no-split, chips)
   // ================================================================
   if (module.type === 'audience') {
-    const audienceList = [
-      { badge: 'Developers', title: 'Lập trình viên & Kỹ sư Phần mềm', desc: 'Muốn tăng tốc quy trình phát triển và tích hợp các công cụ AI vào dự án thực tế.' },
-      { badge: 'Designers', title: 'Product Manager & UI/UX Designer', desc: 'Nắm bắt xu hướng kiến trúc giao diện tương thích đa thiết bị và design tokens.' },
-      { badge: 'Students', title: 'Sinh viên & Người bắt đầu', desc: 'Tiếp cận tư duy Vibe Coding hiện đại từ các chuyên gia đầu ngành.' },
+    const extraDescText = String(eventData.description || '').trim();
+    const descParts = extraDescText
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const speakerNames = Array.isArray(eventData.speakers)
+      ? eventData.speakers.map((s) => (typeof s === 'string' ? s : s?.name)).filter(Boolean).join(', ')
+      : 'diễn giả chương trình';
+
+    const defaultAudienceList = [
+      {
+        badge: 'Trọng tâm 01',
+        title: `Người quan tâm ${eventData.eventName || 'chương trình'}`,
+        desc: descParts[0] || benefits[0] || description,
+      },
+      {
+        badge: 'Trọng tâm 02',
+        title: `Giao lưu trực tiếp cùng ${speakerNames}`,
+        desc: descParts[1] || benefits[1] || `Trao đổi chuyên môn trực tiếp tại ${eventData.venue || 'sự kiện'}.`,
+      },
+      {
+        badge: 'Trọng tâm 03',
+        title: 'Mở rộng kết nối & Nhận quyền lợi đăng ký sớm',
+        desc: descParts[2] || eventData.earlyBirdOffer || benefits[2] || description,
+      },
     ];
+
+    const customAudience = Array.isArray(custom.items) && custom.items.length > 0 ? custom.items : null;
+    const aiAudience = Array.isArray(aiData?.audience) && aiData.audience.length > 0 ? aiData.audience : null;
+    const audienceList = customAudience || aiAudience || defaultAudienceList;
 
     const isPersona = variant === 'persona-cards';
     const isChecklist = variant === 'checklist';
@@ -2529,11 +2572,12 @@ export function ModuleRenderer({
         <div>
           <div className={styles.blockTitleCenter}>
             <h2 className={styles.secTitle}>Sự kiện này dành cho ai?</h2>
+            <p className={styles.secDesc}>Đối tượng tham dự và mục tiêu chương trình {eventData.eventName || ''}</p>
           </div>
           <div className={styles.audPersonaCardsGrid}>
             {audienceList.map((item, idx) => (
               <div key={idx} className={styles.audPersonaCard}>
-                <span className={styles.audBadge}>{item.badge}</span>
+                <span className={styles.audBadge}>{item.badge || `Nhóm 0${idx + 1}`}</span>
                 <h4 style={{ margin: '12px 0 6px 0', fontSize: '1.05rem', color: '#0f172a' }}>{item.title}</h4>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>{item.desc}</p>
               </div>
@@ -2550,18 +2594,12 @@ export function ModuleRenderer({
             <h2 className={styles.secTitle}>Bạn có thấy mình trong số này?</h2>
           </div>
           <div className={styles.audChecklistWrap}>
-            <div className={styles.audChecklistItem}>
-              <CheckIcon size={18} style={{ color: '#059669' }} />
-              <span>Đang tìm cách ứng dụng AI vào xây dựng web nhanh hơn gấp 10 lần.</span>
-            </div>
-            <div className={styles.audChecklistItem}>
-              <CheckIcon size={18} style={{ color: '#059669' }} />
-              <span>Muốn giao diện chuẩn co giãn đa màn hình mà không cần mò mẫm CSS từ đầu.</span>
-            </div>
-            <div className={styles.audChecklistItem}>
-              <CheckIcon size={18} style={{ color: '#059669' }} />
-              <span>Cần giao lưu và mở rộng mối quan hệ cùng các chuyên gia hàng đầu.</span>
-            </div>
+            {audienceList.map((item, idx) => (
+              <div key={idx} className={styles.audChecklistItem}>
+                <CheckIcon size={18} style={{ color: '#059669', flexShrink: 0 }} />
+                <span><strong>{item.title}:</strong> {item.desc}</span>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -2577,16 +2615,16 @@ export function ModuleRenderer({
             <div className={styles.audYesCol}>
               <h4 style={{ margin: '0 0 12px 0', color: '#166534', fontSize: '1.05rem' }}>✓ DÀNH CHO BẠN NẾU:</h4>
               <ul style={{ paddingLeft: 18, margin: 0, fontSize: '0.85rem', color: '#15803d', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <li>Muốn làm chủ công cụ AI coding thực chiến.</li>
-                <li>Quan tâm tới tối ưu responsive đa màn hình.</li>
-                <li>Thích phương pháp học qua thực hành trực tiếp.</li>
+                {audienceList.map((item, idx) => (
+                  <li key={idx}><strong>{item.title}:</strong> {item.desc}</li>
+                ))}
               </ul>
             </div>
             <div className={styles.audNoCol}>
-              <h4 style={{ margin: '0 0 12px 0', color: '#991b1b', fontSize: '1.05rem' }}>✗ KHÔNG PHÙ HỢP NẾU:</h4>
+              <h4 style={{ margin: '0 0 12px 0', color: '#991b1b', fontSize: '1.05rem' }}>ℹ LƯU Ý THAM DỰ:</h4>
               <ul style={{ paddingLeft: 18, margin: 0, fontSize: '0.85rem', color: '#b91c1c', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <li>Chỉ muốn nghe lý thuyết hàn lâm không thực hành.</li>
-                <li>Không muốn tiếp cận các công cụ tự động hóa mới.</li>
+                <li>Chương trình tổ chức đúng giờ vào lúc {eventData.eventTime || '08:30'} ngày {eventData.eventDate || 'theo thông báo'}.</li>
+                <li>Vui lòng hoàn tất đăng ký trước để nhận mã QR check-in tại {eventData.venue || 'địa điểm sự kiện'}.</li>
               </ul>
             </div>
           </div>
@@ -2598,12 +2636,12 @@ export function ModuleRenderer({
       <div>
         <div className={styles.blockTitleCenter}>
           <h2 className={styles.secTitle}>Sự kiện này dành cho ai?</h2>
-          <p className={styles.secDesc}>Nội dung được thiết kế phù hợp cho nhiều nhóm đối tượng</p>
+          <p className={styles.secDesc}>Đối tượng tham dự phù hợp với nội dung chương trình</p>
         </div>
         <div className={styles.audGrid}>
           {audienceList.map((item, idx) => (
             <div key={idx} className={styles.audCard}>
-              <span className={styles.audBadge}>{item.badge}</span>
+              <span className={styles.audBadge}>{item.badge || `Nhóm 0${idx + 1}`}</span>
               <h4 className={styles.audTitle}>{item.title}</h4>
               <p className={styles.audDesc}>{item.desc}</p>
             </div>
@@ -2619,29 +2657,59 @@ export function ModuleRenderer({
   if (module.type === 'bento') {
     const isBento3 = variant === 'bento-3';
     const isDarkGlass = variant === 'bento-dark-glass';
+    const firstSpeakerName = Array.isArray(eventData.speakers) && eventData.speakers[0]?.name
+      ? eventData.speakers[0].name
+      : 'diễn giả chương trình';
+    const capacityNum = Number(eventData.capacity || 0);
+    const customBento = Array.isArray(custom.items) && custom.items.length > 0 ? custom.items : null;
+    const aiBento = Array.isArray(aiData?.bentoHighlights) && aiData.bentoHighlights.length > 0 ? aiData.bentoHighlights : null;
+    const bentoItems = customBento || aiBento || [
+      {
+        tag: '01 / GIÁ TRỊ TRỌNG TÂM',
+        title: benefits[0] || headline,
+        desc: eventData.description || description,
+      },
+      {
+        tag: '02 / QUYỀN LỢI ĐĂNG KÝ SỚM',
+        title: 'Ưu đãi dành cho người tham dự',
+        desc: eventData.earlyBirdOffer || benefits[2] || 'Đăng ký sớm để giữ chỗ ưu tiên tại sự kiện.',
+      },
+      {
+        tag: '03 / KẾT NỐI CHUYÊN GIA',
+        title: `Giao lưu cùng ${firstSpeakerName}`,
+        desc: benefits[1] || 'Trực tiếp đặt câu hỏi và trao đổi kinh nghiệm thực tế tại sự kiện.',
+      },
+      {
+        tag: '04 / QUY MÔ & ĐỊA ĐIỂM',
+        title: capacityNum > 0 ? `Giới hạn ${capacityNum} suất tham dự` : (eventData.venue || 'Không gian sự kiện'),
+        desc: eventData.venueNotes || `Tổ chức tại ${eventData.venue || 'địa điểm sự kiện'} với quy trình check-in mã QR nhanh chóng.`,
+      },
+    ];
 
     if (isBento3) {
       return renderContainer(
         <div>
           <div className={styles.blockTitleCenter}>
-            <h2 className={styles.secTitle}>Điểm nhấn đặc biệt (Bento 3)</h2>
+            <h2 className={styles.secTitle}>Điểm nhấn đặc biệt</h2>
           </div>
           <div className={styles.bento3Wrap}>
             <div className={styles.bentoItem} style={{ background: 'linear-gradient(135deg, #eff6ff, #dbeafe)' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#2563eb' }}>01 / THỰC CHIẾN</span>
-              <h3 style={{ fontSize: '1.35rem', margin: '8px 0', color: '#0f172a' }}>Xây dựng Landing Page 15 phút</h3>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#2563eb' }}>{bentoItems[0]?.tag || '01 / TRỌNG TÂM'}</span>
+              <h3 style={{ fontSize: '1.35rem', margin: '8px 0', color: '#0f172a' }}>{bentoItems[0]?.title || headline}</h3>
               <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: 1.6 }}>
-                Làm chủ quy trình từ prompt ý tưởng đến giao diện hoàn chỉnh, co giãn mượt mà trên mọi thiết bị.
+                {bentoItems[0]?.desc || description}
               </p>
             </div>
             <div className={styles.bento3SideCol}>
               <div className={styles.bentoItem}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#059669' }}>02 / QUÀ TẶNG</span>
-                <h4 style={{ margin: '4px 0', fontSize: '1rem' }}>Ebook & 100+ Prompts</h4>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#059669' }}>{bentoItems[1]?.tag || '02 / ƯU ĐÃI SỚM'}</span>
+                <h4 style={{ margin: '4px 0', fontSize: '1rem' }}>{bentoItems[1]?.title || 'Quyền lợi đăng ký sớm'}</h4>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: '#64748b' }}>{bentoItems[1]?.desc}</p>
               </div>
               <div className={styles.bentoItem}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706' }}>03 / CHỨNG NHẬN</span>
-                <h4 style={{ margin: '4px 0', fontSize: '1rem' }}>NFT Certificate Verified</h4>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706' }}>{bentoItems[2]?.tag || '03 / DIỄN GIẢ'}</span>
+                <h4 style={{ margin: '4px 0', fontSize: '1rem' }}>{bentoItems[2]?.title || firstSpeakerName}</h4>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: '#64748b' }}>{bentoItems[2]?.desc}</p>
               </div>
             </div>
           </div>
@@ -2653,64 +2721,60 @@ export function ModuleRenderer({
       return renderContainer(
         <div>
           <div className={styles.blockTitleCenter}>
-            <h2 className={styles.secTitle}>Tổng quan công nghệ (Dark Glass)</h2>
+            <h2 className={styles.secTitle}>Tổng quan điểm nhấn</h2>
           </div>
           <div className={styles.bentoDarkGlassWrap}>
             <div className={`${styles.bentoDarkItem} ${styles.bentoSpan8}`}>
-              <span style={{ color: '#fb7185', fontSize: '0.8rem', fontWeight: 700 }}>AI ARCHITECTURE</span>
-              <h3 style={{ fontSize: '1.25rem', margin: '8px 0' }}>Container Query & Fact Guard Engine</h3>
+              <span style={{ color: '#fb7185', fontSize: '0.8rem', fontWeight: 700 }}>{bentoItems[0]?.tag || '01 / ĐIỂM NHẤN'}</span>
+              <h3 style={{ fontSize: '1.25rem', margin: '8px 0' }}>{bentoItems[0]?.title || headline}</h3>
               <p style={{ fontSize: '0.85rem', opacity: 0.8, lineHeight: 1.5 }}>
-                Bảo vệ toàn vẹn bố cục và dữ liệu với công nghệ quét tự động đa kích thước.
+                {bentoItems[0]?.desc || description}
               </p>
             </div>
             <div className={`${styles.bentoDarkItem} ${styles.bentoSpan4}`}>
-              <span style={{ color: '#34d399', fontSize: '0.8rem', fontWeight: 700 }}>PERFORMANCE</span>
-              <h3 style={{ fontSize: '1.25rem', margin: '8px 0' }}>100% Điểm Lighthouse</h3>
+              <span style={{ color: '#34d399', fontSize: '0.8rem', fontWeight: 700 }}>{bentoItems[1]?.tag || '02 / ƯU ĐÃI SỚM'}</span>
+              <h3 style={{ fontSize: '1.15rem', margin: '8px 0' }}>{bentoItems[1]?.title || 'Ưu đãi đăng ký sớm'}</h3>
+              <p style={{ fontSize: '0.82rem', opacity: 0.85, margin: 0 }}>{bentoItems[1]?.desc}</p>
             </div>
           </div>
         </div>
       );
     }
 
-    const firstSpeakerName = Array.isArray(eventData.speakers) && eventData.speakers[0]?.name
-      ? eventData.speakers[0].name
-      : 'các chuyên gia khách mời';
-    const capacityNum = Number(eventData.capacity || 0);
-
     return renderContainer(
       <div>
         <div className={styles.blockTitleCenter}>
-          <h2 className={styles.secTitle}>Tổng quan tiêu điểm (Bento Grid)</h2>
+          <h2 className={styles.secTitle}>Tổng quan tiêu điểm</h2>
           <p className={styles.secDesc}>Những giá trị cốt lõi dành cho người tham dự {eventData.eventName || 'sự kiện'}</p>
         </div>
         <div className={styles.bentoGrid}>
           <div className={`${styles.bentoItem} ${styles.bentoSpan8}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--theme-primary, #e11d48)' }}>01 / GIÁ TRỊ TRỌNG TÂM</span>
-              <h3 className={styles.bentoItemTitle}>{benefits[0] || headline}</h3>
-              <p className={styles.bentoItemDesc}>{description}</p>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--theme-primary, #e11d48)' }}>{bentoItems[0]?.tag || '01 / GIÁ TRỊ TRỌNG TÂM'}</span>
+              <h3 className={styles.bentoItemTitle}>{bentoItems[0]?.title || benefits[0] || headline}</h3>
+              <p className={styles.bentoItemDesc}>{bentoItems[0]?.desc || description}</p>
             </div>
             <div style={{ marginTop: 16 }}><span className={styles.icPill}><ZapIcon size={12} /> {eventData.eventTime || '09:00'} · {eventData.eventDate || 'Sắp diễn ra'}</span></div>
           </div>
           <div className={`${styles.bentoItem} ${styles.bentoSpan4}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#059669' }}>02 / QUYỀN LỢI ĐĂNG KÝ SỚM</span>
-              <h3 className={styles.bentoItemTitle}>Ưu đãi dành cho người tham dự</h3>
-              <p className={styles.bentoItemDesc}>{eventData.earlyBirdOffer || benefits[1] || 'Đăng ký sớm để giữ chỗ ưu tiên tại sự kiện.'}</p>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#059669' }}>{bentoItems[1]?.tag || '02 / QUYỀN LỢI ĐĂNG KÝ SỚM'}</span>
+              <h3 className={styles.bentoItemTitle}>{bentoItems[1]?.title || 'Ưu đãi dành cho người tham dự'}</h3>
+              <p className={styles.bentoItemDesc}>{bentoItems[1]?.desc || eventData.earlyBirdOffer || benefits[1]}</p>
             </div>
           </div>
           <div className={`${styles.bentoItem} ${styles.bentoSpan6}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0891b2' }}>03 / KẾT NỐI CHUYÊN GIA</span>
-              <h3 className={styles.bentoItemTitle}>Giao lưu cùng {firstSpeakerName}</h3>
-              <p className={styles.bentoItemDesc}>{benefits[1] || 'Trực tiếp đặt câu hỏi và trao đổi kinh nghiệm thực tế tại sự kiện.'}</p>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0891b2' }}>{bentoItems[2]?.tag || '03 / KẾT NỐI CHUYÊN GIA'}</span>
+              <h3 className={styles.bentoItemTitle}>{bentoItems[2]?.title || `Giao lưu cùng ${firstSpeakerName}`}</h3>
+              <p className={styles.bentoItemDesc}>{bentoItems[2]?.desc || benefits[1]}</p>
             </div>
           </div>
           <div className={`${styles.bentoItem} ${styles.bentoSpan6}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706' }}>04 / QUY MÔ & ĐỊA ĐIỂM</span>
-              <h3 className={styles.bentoItemTitle}>{capacityNum > 0 ? `Giới hạn ${capacityNum} suất tham dự` : (eventData.venue || 'Không gian sự kiện chuyên nghiệp')}</h3>
-              <p className={styles.bentoItemDesc}>{benefits[2] || `Tổ chức tại ${eventData.venue || 'hội trường trung tâm'} với quy trình check-in mã QR nhanh chóng.`}</p>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706' }}>{bentoItems[3]?.tag || '04 / QUY MÔ & ĐỊA ĐIỂM'}</span>
+              <h3 className={styles.bentoItemTitle}>{bentoItems[3]?.title || (capacityNum > 0 ? `Giới hạn ${capacityNum} suất tham dự` : (eventData.venue || 'Không gian sự kiện'))}</h3>
+              <p className={styles.bentoItemDesc}>{bentoItems[3]?.desc || benefits[2] || `Tổ chức tại ${eventData.venue || 'hội trường trung tâm'}.`}</p>
             </div>
           </div>
         </div>
@@ -2722,22 +2786,27 @@ export function ModuleRenderer({
   // 19. SPONSORS MODULE
   // ================================================================
   if (module.type === 'sponsors') {
-    const sponsorsTiers = [
-      { tier: 'Đơn vị đồng hành công nghệ', brands: ['TechCorp Global', 'AI Innovators Hub', 'CloudVibe Systems'] },
-      { tier: 'Bảo trợ truyền thông', brands: ['Dev Vietnam Club', 'NextGen Coder Magazine'] },
-    ];
+    const sponsorsTiers = Array.isArray(custom.sponsors) && custom.sponsors.length > 0
+      ? custom.sponsors
+      : Array.isArray(aiData?.sponsors) && aiData.sponsors.length > 0
+        ? aiData.sponsors
+        : Array.isArray(eventData?.sponsors) && eventData.sponsors.length > 0
+          ? eventData.sponsors
+          : [];
+
+    if (sponsorsTiers.length === 0) return null;
 
     return renderContainer(
       <div>
         <div className={styles.blockTitleCenter}>
-          <h2 className={styles.secTitle}>Đối tác & Nhà tài trợ</h2>
-          <p className={styles.secDesc}>Các đơn vị đồng hành phát triển cộng đồng công nghệ</p>
+          <h2 className={styles.secTitle}>Đối tác & Đơn vị đồng hành</h2>
+          <p className={styles.secDesc}>Các đơn vị phối hợp tổ chức chương trình</p>
         </div>
         {sponsorsTiers.map((t, idx) => (
           <div key={idx} className={styles.sponsorTier}>
             <div className={styles.sponsorTierTitle}>{t.tier}</div>
             <div className={styles.sponsorLogosRow}>
-              {t.brands.map((b, bIdx) => (
+              {(t.brands || []).map((b, bIdx) => (
                 <div key={bIdx} className={styles.sponsorWordmarkItem}>{b}</div>
               ))}
             </div>
@@ -2756,18 +2825,17 @@ export function ModuleRenderer({
     const isMinimal = variant === 'minimal';
     const isCountdownCta = variant === 'countdown-cta';
 
-    // Biến thể P0: cinema-finale (Khép màn điện ảnh kịch tính trên nền spotlight)
     if (isCinemaFinale) {
       return renderContainer(
         <div className={styles.finalCtaCinemaFinale}>
           <div className={styles.sceneBadge} style={{ marginBottom: 16 }}>
-            FINAL ACT · KHỞI ĐẦU MỚI
+            ĐĂNG KÝ THAM DỰ
           </div>
           <h2 className={styles.finalCtaDisplayTitle}>
-            Sẵn Sàng Bước Vào Kỷ Nguyên Mới?
+            {eventData.eventName || 'Sẵn Sàng Tham Gia Sự Kiện?'}
           </h2>
           <p style={{ maxWidth: '640px', margin: '0 auto 28px auto', fontSize: '1.05rem', color: '#cbd5e1', lineHeight: 1.6 }}>
-            Đừng bỏ lỡ cơ hội trực tiếp học hỏi cùng các chuyên gia hàng đầu và kết nối với cộng đồng công nghệ tiên phong.
+            {description}
           </p>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 20 }}>
             <button
@@ -2776,11 +2844,11 @@ export function ModuleRenderer({
               style={{ padding: '16px 36px', fontSize: '1.1rem', fontWeight: 800 }}
               onClick={scrollToForm}
             >
-              Đăng ký giữ chỗ miễn phí ↗
+              Đăng ký giữ chỗ ngay ↗
             </button>
           </div>
           <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
-            ⏰ Khai mạc lúc {eventData.eventTime || '08:30'} · {eventData.eventDate || '20/11/2026'} · {eventData.venue || 'Innovation Hub'}
+            ⏰ Khai mạc lúc {eventData.eventTime || '08:30'} · {eventData.eventDate || '2026'} · {eventData.venue || 'Địa điểm sự kiện'}
           </div>
         </div>
       );
@@ -2790,11 +2858,11 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.finalCtaSplitFormWrap}>
           <div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 8px 0' }}>Bứt phá cùng Vibe Coding 2026</h2>
-            <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem' }}>Đăng ký ngay trước khi cổng ghi danh đóng lại.</p>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 8px 0' }}>{eventData.eventName || 'Đăng ký tham gia sự kiện'}</h2>
+            <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem' }}>Hoàn tất đăng ký để nhận mã QR check-in tham dự chương trình.</p>
           </div>
           <button type="button" className={styles.finalCtaBtn} onClick={scrollToForm}>
-            Giữ chỗ miễn phí ngay ↗
+            Đăng ký giữ chỗ ngay ↗
           </button>
         </div>
       );
@@ -2804,10 +2872,10 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.finalCtaMinimalWrap}>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', margin: '0 0 10px 0' }}>
-            Sẵn sàng làm chủ công nghệ tương lai?
+            Đồng hành tại {eventData.eventName || 'chương trình'}
           </h2>
           <p style={{ fontSize: '0.9rem', color: '#64748b', margin: '0 0 18px 0' }}>
-            Số lượng ghế ngồi tại hội trường có giới hạn. Đăng ký sớm để nhận vé mời chính thức.
+            Đăng ký trực tuyến để giữ chỗ và nhận mã QR xác nhận tham dự.
           </p>
           <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
             Đăng ký tham dự ngay
@@ -2819,7 +2887,7 @@ export function ModuleRenderer({
     if (isCountdownCta) {
       return renderContainer(
         <div className={styles.finalCtaCountdownWrap}>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 12px 0' }}>Chỉ còn thời gian ngắn để đăng ký!</h2>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, margin: '0 0 12px 0' }}>Chỉ còn thời gian ngắn trước giờ khai mạc!</h2>
           <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#fde047', margin: '14px 0 20px 0' }}>
             {countdown.d} Ngày : {countdown.h} Giờ : {countdown.m} Phút : {countdown.s} Giây
           </div>
@@ -2854,22 +2922,41 @@ export function ModuleRenderer({
   // 22. ORGANIZER MODULE
   // ================================================================
   if (module.type === 'organizer') {
+    const orgData = custom.organizer || aiData?.organizer || {};
+    const extraDesc = String(eventData.description || '');
+    const emailMatch = extraDesc.match(/[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}/);
+    const phoneMatch = extraDesc.match(/(?:0|\+84)[\d\s.-]{8,13}\d/);
+
+    const orgName = orgData.name || eventData.organizerName || `Ban Tổ Chức — ${eventData.eventName || 'Sự kiện'}`;
+    const orgTagline = orgData.tagline || extraDesc || description;
+    const orgEmail = orgData.email || (emailMatch ? emailMatch[0] : null);
+    const orgHotline = orgData.hotline || (phoneMatch ? phoneMatch[0].trim() : null);
+    const orgHours = orgData.hours || `${eventData.eventTime || '08:30'} · Ngày ${eventData.eventDate || 'theo lịch trình'}`;
+
     return renderContainer(
       <div className={styles.orgCard}>
-        <h3 className={styles.orgTitle}>Ban Tổ Chức & Kênh Hỗ Trợ</h3>
-        <p className={styles.orgTagline}>Cộng đồng Kết nối Kỹ sư Công nghệ & Nhà sáng tạo số Việt Nam</p>
+        <h3 className={styles.orgTitle}>{orgName}</h3>
+        <p className={styles.orgTagline}>{orgTagline}</p>
         <div className={styles.orgContactRow}>
+          {orgEmail && (
+            <div className={styles.orgItem}>
+              <span className={styles.orgItemLabel}>Email liên hệ</span>
+              <span className={styles.orgItemVal}>{orgEmail}</span>
+            </div>
+          )}
+          {orgHotline && (
+            <div className={styles.orgItem}>
+              <span className={styles.orgItemLabel}>Hotline hỗ trợ</span>
+              <span className={styles.orgItemVal}>{orgHotline}</span>
+            </div>
+          )}
           <div className={styles.orgItem}>
-            <span className={styles.orgItemLabel}>Email hỗ trợ</span>
-            <span className={styles.orgItemVal}>contact@vibecoding.vn</span>
+            <span className={styles.orgItemLabel}>Địa điểm đón tiếp</span>
+            <span className={styles.orgItemVal}>{orgData.venue || eventData.venue || 'Tại hội trường sự kiện'}</span>
           </div>
           <div className={styles.orgItem}>
-            <span className={styles.orgItemLabel}>Hotline sự kiện</span>
-            <span className={styles.orgItemVal}>024 3999 8888</span>
-          </div>
-          <div className={styles.orgItem}>
-            <span className={styles.orgItemLabel}>Thời gian hỗ trợ</span>
-            <span className={styles.orgItemVal}>08:00 - 18:00 (Thứ 2 - Thứ 6)</span>
+            <span className={styles.orgItemLabel}>Thời gian tổ chức</span>
+            <span className={styles.orgItemVal}>{orgHours}</span>
           </div>
         </div>
       </div>

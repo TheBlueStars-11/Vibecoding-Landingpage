@@ -6,7 +6,7 @@ import { validateProjectInfo, validateFormFields } from '../../domain/validators
 import { generateMockContent } from '../../services/mockAi.js';
 import { generateAiContent } from '../../services/aiClient.js';
 import { PROJECT_STATUS } from '../../domain/elsSchema.js';
-import { createPresetModuleTree, PRESET_TEMPLATES, COLOR_THEMES, inferPresetAndTheme, getSafeVariant, getDeletedModuleTypes } from '../../domain/moduleSchema.js';
+import { createPresetModuleTree, PRESET_TEMPLATES, COLOR_THEMES, inferPresetAndTheme, getSafeVariant, adaptModuleTreeToEventData } from '../../domain/moduleSchema.js';
 import { LandingView } from '../landing/LandingView.jsx';
 import {
   SparklesIcon,
@@ -164,6 +164,8 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
         speakers: (project.event?.speakers || []).map((s) => s.name).filter(Boolean).join(', '),
         earlyBird: project.event?.earlyBirdOffer,
         earlyBirdOffer: project.event?.earlyBirdOffer,
+        agenda: project.event?.agenda || [],
+        capacity: project.event?.capacity,
         imageCaptions: assets.map((a) => a.caption).filter(Boolean),
       };
 
@@ -197,6 +199,8 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
         speakers: (project.event?.speakers || []).map((s) => s.name).filter(Boolean).join(', '),
         earlyBird: project.event?.earlyBirdOffer,
         earlyBirdOffer: project.event?.earlyBirdOffer,
+        agenda: project.event?.agenda || [],
+        capacity: project.event?.capacity,
         imageCaptions: assets.map((a) => a.caption).filter(Boolean),
       };
       const mockResult = generateMockContent(eventData, assets);
@@ -223,6 +227,8 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
       speakers: (project.event?.speakers || []).map((s) => s.name).filter(Boolean).join(', '),
       earlyBird: project.event?.earlyBirdOffer,
       earlyBirdOffer: project.event?.earlyBirdOffer,
+      agenda: project.event?.agenda || [],
+      capacity: project.event?.capacity,
       imageCaptions: assets.map((a) => a.caption).filter(Boolean),
     };
 
@@ -241,44 +247,13 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
       || null;
 
     const baseTree = createPresetModuleTree(chosenPreset);
-    const deletedTypes = getDeletedModuleTypes();
-    const enrichedTree = baseTree
-      .filter((m) => !deletedTypes.includes(m.type))
-      .map((m) => {
-        const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
-        if (m.type === 'speakers') {
-          enriched.variant = chosenSpeakerVariant;
-        } else if (m.type === 'hero') {
-          if (validHeroAsset) {
-            enriched.customContent = { ...enriched.customContent, heroImageId: validHeroAsset.id };
-          } else {
-            // Không có ảnh liên quan đến sự kiện -> Bắt buộc dùng module Hero không có ảnh
-            if (enriched.variant === 'image-right' || enriched.variant === 'image-left' || enriched.variant === 'center') {
-              enriched.variant = 'split-card';
-            }
-          }
-        } else if (m.type === 'venue' && aiResult.imageAssignments?.venueImageId) {
-          enriched.customContent = { ...enriched.customContent, venueImageId: aiResult.imageAssignments.venueImageId };
-        } else if (m.type === 'offer_banner') {
-          if (aiResult.imageAssignments?.giftImageId) {
-            enriched.customContent = { ...enriched.customContent, giftImageId: aiResult.imageAssignments.giftImageId };
-          }
-          if (aiResult.earlyBirdOffer || aiResult.couponCode) {
-            enriched.customContent = {
-              ...enriched.customContent,
-              offer: aiResult.earlyBirdOffer || project.event?.earlyBirdOffer,
-              code: aiResult.couponCode || '',
-            };
-          }
-        } else if (m.type === 'faq' && Array.isArray(aiResult.faq) && aiResult.faq.length > 0) {
-          enriched.customContent = { ...enriched.customContent, items: aiResult.faq };
-        } else if (m.type === 'stats' && Array.isArray(aiResult.stats) && aiResult.stats.length > 0) {
-          enriched.customContent = { ...enriched.customContent, stats: aiResult.stats };
-        } else if (m.type === 'image_content' && aiResult.imageAssignments?.contentImageId) {
-          enriched.customContent = { ...enriched.customContent, contentImageId: aiResult.imageAssignments.contentImageId };
-        }
-        return enriched;
-      });
+    const enrichedTree = adaptModuleTreeToEventData(
+      baseTree,
+      project.event,
+      assets,
+      aiResult,
+      { expandWhenRich: true, chosenSpeakerVariant }
+    );
 
     const updatedProject = {
       ...project,
@@ -319,31 +294,14 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
   const handleSelectPreset = (presetId) => {
     const template = PRESET_TEMPLATES[presetId];
     if (!template) return;
-    const eventHeroAssets = assets.filter((a) => a.role === 'hero' || a.role === 'other');
-    const validHeroAsset = (project.ai?.imageAssignments?.heroImageId && eventHeroAssets.find((a) => a.id === project.ai.imageAssignments.heroImageId))
-      || eventHeroAssets[0]
-      || null;
     const baseTree = createPresetModuleTree(presetId);
-    const deletedTypes = getDeletedModuleTypes();
-    const enrichedTree = baseTree
-      .filter((m) => !deletedTypes.includes(m.type))
-      .map((m) => {
-        const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
-        if (m.type === 'hero') {
-          if (validHeroAsset) {
-            enriched.customContent = { ...enriched.customContent, heroImageId: validHeroAsset.id };
-          } else if (enriched.variant === 'image-right' || enriched.variant === 'image-left' || enriched.variant === 'center') {
-            enriched.variant = 'split-card';
-          }
-        } else if (m.type === 'venue' && project.ai?.imageAssignments?.venueImageId) {
-          enriched.customContent = { ...enriched.customContent, venueImageId: project.ai.imageAssignments.venueImageId };
-        } else if (m.type === 'offer_banner' && project.ai?.imageAssignments?.giftImageId) {
-          enriched.customContent = { ...enriched.customContent, giftImageId: project.ai.imageAssignments.giftImageId };
-        } else if (m.type === 'image_content' && project.ai?.imageAssignments?.contentImageId) {
-          enriched.customContent = { ...enriched.customContent, contentImageId: project.ai.imageAssignments.contentImageId };
-        }
-        return enriched;
-      });
+    const enrichedTree = adaptModuleTreeToEventData(
+      baseTree,
+      project.event,
+      assets,
+      project.ai,
+      { expandWhenRich: false }
+    );
 
     const updated = {
       ...project,
@@ -364,31 +322,14 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
       description: project.event?.description || '',
     };
     const inferred = inferPresetAndTheme(eventInfo);
-    const eventHeroAssets = assets.filter((a) => a.role === 'hero' || a.role === 'other');
-    const validHeroAsset = (project.ai?.imageAssignments?.heroImageId && eventHeroAssets.find((a) => a.id === project.ai.imageAssignments.heroImageId))
-      || eventHeroAssets[0]
-      || null;
     const baseTree = createPresetModuleTree(inferred.presetId);
-    const deletedTypes = getDeletedModuleTypes();
-    const enrichedTree = baseTree
-      .filter((m) => !deletedTypes.includes(m.type))
-      .map((m) => {
-        const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
-        if (m.type === 'hero') {
-          if (validHeroAsset) {
-            enriched.customContent = { ...enriched.customContent, heroImageId: validHeroAsset.id };
-          } else if (enriched.variant === 'image-right' || enriched.variant === 'image-left' || enriched.variant === 'center') {
-            enriched.variant = 'split-card';
-          }
-        } else if (m.type === 'venue' && project.ai?.imageAssignments?.venueImageId) {
-          enriched.customContent = { ...enriched.customContent, venueImageId: project.ai.imageAssignments.venueImageId };
-        } else if (m.type === 'offer_banner' && project.ai?.imageAssignments?.giftImageId) {
-          enriched.customContent = { ...enriched.customContent, giftImageId: project.ai.imageAssignments.giftImageId };
-        } else if (m.type === 'image_content' && project.ai?.imageAssignments?.contentImageId) {
-          enriched.customContent = { ...enriched.customContent, contentImageId: project.ai.imageAssignments.contentImageId };
-        }
-        return enriched;
-      });
+    const enrichedTree = adaptModuleTreeToEventData(
+      baseTree,
+      project.event,
+      assets,
+      project.ai,
+      { expandWhenRich: true }
+    );
 
     const updated = {
       ...project,

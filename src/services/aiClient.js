@@ -18,7 +18,7 @@ export function escapePromptField(val) {
  * và tối ưu hóa nhận biết các Module và gán ảnh vào các trường phù hợp.
  */
 export function buildPrompt(eventInfo, assets = []) {
-  const { name, datetime, location, speakers, earlyBird, tone = TONES.PROFESSIONAL, imageCaptions, description: extraDescription } = eventInfo;
+  const { name, datetime, location, speakers, earlyBird, agenda, tone = TONES.PROFESSIONAL, imageCaptions, description: extraDescription } = eventInfo;
 
   let toneInstruction = 'Giọng văn chuyên nghiệp, uy tín, truyền cảm hứng.';
   if (tone === TONES.FRIENDLY) {
@@ -27,6 +27,12 @@ export function buildPrompt(eventInfo, assets = []) {
     toneInstruction = 'Giọng văn sang trọng, đẳng cấp, tinh tế và nhấn mạnh đặc quyền.';
   }
 
+  const cleanExtraDesc = escapePromptField(extraDescription);
+  const hasExtraDesc = Boolean(cleanExtraDesc.length > 0);
+  const agendaText = Array.isArray(agenda)
+    ? agenda.map((a) => (typeof a === 'string' ? a : `${a.time || ''} ${a.title || ''}`.trim())).filter(Boolean).join('; ')
+    : escapePromptField(agenda);
+
   // Danh sách hình ảnh khả dụng kèm vai trò và chú thích
   const assetList = (assets && assets.length > 0)
     ? assets
@@ -34,10 +40,14 @@ export function buildPrompt(eventInfo, assets = []) {
 
   const imageDescriptions = assetList.length > 0
     ? assetList.map((a, i) => `- ID: "${escapePromptField(a.id || `ast_${i + 1}`)}"` + `, Vai trò: "${escapePromptField(a.role || 'other')}", Chú thích ảnh: "${escapePromptField(a.caption || 'Ảnh sự kiện')}"`).join('\n')
-    : 'Chưa có ảnh tải lên (sử dụng ảnh minh họa mặc định)';
+    : 'Chưa có ảnh tải lên (sử dụng bố cục không ảnh)';
+
+  const extraDescInstruction = hasExtraDesc
+    ? `Người dùng CÓ cung cấp "Mô tả thêm / Ghi chú đặc thù". Hãy TẬN DỤNG TỐI ĐA thông tin trong mục này để điền đầy đủ description, bullets, faq (4 câu hỏi sát thực tế), audience (3 nhóm đối tượng tham dự trích từ mô tả thêm), bentoHighlights (4 điểm nhấn cốt lõi trích từ mô tả thêm) và organizer (thông tin đơn vị tổ chức/liên hệ nếu có trong mô tả thêm).`
+    : `Người dùng BỎ TRỐNG "Mô tả thêm / Ghi chú đặc thù". TUYỆT ĐỐI KHÔNG BỊA ĐẶT thông tin ngoài các trường đã nhập. Chỉ tổng hợp description, bullets và faq thuần túy từ Tên sự kiện, Thời gian, Địa điểm, Diễn giả, Ưu đãi đăng ký sớm và Lịch trình; đồng thời trả về "audience": [], "bentoHighlights": [], "organizer": null để hệ thống tự động cắt giảm các module mở rộng.`;
 
   return `Bạn là copywriter marketing sự kiện tiếng Việt chuyên nghiệp cho nền tảng Event Landing Studio.
-Nhiệm vụ: Phân tích thông tin sự kiện để biên soạn nội dung landing page theo đúng quy chế: Bám sát thông tin đầu vào, tuyệt đối không bịa đặt thêm số liệu, giá vé, cam kết miễn phí, chứng chỉ hay thông tin ngoài dữ liệu được cung cấp.
+Nhiệm vụ: Phân tích thông tin sự kiện để biên soạn nội dung landing page theo đúng 3 tiêu chí: KHÔNG BỊA ĐẶT - TẬN DỤNG THÔNG TIN - TẬN DỤNG MODULE.
 
 <event_data>
 - Tên sự kiện: ${escapePromptField(name)}
@@ -45,7 +55,8 @@ Nhiệm vụ: Phân tích thông tin sự kiện để biên soạn nội dung l
 - Địa điểm: ${escapePromptField(location)}
 - Diễn giả: ${escapePromptField(speakers)}
 - Ưu đãi đăng ký sớm: ${escapePromptField(earlyBird) || 'Không có'}
-- Mô tả thêm / Ghi chú đặc thù: ${escapePromptField(extraDescription) || 'Không có'}
+- Lịch trình: ${escapePromptField(agendaText) || 'Theo chương trình'}
+- Mô tả thêm / Ghi chú đặc thù: ${cleanExtraDesc || 'Không có'}
 - Giọng điệu hướng dẫn: ${toneInstruction}
 </event_data>
 
@@ -54,26 +65,35 @@ ${imageDescriptions}
 </available_images>
 
 YÊU CẦU NỘI DUNG:
-1. Headline: Tiêu đề lôi cuốn, súc tích (10-12 từ) thể hiện chủ đề sự kiện.
-2. Description: Đoạn mô tả cuốn hút từ 2-3 câu làm nổi bật giá trị cốt lõi.
-3. Bullets: Đúng 3 gạch đầu dòng lợi ích thiết thực người tham dự nhận được từ nội dung và diễn giả.
-4. Tự động đề xuất phong cách thiết kế:
+1. Headline: Giữ nguyên chính xác Tên sự kiện trong <event_data>.
+2. Description: Đoạn mô tả từ 2-3 câu (tối đa 300 ký tự) tổng hợp trung thực từ <event_data>.
+3. Bullets: Đúng 3 gạch đầu dòng lợi ích thiết thực (mỗi dòng 15-140 ký tự) bám sát diễn giả, lịch trình, ưu đãi sớm và mô tả thêm.
+4. Quy tắc xử lý Mô tả thêm: ${extraDescInstruction}
+5. Tự động đề xuất phong cách thiết kế:
    - recommendedPreset: chọn 1 trong ['techtalk', 'workshop', 'community', 'gala', 'compact']
    - recommendedSpeakerVariant: chọn 1 trong ['portrait-cards', 'trio-typographic', 'solo-spotlight']
    - colorTheme: chọn 1 trong ['purple', 'blue', 'emerald', 'amber', 'rose', 'dark']
-   - designReasoning: 1 câu ngắn gọn giải thích lý do lựa chọn bố cục.
-5. Phân bổ ảnh: Gán ID ảnh tương ứng vào heroImageId, venueImageId, giftImageId, speakerImageIds.
-6. Ràng buộc nghiêm ngặt: Tuyệt đối không tự ý bịa đặt mã voucher, cam kết miễn phí/thu phí hoặc cấp chứng nhận nếu trong <event_data> không có thông tin này.
+   - designReasoning: 1 câu ngắn gọn giải thích lý do lựa chọn bố cục và module.
+6. Phân bổ ảnh: Gán ID ảnh tương ứng vào heroImageId (chỉ gán nếu có ảnh vai trò hero hoặc other), venueImageId, giftImageId, speakerImageIds.
+7. Ràng buộc nghiêm ngặt: Tuyệt đối không tự ý bịa đặt mã voucher, cam kết miễn phí/thu phí, quà tặng hay cấp chứng nhận nếu trong <event_data> không có thông tin này.
 
 Trả về DUY NHẤT một khối JSON hợp lệ theo cấu trúc sau (không bọc trong markdown, không giải thích gì thêm):
 {
-  "headline": "Tiêu đề hấp dẫn, súc tích từ 10 đến 12 từ",
-  "description": "Mô tả cuốn hút từ 2 đến 3 câu nhấn mạnh giá trị và lý do tham gia",
+  "headline": "${escapePromptField(name) || 'Tên sự kiện'}",
+  "description": "Mô tả từ 2 đến 3 câu bám sát dữ liệu đầu vào",
   "bullets": [
-    "Lợi ích 1 nhận được khi tham dự",
-    "Lợi ích 2 nhận được khi tham dự",
-    "Lợi ích 3 nhận được khi tham dự"
+    "Lợi ích 1 trích xuất từ dữ liệu sự kiện",
+    "Lợi ích 2 trích xuất từ dữ liệu sự kiện",
+    "Lợi ích 3 trích xuất từ dữ liệu sự kiện"
   ],
+  "faq": [
+    { "q": "Câu hỏi thường gặp 1?", "a": "Câu trả lời xác thực từ dữ liệu sự kiện" },
+    { "q": "Câu hỏi thường gặp 2?", "a": "Câu trả lời xác thực từ dữ liệu sự kiện" },
+    { "q": "Câu hỏi thường gặp 3?", "a": "Câu trả lời xác thực từ dữ liệu sự kiện" }
+  ],
+  "audience": [],
+  "bentoHighlights": [],
+  "organizer": null,
   "recommendedPreset": "techtalk",
   "recommendedSpeakerVariant": "portrait-cards",
   "colorTheme": "purple",

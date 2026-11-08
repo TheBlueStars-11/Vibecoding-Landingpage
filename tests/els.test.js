@@ -18,6 +18,7 @@ import {
 
 import { createDefaultSampleAssets } from '../src/domain/sampleAssets.js';
 import { buildSystemSampleProjects, SAMPLE_PROJECT_IDS } from '../src/domain/sampleProjects.js';
+import { adaptModuleTreeToEventData, createPresetModuleTree } from '../src/domain/moduleSchema.js';
 import { runResponsiveScan } from '../src/domain/moduleAuditor.js';
 import { elsRepository, formatXmlCell } from '../src/services/elsRepository.js';
 import { generateMockContent } from '../src/services/mockAi.js';
@@ -380,6 +381,72 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
     const mockNoEventImg = generateMockContent(s3.project.event, s3.assets);
     assert.equal(mockNoEventImg.headline, s3.project.event.eventName);
     assert.equal(mockNoEventImg.imageAssignments.heroImageId, null);
+
+    // Kiểm tra yêu cầu: 2 dự án mẫu có đầy đủ Mô tả thêm sự kiện (Mẫu 1 & Mẫu 3) và 1 dự án mẫu bỏ trống (Mẫu 2)
+    assert.equal(s1.project.event.description.length > 100, true);
+    assert.equal(s3.project.event.description.length > 100, true);
+    assert.equal(s2.project.event.description, '');
+
+    // Mẫu 1 & Mẫu 3 (có Mô tả thêm): Tận dụng đầy đủ thông tin & module (bento, audience, organizer, offer_banner, faq)
+    for (const richSample of [s1, s3]) {
+      const modTypes = richSample.project.moduleLayout.map((m) => m.type);
+      assert.equal(modTypes.includes('bento'), true);
+      assert.equal(modTypes.includes('audience'), true);
+      assert.equal(modTypes.includes('organizer'), true);
+      assert.equal(modTypes.includes('offer_banner'), true);
+      assert.equal(modTypes.includes('faq'), true);
+      assert.equal(Array.isArray(richSample.project.ai.audience) && richSample.project.ai.audience.length === 3, true);
+      assert.equal(Array.isArray(richSample.project.ai.bentoHighlights) && richSample.project.ai.bentoHighlights.length === 4, true);
+      assert.equal(Boolean(richSample.project.ai.organizer?.email), true);
+    }
+
+    // Mẫu 2 (bỏ trống Mô tả thêm): Không bịa đặt & Cắt giảm các module mở rộng (không có bento, audience, organizer, sponsors)
+    const s2ModTypes = s2.project.moduleLayout.map((m) => m.type);
+    assert.equal(s2ModTypes.includes('bento'), false);
+    assert.equal(s2ModTypes.includes('audience'), false);
+    assert.equal(s2ModTypes.includes('organizer'), false);
+    assert.equal(s2ModTypes.includes('sponsors'), false);
+    assert.deepEqual(s2.project.ai.audience, []);
+    assert.deepEqual(s2.project.ai.bentoHighlights, []);
+    assert.equal(s2.project.ai.organizer, null);
+
+    // Kiểm tra engine generateMockContent & adaptModuleTreeToEventData theo 3 tiêu chí cho mọi dự án:
+    // 1. Khi dự án KHÔNG có mô tả thêm: cắt giảm module và không bịa đặt
+    const mockWithoutDesc = generateMockContent(s2.project.event, s2.assets);
+    assert.deepEqual(mockWithoutDesc.audience, []);
+    assert.deepEqual(mockWithoutDesc.bentoHighlights, []);
+    assert.equal(mockWithoutDesc.organizer, null);
+    const adaptedWithoutDesc = adaptModuleTreeToEventData(
+      createPresetModuleTree('techtalk'),
+      s2.project.event,
+      s2.assets,
+      mockWithoutDesc,
+      { expandWhenRich: true }
+    );
+    const adaptedNoDescTypes = adaptedWithoutDesc.map((m) => m.type);
+    assert.equal(adaptedNoDescTypes.includes('bento'), false);
+    assert.equal(adaptedNoDescTypes.includes('audience'), false);
+    assert.equal(adaptedNoDescTypes.includes('organizer'), false);
+    assert.equal(adaptedNoDescTypes.includes('sponsors'), false);
+
+    // 2. Khi dự án CÓ mô tả thêm: tận dụng thông tin mô tả thêm và kích hoạt đầy đủ module hợp lý
+    const mockWithDesc = generateMockContent(s1.project.event, s1.assets);
+    assert.equal(mockWithDesc.audience.length, 3);
+    assert.equal(mockWithDesc.bentoHighlights.length, 4);
+    assert.equal(mockWithDesc.organizer.email, 'sukien.ai@nic.gov.vn');
+    const adaptedWithDesc = adaptModuleTreeToEventData(
+      createPresetModuleTree('compact'),
+      s1.project.event,
+      s1.assets,
+      mockWithDesc,
+      { expandWhenRich: true }
+    );
+    const adaptedRichTypes = adaptedWithDesc.map((m) => m.type);
+    assert.equal(adaptedRichTypes.includes('bento'), true);
+    assert.equal(adaptedRichTypes.includes('audience'), true);
+    assert.equal(adaptedRichTypes.includes('organizer'), true);
+    assert.equal(adaptedRichTypes.includes('offer_banner'), true);
+    assert.equal(adaptedRichTypes.includes('sponsors'), false); // Không có nhà tài trợ trong dữ liệu -> không bịa đặt
 
     // Đánh giá tự động từng dự án qua bộ Validator (WS1 + WS2) và Responsive Module Auditor (5 kích thước màn hình)
     for (const { project, assets } of samples) {

@@ -87,7 +87,10 @@ export function checkFactGuard(aiContent, inputData = {}) {
   const warnings = [];
   const safeAi = aiContent || {};
   const safeInput = inputData || {};
-  const fullAiText = `${safeAi.headline || ''} ${safeAi.description || ''} ${(safeAi.bullets || []).join(' ')}`;
+  const faqText = Array.isArray(safeAi.faq) ? safeAi.faq.map((f) => `${f?.q || ''} ${f?.a || ''}`).join(' ') : '';
+  const audienceText = Array.isArray(safeAi.audience) ? safeAi.audience.map((a) => `${a?.badge || ''} ${a?.title || ''} ${a?.desc || ''}`).join(' ') : '';
+  const bentoText = Array.isArray(safeAi.bentoHighlights) ? safeAi.bentoHighlights.map((b) => `${b?.tag || ''} ${b?.title || ''} ${b?.desc || ''}`).join(' ') : '';
+  const fullAiText = `${safeAi.headline || ''} ${safeAi.description || ''} ${(safeAi.bullets || []).join(' ')} ${faqText} ${audienceText} ${bentoText}`;
 
   // 1. [L3 Safety] Chống chèn thẻ HTML / XSS Script / Dangerous URI / Inline Event Handlers
   if (
@@ -236,9 +239,19 @@ export function runAiGuard(rawText, inputData) {
       };
     }
 
+    const hasExtraDesc = Boolean(String(inputData?.description || '').trim());
+    const finalData = {
+      ...schemaResult.data,
+      // Nếu người dùng không nhập Mô tả thêm sự kiện, cắt bỏ các dữ liệu mở rộng để đảm bảo tuyệt đối không bịa đặt
+      audience: hasExtraDesc && Array.isArray(schemaResult.data.audience) ? schemaResult.data.audience : [],
+      bentoHighlights: hasExtraDesc && Array.isArray(schemaResult.data.bentoHighlights) ? schemaResult.data.bentoHighlights : [],
+      organizer: hasExtraDesc && schemaResult.data.organizer ? schemaResult.data.organizer : null,
+      sponsors: hasExtraDesc && Array.isArray(schemaResult.data.sponsors) ? schemaResult.data.sponsors : [],
+    };
+
     return {
       ok: true,
-      data: schemaResult.data,
+      data: finalData,
     };
   } catch (err) {
     return {

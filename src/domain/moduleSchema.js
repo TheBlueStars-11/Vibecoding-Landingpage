@@ -600,6 +600,164 @@ export function createPresetModuleTree(presetId = 'workshop') {
 }
 
 /**
+ * Thích ứng cây Module thông minh dựa trên dữ liệu sự kiện thực tế theo 3 tiêu chí:
+ *   1. Không bịa đặt (Zero Hallucination)
+ *   2. Tận dụng thông tin (Maximize Info Utilization)
+ *   3. Tận dụng module (Smart Module Selection & Pruning)
+ */
+export function adaptModuleTreeToEventData(
+  modules = [],
+  eventData = {},
+  assets = [],
+  aiData = {},
+  options = {}
+) {
+  const { expandWhenRich = false, chosenSpeakerVariant = null } = options;
+  const hasExtraDesc = Boolean(String(eventData?.description || '').trim().length > 0);
+  const earlyBirdText = String(eventData?.earlyBirdOffer || eventData?.earlyBird || aiData?.earlyBirdOffer || '').trim();
+  const eventHeroAssets = (assets || []).filter((a) => a.role === 'hero' || a.role === 'other');
+  const validHeroAsset =
+    (aiData?.imageAssignments?.heroImageId && eventHeroAssets.find((a) => a.id === aiData.imageAssignments.heroImageId)) ||
+    (aiData?.imageAssignments?.hero && eventHeroAssets.find((a) => a.id === aiData.imageAssignments.hero)) ||
+    eventHeroAssets[0] ||
+    null;
+  const venueAsset =
+    (aiData?.imageAssignments?.venueImageId && (assets || []).find((a) => a.id === aiData.imageAssignments.venueImageId)) ||
+    (aiData?.imageAssignments?.venue && (assets || []).find((a) => a.id === aiData.imageAssignments.venue)) ||
+    (assets || []).find((a) => a.role === 'venue') ||
+    null;
+  const giftAsset =
+    (aiData?.imageAssignments?.giftImageId && (assets || []).find((a) => a.id === aiData.imageAssignments.giftImageId)) ||
+    (aiData?.imageAssignments?.gift && (assets || []).find((a) => a.id === aiData.imageAssignments.gift)) ||
+    (assets || []).find((a) => a.role === 'gift') ||
+    null;
+  const contentAsset =
+    (aiData?.imageAssignments?.contentImageId && (assets || []).find((a) => a.id === aiData.imageAssignments.contentImageId)) ||
+    (assets || []).find((a) => a.role === 'image_content') ||
+    null;
+
+  const hasEarlyBird = Boolean(earlyBirdText.length > 0 || giftAsset);
+  const hasSponsors = Boolean(
+    (Array.isArray(aiData?.sponsors) && aiData.sponsors.length > 0) ||
+      (Array.isArray(eventData?.sponsors) && eventData.sponsors.length > 0)
+  );
+
+  let workingList = Array.isArray(modules) ? [...modules] : [];
+
+  // Khi sự kiện CÓ mô tả thêm và bật cờ expandWhenRich (lúc tạo AI / phân tích lại bố cục),
+  // tự động bổ sung các module giàu thông tin (bento, audience, offer_banner, organizer) nếu preset gốc chưa có.
+  if (expandWhenRich && hasExtraDesc) {
+    if (!workingList.some((m) => m.type === 'bento')) {
+      const targetIdx = workingList.findIndex((m) => m.type === 'stats' || m.type === 'benefits' || m.type === 'speakers');
+      const bentoMod = createModuleInstance('bento', { variant: 'grid-asymmetric' });
+      if (targetIdx >= 0) workingList.splice(targetIdx, 0, bentoMod);
+      else workingList.push(bentoMod);
+    }
+    if (!workingList.some((m) => m.type === 'audience')) {
+      const targetIdx = workingList.findIndex((m) => m.type === 'benefits');
+      const audMod = createModuleInstance('audience', { variant: 'persona-cards' });
+      if (targetIdx >= 0) workingList.splice(targetIdx + 1, 0, audMod);
+      else workingList.push(audMod);
+    }
+    if (hasEarlyBird && !workingList.some((m) => m.type === 'offer_banner')) {
+      const targetIdx = workingList.findIndex((m) => m.type === 'faq' || m.type === 'form');
+      const offerMod = createModuleInstance('offer_banner', {
+        variant: giftAsset ? 'card-image-left' : 'ribbon',
+      });
+      if (targetIdx >= 0) workingList.splice(targetIdx, 0, offerMod);
+      else workingList.push(offerMod);
+    }
+    if (!workingList.some((m) => m.type === 'organizer')) {
+      const targetIdx = workingList.findIndex((m) => m.type === 'final_cta' || m.type === 'footer');
+      const orgMod = createModuleInstance('organizer', { variant: 'card' });
+      if (targetIdx >= 0) workingList.splice(targetIdx, 0, orgMod);
+      else workingList.push(orgMod);
+    }
+  }
+
+  const deletedTypes = getDeletedModuleTypes();
+  const deletedVariants = getDeletedVariants();
+  const prunedWithoutDesc = ['bento', 'audience', 'organizer', 'sponsors', 'announcement_bar'];
+
+  return workingList
+    .filter((m) => {
+      if (!m || deletedTypes.includes(m.type) || m.hidden) return false;
+      const isCustom = m.dataSource === 'custom';
+      if (!hasExtraDesc && prunedWithoutDesc.includes(m.type) && !isCustom) {
+        return false;
+      }
+      if (m.type === 'sponsors' && !hasSponsors && !isCustom) {
+        return false;
+      }
+      if (m.type === 'offer_banner' && !hasEarlyBird && !isCustom) {
+        return false;
+      }
+      if (m.type === 'image_content' && !contentAsset && !isCustom) {
+        return false;
+      }
+      return true;
+    })
+    .map((m) => {
+      const delList = deletedVariants[m.type] || [];
+      let nextVariant = delList.includes(m.variant) ? getSafeVariant(m.type, m.variant) : getSafeVariant(m.type, m.variant);
+      let nextCustom = { ...(m.customContent || {}) };
+
+      if (m.type === 'speakers' && chosenSpeakerVariant) {
+        nextVariant = getSafeVariant('speakers', chosenSpeakerVariant);
+      }
+
+      if (m.type === 'hero') {
+        if (validHeroAsset) {
+          nextCustom = { ...nextCustom, heroImageId: validHeroAsset.id };
+        } else if (
+          nextVariant === 'image-right' ||
+          nextVariant === 'image-left' ||
+          nextVariant === 'center' ||
+          nextVariant === 'poster-fullbleed'
+        ) {
+          nextVariant = 'split-card';
+        }
+      } else if (m.type === 'venue') {
+        if (venueAsset) {
+          nextCustom = { ...nextCustom, venueImageId: venueAsset.id };
+        }
+      } else if (m.type === 'offer_banner') {
+        if (giftAsset) {
+          nextCustom = { ...nextCustom, giftImageId: giftAsset.id };
+          if (nextVariant === 'ribbon') {
+            nextVariant = 'card-image-left';
+          }
+        }
+        if (earlyBirdText) {
+          nextCustom = {
+            ...nextCustom,
+            offer: earlyBirdText,
+            code: aiData?.couponCode || nextCustom.code || '',
+          };
+        }
+      } else if (m.type === 'faq' && Array.isArray(aiData?.faq) && aiData.faq.length > 0) {
+        nextCustom = { ...nextCustom, items: aiData.faq };
+      } else if (m.type === 'stats' && Array.isArray(aiData?.stats) && aiData.stats.length > 0) {
+        nextCustom = { ...nextCustom, stats: aiData.stats };
+      } else if (m.type === 'audience' && Array.isArray(aiData?.audience) && aiData.audience.length > 0) {
+        nextCustom = { ...nextCustom, items: aiData.audience };
+      } else if (m.type === 'bento' && Array.isArray(aiData?.bentoHighlights) && aiData.bentoHighlights.length > 0) {
+        nextCustom = { ...nextCustom, items: aiData.bentoHighlights };
+      } else if (m.type === 'organizer' && aiData?.organizer) {
+        nextCustom = { ...nextCustom, organizer: aiData.organizer };
+      } else if (m.type === 'image_content' && contentAsset) {
+        nextCustom = { ...nextCustom, contentImageId: contentAsset.id };
+      }
+
+      return {
+        ...m,
+        variant: nextVariant,
+        customContent: nextCustom,
+      };
+    });
+}
+
+/**
  * Tự động phân tích chủ đề sự kiện để suy luận bố cục (preset), bảng màu (colorTheme)
  * và phương pháp thiết kế tối ưu dựa trên nhu cầu của người dùng.
  */

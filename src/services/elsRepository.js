@@ -234,24 +234,31 @@ export const elsRepository = {
         safeSetItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${sampleProj.id}`, sampleRegs);
         changed = true;
       } else {
-        // Đảm bảo cờ isSample, sampleTag, tên sự kiện giữ nguyên và Hero không ảnh cho dự án mẫu đã lưu
+        // Đảm bảo đồng bộ đầy đủ event.description, moduleLayout, ai và sampleTag cho 3 dự án mẫu hệ thống đã lưu
         const existing = nextProjects[existingIdx];
         const expectedHeadline = existing.event?.eventName || sampleProj.event.eventName;
         const needHeadlineSync = existing.ai && existing.ai.headline !== expectedHeadline;
-        const needHeroSync = sampleProj.id === 'prj_sample_student_fest'
-          && Array.isArray(existing.moduleLayout)
-          && existing.moduleLayout.some((m) => m.type === 'hero' && (m.variant === 'center' || m.variant === 'image-right'));
+        const needDescSync = (existing.event?.description || '') !== (sampleProj.event.description || '');
+        const needTagSync = existing.sampleTag !== sampleProj.sampleTag || existing.sampleScenario !== sampleProj.sampleScenario;
+        const needLayoutSync = !existing.ai?.edited && (
+          !Array.isArray(existing.moduleLayout) ||
+          existing.moduleLayout.length !== sampleProj.moduleLayout.length
+        );
 
-        if (!existing.isSample || !existing.sampleTag || needHeadlineSync || needHeroSync) {
+        if (!existing.isSample || needTagSync || needHeadlineSync || needDescSync || needLayoutSync) {
           nextProjects[existingIdx] = {
             ...existing,
             isSample: true,
             sampleTag: sampleProj.sampleTag,
             sampleScenario: sampleProj.sampleScenario,
-            ai: existing.ai ? { ...existing.ai, headline: expectedHeadline } : sampleProj.ai,
-            moduleLayout: needHeroSync
-              ? existing.moduleLayout.map((m) => (m.type === 'hero' ? { ...m, variant: 'benefits-band' } : m))
-              : existing.moduleLayout,
+            event: {
+              ...(existing.event || {}),
+              description: sampleProj.event.description || '',
+            },
+            ai: existing.ai?.edited
+              ? { ...existing.ai, headline: expectedHeadline }
+              : sampleProj.ai,
+            moduleLayout: existing.ai?.edited ? existing.moduleLayout : sampleProj.moduleLayout,
           };
           changed = true;
         }
