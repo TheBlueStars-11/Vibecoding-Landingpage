@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ModuleRenderer.module.css';
-import { calculateCountdown } from '../../../domain/time.js';
-import { STANDALONE_DEV_MOCK_DATA, getSafeVariant } from '../../../domain/moduleSchema.js';
+import { calculateCountdown } from '../../domain/time.js';
+import { STANDALONE_DEV_MOCK_DATA, getSafeVariant } from '../../domain/moduleSchema.js';
 import {
   CalendarIcon,
   ClockIcon,
@@ -29,7 +29,7 @@ import {
   WifiIcon,
   QrCodeIcon,
   DownloadIcon,
-} from '../../ui/Icons.jsx';
+} from '../ui/Icons.jsx';
 
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #e11d48, #fb7185)',

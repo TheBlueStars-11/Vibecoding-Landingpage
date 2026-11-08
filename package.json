@@ -8,7 +8,7 @@
     "tunnel": "npx --yes cloudflared tunnel --url http://localhost:5173",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node --test tests/domain.test.js tests/els.test.js tests/module.test.js tests/barem.test.js",
+    "test": "node --test tests/domain.test.js tests/els.test.js tests/module.test.js tests/acceptance.test.js",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "package:submission": "node scripts/package-submission.mjs",
     "preview": "vite preview"
