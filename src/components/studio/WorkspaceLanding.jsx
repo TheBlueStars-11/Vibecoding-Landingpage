@@ -488,10 +488,10 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
           <div className={styles.topPreflightLeft}>
             <div className={styles.topPreflightTitleGroup}>
               <h3 className={styles.topPreflightTitle}>
-                <span>Kiểm tra đầu vào (Pre-flight)</span>
+                <span>Kiểm tra đầu vào</span>
               </h3>
               <span className={styles.topPreflightSub}>
-                Xác thực dữ liệu từ WS1 (Sự kiện &amp; Ảnh) và WS2 (Form đăng ký)
+                Xác thực dữ liệu từ WS1 và WS2
               </span>
             </div>
 
@@ -512,14 +512,12 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
 
           <div className={styles.topPreflightRight}>
             {/* Nhãn minh bạch AI bắt buộc theo quy chế FDD mục 6.3.7 */}
-            <div className={styles.aiNoticeBadge}>
-              <span className={styles.aiDot} />
-              {isMock ? (
+            {isMock && (
+              <div className={styles.aiNoticeBadge}>
+                <span className={styles.aiDot} />
                 <strong>Bản demo vòng loại - Dữ liệu mô phỏng AI</strong>
-              ) : (
-                <span>Tạo bởi AI (Gemini 2.5)</span>
-              )}
-            </div>
+              </div>
+            )}
 
             <button
               type="button"
@@ -598,7 +596,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
               onClick={() => setDeviceMode('laptop')}
             >
               <LaptopIcon size={16} />
-              <span className={styles.btnFullText}>Laptop (1280px)</span>
+              <span className={styles.btnFullText}>Laptop</span>
               <span className={styles.btnShortText}>Laptop</span>
             </button>
             <button
@@ -607,7 +605,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
               onClick={() => setDeviceMode('phone')}
             >
               <PhoneIcon size={16} />
-              <span className={styles.btnFullText}>Điện thoại (375px)</span>
+              <span className={styles.btnFullText}>Điện thoại</span>
               <span className={styles.btnShortText}>Điện thoại</span>
             </button>
           </div>
@@ -617,7 +615,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
               type="button"
               className={styles.btnResetPage}
               onClick={() => setIsResetConfirmOpen(true)}
-              title="Khởi tạo landing page sự kiện mới (Tính năng #5 - Đề 08)"
+              title="Khởi tạo landing page sự kiện mới"
             >
               <PlusIcon size={14} />
               <span className={styles.btnFullText}>Tạo trang mới</span>
@@ -634,10 +632,10 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
                   setIsDevMode(true);
                 }
               }}
-              title="Mở không gian thiết kế module độc lập (Dev Mode)"
+              title="Mở không gian thiết kế module độc lập"
             >
               <CodeIcon size={14} />
-              <span className={styles.btnFullText}>Chế độ lập trình (Dev Mode)</span>
+              <span className={styles.btnFullText}>Chế độ lập trình</span>
               <span className={styles.btnShortText}>Dev Mode</span>
             </button>
 
@@ -883,12 +881,12 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
 
           {/* HÀNG 3: 2 CỘT Ở DƯỚI (NỘI DUNG AI + MÀU SẮC & GIAO DIỆN) */}
           <div className={styles.twoColRow}>
-            {/* CỘT 1: NỘI DUNG AI (CHỈNH SỬA ĐƯỢC) */}
+            {/* CỘT 1: NỘI DUNG AI */}
             <div className={styles.sidebarCard}>
               <div className={styles.cardHeader}>
                 <h3 className={styles.cardTitle} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <PencilIcon size={16} />
-                  <span>Nội dung AI (Chỉnh sửa được)</span>
+                  <span>Nội dung AI</span>
                 </h3>
               </div>
 
@@ -900,7 +898,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
               )}
 
               <div className={styles.editGroup}>
-                <label className={styles.editLabel}>Tiêu đề (Headline)</label>
+                <label className={styles.editLabel}>Tiêu đề</label>
                 <input
                   type="text"
                   className={styles.editInput}

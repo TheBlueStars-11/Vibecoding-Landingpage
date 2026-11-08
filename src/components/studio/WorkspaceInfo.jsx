@@ -403,7 +403,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
           title="Tự động điền đầy đủ dữ liệu mẫu sự kiện chuyên nghiệp để kiểm thử nhanh"
         >
           <CodeIcon size={16} />
-          <span>Điền mẫu nhanh (Dev Mode)</span>
+          <span>Điền mẫu nhanh</span>
         </button>
       </div>
 
@@ -444,18 +444,14 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
                 id="input-eventName"
                 type="text"
                 className={`${styles.input} ${errors.eventName ? styles.inputError : ''}`}
-                placeholder="Nhập tên sự kiện (ví dụ: Workshop AI & Vibe Coding 2026)"
+                placeholder="Nhập tên sự kiện"
                 value={eventData.eventName}
                 onChange={(e) => handleFieldChange('eventName', e.target.value)}
                 maxLength={120}
               />
-              {errors.eventName ? (
+              {errors.eventName && (
                 <span className={styles.errorMessage}>
                   <AlertCircleIcon size={14} /> {errors.eventName}
-                </span>
-              ) : (
-                <span className={styles.helperText}>
-                  Tên sự kiện chính thức, sẽ hiển thị trên banner và toàn bộ landing page.
                 </span>
               )}
             </div>
@@ -478,7 +474,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
 
               <div className={styles.formGroup} id="field-eventTime">
                 <label htmlFor="input-eventTime" className={styles.label}>
-                  Giờ bắt đầu (UTC+7) <span className={styles.required}>*</span>
+                  Giờ bắt đầu <span className={styles.required}>*</span>
                 </label>
                 <input
                   id="input-eventTime"
@@ -500,23 +496,21 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
                 id="input-venue"
                 type="text"
                 className={`${styles.input} ${errors.venue ? styles.inputError : ''}`}
-                placeholder="Ví dụ: Hội trường Grand Hall, Tầng 3, 227 Nguyễn Văn Cừ, Q.5, TP.HCM"
+                placeholder="Nhập địa chỉ tổ chức sự kiện hoặc link phòng họp online"
                 value={eventData.venue}
                 onChange={(e) => handleFieldChange('venue', e.target.value)}
                 maxLength={200}
               />
-              {errors.venue ? (
+              {errors.venue && (
                 <p className={styles.errorText}>{errors.venue}</p>
-              ) : (
-                <span className={styles.helperText}>Nhập địa chỉ hội trường trực tiếp hoặc link phòng họp online (Zoom, Google Meet).</span>
               )}
             </div>
 
-            {/* Mô tả thêm / Ghi chú sự kiện (Không bắt buộc) */}
+            {/* Mô tả thêm sự kiện (Không bắt buộc) */}
             <div className={styles.formGroup} id="field-description">
               <div className={styles.labelRow}>
                 <label htmlFor="input-description" className={styles.label}>
-                  Mô tả thêm / Ghi chú sự kiện
+                  Mô tả thêm sự kiện
                 </label>
                 <span className={styles.badgeOptional}>Không bắt buộc</span>
               </div>
@@ -524,7 +518,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
                 id="input-description"
                 rows={3}
                 className={styles.textarea}
-                placeholder="Nhập thêm chi tiết về chủ đề, mục tiêu, đối tượng người tham dự hoặc phong cách mong muốn để AI tự động chọn bố cục thiết kế phù hợp nhất..."
+                placeholder="Nhập thêm chi tiết về chủ đề, mục tiêu hoặc phong cách mong muốn..."
                 value={eventData.description || ''}
                 onChange={(e) => handleFieldChange('description', e.target.value)}
                 maxLength={1000}
@@ -532,9 +526,6 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
               <div className={styles.charCount}>
                 {(eventData.description || '').length}/1000 ký tự
               </div>
-              <span className={styles.helperText}>
-                Hệ thống sẽ phân tích mô tả này cùng tên sự kiện để tự động chọn bố cục module (Tech Talk, Workshop, Community, Gala...) và màu sắc tối ưu nhất.
-              </span>
             </div>
 
             {/* 6. Ưu đãi đăng ký sớm */}
@@ -546,7 +537,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
                 id="input-earlyBird"
                 rows={2}
                 className={`${styles.textarea} ${errors.earlyBirdOffer ? styles.inputError : ''}`}
-                placeholder="Ví dụ: Tặng Ebook Prompt Engineering trị giá 500k và vé mời giao lưu VIP cho 50 người đăng ký đầu tiên."
+                placeholder="Nhập ưu đãi dành cho người đăng ký sớm"
                 value={eventData.earlyBirdOffer}
                 onChange={(e) => handleFieldChange('earlyBirdOffer', e.target.value)}
                 maxLength={300}
@@ -561,7 +552,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
           {/* 5. Danh sách Diễn giả */}
           <div className={styles.sectionCard} id="field-speakers">
             <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>2. Danh sách Diễn giả ({eventData.speakers.length})</h2>
+              <h2 className={styles.cardTitle}>2. Danh sách Diễn giả</h2>
               <button
                 type="button"
                 className={styles.btnAddSmall}
@@ -611,7 +602,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
           {/* 7. Chương trình sự kiện (Agenda) */}
           <div className={styles.sectionCard} id="field-agenda">
             <div className={styles.cardHeader}>
-              <h2 className={styles.cardTitle}>3. Chương trình chi tiết ({eventData.agenda.length} mục)</h2>
+              <h2 className={styles.cardTitle}>3. Chương trình chi tiết</h2>
               <button
                 type="button"
                 className={styles.btnAddSmall}
@@ -696,7 +687,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
                 type="button"
                 className={styles.btnDevAutofill}
                 onClick={handleLoadSampleImagesOnly}
-                title="Tự động nạp 6 ảnh mẫu AI (3 diễn giả, sự kiện, địa điểm, giải thưởng)"
+                title="Tự động nạp 6 ảnh mẫu AI"
                 style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}
               >
                 <SparklesIcon size={14} />
@@ -732,7 +723,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
                   <>
                     <strong>Nhấn để chọn ảnh</strong> hoặc kéo thả vào đây
                     <br />
-                    <span className={styles.dropzoneSub}>Tối đa 5MB/ảnh (JPG, PNG, WebP) — Tự động resize ≤1280px</span>
+                    <span className={styles.dropzoneSub}>Tối đa 5MB/ảnh</span>
                   </>
                 )}
               </p>
@@ -763,12 +754,12 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
                     <div className={styles.assetDetails}>
                       <div className={styles.formGroup}>
                         <label className={styles.labelSmall}>
-                          Mô tả ảnh <span className={styles.required}>* (Bắt buộc cho AI)</span>
+                          Mô tả ảnh <span className={styles.required}>*</span>
                         </label>
                         <input
                           type="text"
                           className={styles.inputSmall}
-                          placeholder="Ví dụ: Diễn giả 1 — TS. Nguyễn Văn A"
+                          placeholder="Mô tả ảnh"
                           value={asset.caption}
                           onChange={(e) => handleUpdateAsset(asset.id, 'caption', e.target.value)}
                         />
@@ -839,7 +830,7 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
         <div className={styles.saveNotice}>
           <div className={styles.autoSaveBadge}>
             <span className={styles.savePulseDot} />
-            <span><strong>Tự động lưu:</strong> Mọi thay đổi thông tin đều được tự động lưu liên tục theo thời gian thực (không cần nhấn lưu).</span>
+            <span><strong>Tự động lưu:</strong> Mọi thay đổi thông tin đều được tự động lưu theo thời gian thực.</span>
           </div>
           <span className={styles.lastSavedText}>Lần lưu gần nhất: {lastSavedTime}</span>
         </div>

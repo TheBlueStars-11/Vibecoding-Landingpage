@@ -856,7 +856,7 @@ export function DevModeWorkspace({
                 setSelectedPreset('custom');
               }}
               className={styles.dimInput}
-              title="Chiều rộng khung (px)"
+              title="Chiều rộng khung"
             />
             <span className={styles.dimSep}>×</span>
             <input
@@ -868,7 +868,7 @@ export function DevModeWorkspace({
               }}
               className={styles.dimInput}
               disabled={isHeightAuto}
-              title="Chiều cao khung (px)"
+              title="Chiều cao khung"
             />
             <span className={styles.dimUnit}>px</span>
             <button
@@ -935,11 +935,11 @@ export function DevModeWorkspace({
               }}
               className={styles.datasetSelect}
             >
-              <option value="">-- Mẫu bố cục ({Object.keys(PRESET_TEMPLATES).length} presets) --</option>
+              <option value="">-- Mẫu bố cục ({Object.keys(PRESET_TEMPLATES).length}) --</option>
               {Object.values(PRESET_TEMPLATES).map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
-              <option value="empty">Trống (Mở độc lập từng module)</option>
+              <option value="empty">Trống</option>
             </select>
           </div>
 
@@ -984,7 +984,7 @@ export function DevModeWorkspace({
             className={styles.toolBtn}
             onClick={handleUndo}
             disabled={historyIndex <= 0}
-            title="Hoàn tác (Undo)"
+            title="Hoàn tác"
           >
             ↶
           </button>
@@ -993,7 +993,7 @@ export function DevModeWorkspace({
             className={styles.toolBtn}
             onClick={handleRedo}
             disabled={historyIndex >= history.length - 1}
-            title="Làm lại (Redo)"
+            title="Làm lại"
           >
             ↷
           </button>
@@ -1332,7 +1332,7 @@ export function DevModeWorkspace({
               <div className={styles.sliderHeaderRow}>
                 <div className={styles.sliderTitle}>
                   <SearchIcon size={14} className={styles.sliderIcon} />
-                  <strong>Tỉ lệ xem (Scale):</strong>
+                  <strong>Tỉ lệ xem:</strong>
                   <span className={styles.sliderValueBadge}>{Math.round(zoomLevel * 100)}%</span>
                 </div>
                 <div className={styles.quickPresetTags}>
@@ -1342,7 +1342,7 @@ export function DevModeWorkspace({
                     onClick={handleFitToScreen}
                     title="Tự động thu phóng để toàn bộ màn hình vừa khít vùng xem cố định"
                   >
-                    <CheckIcon size={12} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 3 }} /> Vừa vặn (Fit)
+                    <CheckIcon size={12} style={{ display: 'inline', verticalAlign: '-1px', marginRight: 3 }} /> Vừa vặn
                   </button>
                   {[
                     { label: '50%', val: 0.5 },
@@ -1632,10 +1632,10 @@ export function DevModeWorkspace({
                 </div>
               </div>
 
-              {/* Nhóm 1: Kiểu bố cục (Variant) */}
+              {/* Nhóm 1: Kiểu bố cục */}
               <div className={styles.propSection}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <label className={styles.propSectionTitle} style={{ margin: 0 }}>Kiểu bố cục (Variant)</label>
+                  <label className={styles.propSectionTitle} style={{ margin: 0 }}>Kiểu bố cục</label>
                   <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
                     {(activeCatalog[selectedModule.type]?.variants || []).length} biến thể
                   </span>
@@ -1687,7 +1687,7 @@ export function DevModeWorkspace({
                       checked={selectedModule.dataSource === 'auto'}
                       onChange={() => handleUpdateSelectedProp('dataSource', 'auto')}
                     />
-                    <span>Tự động (từ WS1, WS2, AI)</span>
+                    <span>Tự động</span>
                   </label>
                   <label className={styles.radioOption}>
                     <input
@@ -1696,7 +1696,7 @@ export function DevModeWorkspace({
                       checked={selectedModule.dataSource === 'custom'}
                       onChange={() => handleUpdateSelectedProp('dataSource', 'custom')}
                     />
-                    <span>Nhập nội dung riêng (Override)</span>
+                    <span>Nhập nội dung riêng</span>
                   </label>
                 </div>
 
@@ -1730,30 +1730,30 @@ export function DevModeWorkspace({
               <div className={styles.propSection}>
                 <label className={styles.propSectionTitle}>Kiểu dáng & Khoảng cách</label>
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Khoảng cách đệm (Padding)</label>
+                  <label className={styles.label}>Khoảng cách đệm</label>
                   <select
                     className={styles.select}
                     value={selectedModule.styles?.padding || 'normal'}
                     onChange={(e) => handleUpdateSelectedProp('styles.padding', e.target.value)}
                   >
-                    <option value="compact">Gọn nhẹ (Compact · 24px)</option>
-                    <option value="normal">Tiêu chuẩn (Normal · 48px)</option>
-                    <option value="spacious">Rộng rãi (Spacious · 72px)</option>
+                    <option value="compact">Gọn nhẹ</option>
+                    <option value="normal">Tiêu chuẩn</option>
+                    <option value="spacious">Rộng rãi</option>
                   </select>
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Màu nền (Background)</label>
+                  <label className={styles.label}>Màu nền</label>
                   <select
                     className={styles.select}
                     value={selectedModule.styles?.background || 'default'}
                     onChange={(e) => handleUpdateSelectedProp('styles.background', e.target.value)}
                   >
-                    <option value="default">Mặc định (Trắng sáng)</option>
-                    <option value="surface">Xám nhạt (Surface #f8fafc)</option>
-                    <option value="alt">Xám đậm nhẹ (#f1f5f9)</option>
-                    <option value="primary">Màu chủ đạo (Gradient tím/chàm)</option>
-                    <option value="dark">Tối sang trọng (#0f172a)</option>
+                    <option value="default">Mặc định</option>
+                    <option value="surface">Xám nhạt</option>
+                    <option value="alt">Xám đậm nhẹ</option>
+                    <option value="primary">Màu chủ đạo</option>
+                    <option value="dark">Tối sang trọng</option>
                   </select>
                 </div>
               </div>
@@ -1846,7 +1846,7 @@ export function DevModeWorkspace({
                     onClick={() => exportAuditReport(scanResult, project.name)}
                   >
                     <DownloadIcon size={14} />
-                    <span>Tải file báo cáo (.md)</span>
+                    <span>Tải file báo cáo</span>
                   </button>
                 </div>
 
@@ -1876,7 +1876,7 @@ export function DevModeWorkspace({
             {auditTab === 'json' && (
               <div className={styles.jsonEditorWrap}>
                 <div className={styles.jsonHeader}>
-                  <span>Xem và chỉnh sửa trực tiếp mảng cấu trúc module (JSON)</span>
+                  <span>Xem và chỉnh sửa trực tiếp mảng cấu trúc module</span>
                   <button
                     type="button"
                     className={styles.btnApplyJson}

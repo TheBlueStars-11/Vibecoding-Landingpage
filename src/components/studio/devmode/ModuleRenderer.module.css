@@ -882,7 +882,7 @@
 }
 
 /* ========================================================= */
-/* HERO ABSTRACT SVG DECORATIVE CIRCLES                      */
+/* HERO ABSTRACT SVG DECORATIVE CIRCLES (SAME LAYER AS BG)   */
 /* ========================================================= */
 .heroAbstractDecorWrap {
   position: absolute;
@@ -897,8 +897,10 @@
   top: -35px;
   right: -35px;
   opacity: 0.85;
-  filter: drop-shadow(0 0 16px var(--theme-glow, rgba(99, 102, 241, 0.18)));
+  filter: drop-shadow(0 0 16px var(--theme-glow, rgba(225, 29, 72, 0.15)));
   animation: heroCircleFloat 16s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .heroAbstractDecorBottom {
@@ -906,8 +908,10 @@
   bottom: -25px;
   left: -25px;
   opacity: 0.78;
-  filter: drop-shadow(0 0 14px var(--theme-glow, rgba(168, 85, 247, 0.16)));
+  filter: drop-shadow(0 0 14px var(--theme-glow, rgba(225, 29, 72, 0.12)));
   animation: heroCircleFloatReverse 20s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 0;
 }
 
 @keyframes heroCircleFloat {
@@ -928,7 +932,7 @@
   }
 }
 
-/* Ensure Hero Containers have relative positioning & content sits on top */
+/* Ensure Hero Containers have relative positioning & clean stacking context */
 .heroSplitWrap,
 .heroCenterWrap,
 .heroImageLeftWrap,
@@ -940,6 +944,21 @@
 .heroPosterFullbleedWrap {
   position: relative !important;
   overflow: hidden !important;
+  isolation: isolate !important; /* Stacking context: decor circles stay at z-index 0 */
+}
+
+/* All hero content elements sit strictly ABOVE decorative background (z-index 2) */
+.heroSplitWrap > :not(.heroAbstractDecorWrap),
+.heroCenterWrap > :not(.heroAbstractDecorWrap),
+.heroImageLeftWrap > :not(.heroAbstractDecorWrap),
+.heroSplitCardWrap > :not(.heroAbstractDecorWrap),
+.heroStackCardsWrap > :not(.heroAbstractDecorWrap),
+.heroBenefitsBandWrap > :not(.heroAbstractDecorWrap),
+.heroCenterTextWrap > :not(.heroAbstractDecorWrap),
+.heroCinemaLetterboxWrap > :not(.heroAbstractDecorWrap),
+.heroPosterFullbleedWrap > :not(.heroAbstractDecorWrap) {
+  position: relative;
+  z-index: 2;
 }
 
 .heroHeaderCenter,
@@ -950,9 +969,16 @@
 .heroCenterVisual,
 .heroCinemaMainContent,
 .heroSplitCardContent,
-.heroBenefitsBandBar {
+.heroBenefitsBandBar,
+.heroSplitLeft,
+.heroSplitCardGlass,
+.heroStackCardsGrid,
+.heroCinemaBarTop,
+.heroCinemaBarBottom,
+.heroCinemaCreditsRow,
+.heroCinemaLetterboxGlow {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 @media (max-width: 768px) {
@@ -6346,6 +6372,8 @@
   left: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .mapSlotPinCircle {

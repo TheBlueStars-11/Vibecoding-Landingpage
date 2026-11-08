@@ -45,7 +45,7 @@ export default function StudioPanel({
             </span>
           ) : (
             <span className={styles.aiBadge}>
-              ✨ Nội dung do AI biên soạn ({aiContent?.model || 'Gemini'})
+              ✨ Nội dung do AI biên soạn
             </span>
           )}
         </div>
@@ -139,7 +139,7 @@ export default function StudioPanel({
           <form onSubmit={handleSaveEdit} className={styles.editForm}>
             <h4>✏️ Chỉnh sửa nhanh nội dung Landing Page</h4>
             <div className={styles.editField}>
-              <label>Tiêu đề chính (Headline):</label>
+              <label>Tiêu đề chính:</label>
               <input
                 value={editForm.headline}
                 onChange={(e) => setEditForm({ ...editForm, headline: e.target.value })}
@@ -148,7 +148,7 @@ export default function StudioPanel({
             </div>
 
             <div className={styles.editField}>
-              <label>Mô tả (Description):</label>
+              <label>Mô tả:</label>
               <textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}

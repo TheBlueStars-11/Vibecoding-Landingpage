@@ -539,7 +539,7 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '16px' }}>🛡️</span>
           <span>
-            <strong>Lưu trữ độc lập:</strong> Trình duyệt lưu dữ liệu vào <strong>LocalStorage (Source of Truth)</strong>, đảm bảo bền vững 100% không mất khi ngắt mạng hoặc tải lại. Đồng bộ đa thiết bị qua Cloudflare/SSE là kênh truyền bổ trợ thời gian thực.
+            <strong>Lưu trữ độc lập:</strong> Trình duyệt lưu dữ liệu vào <strong>Bộ nhớ cục bộ</strong>, đảm bảo bền vững 100% không mất khi ngắt mạng hoặc tải lại. Đồng bộ đa thiết bị qua Cloudflare/SSE là kênh truyền bổ trợ thời gian thực.
           </span>
         </div>
         <span style={{
@@ -578,7 +578,7 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
             onClick={() => setShareMode('direct')}
           >
             <GlobeIcon size={16} />
-            <span>Web trực tiếp / Localhost (Không cần mạng & Vercel)</span>
+            <span>Web trực tiếp / Localhost</span>
             <span className={styles.modeBadgeRecommended}>Khuyên dùng</span>
           </button>
           <button
@@ -587,7 +587,7 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
             onClick={() => setShareMode('tunnel')}
           >
             <ActivityIcon size={16} />
-            <span>Cloudflare Tunnel (Mạng công khai)</span>
+            <span>Cloudflare Tunnel</span>
           </button>
         </div>
 
@@ -763,7 +763,7 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
                         ) : (
                           <>
                             <GlobeIcon size={14} />
-                            <span>Khởi động Cloudflare Tunnel (1 Click)</span>
+                            <span>Khởi động Cloudflare Tunnel</span>
                           </>
                         )}
                       </button>
@@ -781,7 +781,7 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
                   )}
                 </div>
 
-                <span className={styles.subLabel}>Đường dẫn Cloudflare Tunnel (tự động cập nhật hoặc dán link thủ công):</span>
+                <span className={styles.subLabel}>Đường dẫn Cloudflare Tunnel:</span>
                 <input
                   type="url"
                   placeholder="https://random-words.trycloudflare.com"

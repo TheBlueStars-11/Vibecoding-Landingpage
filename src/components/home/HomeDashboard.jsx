@@ -520,9 +520,6 @@ export function HomeDashboard({ onNavigate }) {
                     {createError}
                   </p>
                 )}
-                <span className={styles.helperText}>
-                  Tên này sẽ dùng để tạo trang và quản lý trong danh sách của bạn.
-                </span>
               </div>
 
               <div className={styles.modalFooter}>

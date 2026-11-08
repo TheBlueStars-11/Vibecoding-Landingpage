@@ -328,10 +328,10 @@ export function ModuleRenderer({
   const renderMapSlot = (address = '') => (
     <div className={styles.mapSlotWrap} data-slot="map" role="img" aria-label={`Vị trí tổ chức: ${address || 'Địa điểm sự kiện'}`}>
       <div className={styles.mapSlotGrid}>
-        <svg className={styles.mapSlotGridSvg} width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <svg className={styles.mapSlotGridSvg} width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <pattern id={`mapGridPattern-${module.id}`} width="24" height="24" patternUnits="userSpaceOnUse">
-              <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(99, 102, 241, 0.18)" strokeWidth="1" />
+              <path d="M 24 0 L 0 0 0 24" fill="none" stroke="rgba(225, 29, 72, 0.15)" strokeWidth="1" />
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill={`url(#mapGridPattern-${module.id})`} />
@@ -489,7 +489,7 @@ export function ModuleRenderer({
     const isSplitCard = variant === 'split-card';
     const isCinemaLetterbox = variant === 'cinema-letterbox';
 
-    // Trang trí hình học trừu tượng (abstract SVG circles) cho Hero
+    // Trang trí hình học trừu tượng (abstract SVG circles) cho Hero - luôn ở layer nền
     const renderHeroAbstractDecor = () => (
       <div className={styles.heroAbstractDecorWrap} aria-hidden="true">
         <svg
@@ -500,11 +500,11 @@ export function ModuleRenderer({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <circle cx="140" cy="140" r="130" stroke="var(--theme-primary, #e11d48)" strokeWidth="1.2" strokeDasharray="4 6" opacity="0.22" />
-          <circle cx="140" cy="140" r="95" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.18" />
-          <circle cx="140" cy="140" r="60" stroke="var(--theme-accent, #a855f7)" strokeWidth="1.2" opacity="0.22" />
-          <circle cx="235" cy="140" r="3.5" fill="var(--theme-primary, #e11d48)" opacity="0.45" />
-          <circle cx="100" cy="50" r="2.5" fill="var(--theme-accent, #a855f7)" opacity="0.4" />
+          <circle cx="140" cy="140" r="130" stroke="var(--theme-primary, #e11d48)" strokeWidth="1.2" strokeDasharray="4 6" opacity="0.16" />
+          <circle cx="140" cy="140" r="95" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.12" />
+          <circle cx="140" cy="140" r="60" stroke="var(--theme-primary, #e11d48)" strokeWidth="1.2" opacity="0.16" />
+          <circle cx="235" cy="140" r="3.5" fill="var(--theme-primary, #e11d48)" opacity="0.35" />
+          <circle cx="100" cy="50" r="2.5" fill="var(--theme-primary, #e11d48)" opacity="0.3" />
         </svg>
         <svg
           className={styles.heroAbstractDecorBottom}
@@ -514,10 +514,10 @@ export function ModuleRenderer({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <circle cx="110" cy="110" r="100" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.18" />
-          <circle cx="110" cy="110" r="70" stroke="var(--theme-accent, #a855f7)" strokeWidth="1.2" strokeDasharray="3 5" opacity="0.2" />
-          <circle cx="110" cy="110" r="40" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.16" />
-          <circle cx="160" cy="75" r="3" fill="var(--theme-primary, #e11d48)" opacity="0.4" />
+          <circle cx="110" cy="110" r="100" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.14" />
+          <circle cx="110" cy="110" r="70" stroke="var(--theme-primary, #e11d48)" strokeWidth="1.2" strokeDasharray="3 5" opacity="0.15" />
+          <circle cx="110" cy="110" r="40" stroke="var(--theme-primary, #e11d48)" strokeWidth="1" opacity="0.12" />
+          <circle cx="160" cy="75" r="3" fill="var(--theme-primary, #e11d48)" opacity="0.3" />
         </svg>
       </div>
     );
@@ -590,7 +590,7 @@ export function ModuleRenderer({
           </div>
           <div className={styles.heroMetaBarCenter}>
             <span className={styles.metaPill}><CalendarIcon size={14} /> {eventData.eventDate || '20/11/2026'}</span>
-            <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime || '08:30'} (UTC+7)</span>
+            <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime || '08:30'}</span>
             <span className={styles.metaPill}><MapPinIcon size={14} /> {eventData.venue || 'Innovation Hub NIC'}</span>
           </div>
           <div className={styles.heroCtaRowCenter}>
@@ -662,7 +662,7 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.heroSplitCardWrap}>
           {renderHeroAbstractDecor()}
-          <div>
+          <div className={styles.heroSplitLeft}>
             <h1 className={styles.heroTitle} style={{ textAlign: 'left' }}>{renderEditorialHeadline(headline, { addNewline: true })}</h1>
             <p className={styles.heroDesc} style={{ textAlign: 'left' }}>{description}</p>
             <ul className={styles.heroBullets} style={{ paddingLeft: 0, listStyle: 'none' }}>
@@ -691,7 +691,7 @@ export function ModuleRenderer({
               <div className={styles.heroSplitMetaIcon}><ClockIcon size={18} /></div>
               <div>
                 <span className={styles.heroSplitMetaLabel}>Thời gian</span>
-                <span className={styles.heroSplitMetaVal}>{eventData.eventTime || '08:30'} - 11:30 (UTC+7)</span>
+                <span className={styles.heroSplitMetaVal}>{eventData.eventTime || '08:30'} - 11:30</span>
               </div>
             </div>
             <div className={styles.heroSplitMetaRow}>
@@ -979,7 +979,7 @@ export function ModuleRenderer({
                     </div>
                   )}
                   <div className={styles.cdCinematicMetaRow} style={{ justifyContent: 'flex-start', marginTop: 10 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><ClockIcon size={13} /> Giờ Việt Nam (GMT+7)</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><ClockIcon size={13} /> Giờ Việt Nam</span>
                     <span className={styles.cdCinematicMetaDot}>•</span>
                     <span>{eventData.eventTime || '08:30'} Ngày {eventData.eventDate || '2026-11-20'}</span>
                   </div>
@@ -1111,7 +1111,7 @@ export function ModuleRenderer({
                 </div>
 
                 <div className={styles.cdCinematicMetaRow}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><ClockIcon size={13} /> Giờ Việt Nam (GMT+7)</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><ClockIcon size={13} /> Giờ Việt Nam</span>
                   <span className={styles.cdCinematicMetaDot}>•</span>
                   <span>{eventData.eventTime || '08:30'} Ngày {eventData.eventDate || '2026-11-20'}</span>
                 </div>
@@ -1605,7 +1605,7 @@ export function ModuleRenderer({
                     title="Tải ảnh vé chứa mã QR để xuất trình khi check-in"
                   >
                     <DownloadIcon size={15} />
-                    <span>Tải ảnh mã QR vé (.png)</span>
+                    <span>Tải ảnh mã QR vé</span>
                   </button>
                 )}
               </div>
@@ -1615,7 +1615,7 @@ export function ModuleRenderer({
             <div className={styles.successActionsRow}>
               {formProps.onDownloadCalendar && (
                 <button type="button" className={styles.btnSuccessDownloadCal} onClick={formProps.onDownloadCalendar}>
-                  <CalendarIcon size={14} /><span>Thêm vào lịch Google / Apple (.ics)</span>
+                  <CalendarIcon size={14} /><span>Thêm vào lịch</span>
                 </button>
               )}
               {formProps.onResetSuccess && (
@@ -1825,7 +1825,7 @@ export function ModuleRenderer({
               <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0 0 14px 0' }}>{venueAddress}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.85rem', color: '#334155' }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ClockIcon size={14} /> <strong>Giờ đón tiếp:</strong> 08:00 - 08:30</div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><MapPinIcon size={14} /> <strong>Bãi gửi xe:</strong> Tầng hầm B1 & B2 (miễn phí)</div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><MapPinIcon size={14} /> <strong>Bãi gửi xe:</strong> Tầng hầm B1 & B2 - Miễn phí</div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WifiIcon size={14} /> <strong>Tiện ích:</strong> Wifi tốc độ cao & máy chiếu 4K</div>
               </div>
             </div>
@@ -1857,7 +1857,7 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.venueOnlineCardWrap}>
           <span className={styles.venueOnlinePlatformBadge} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <LaptopIcon size={14} /> Sự kiện Trực tuyến (Online)
+            <LaptopIcon size={14} /> Sự kiện Trực tuyến
           </span>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 10px 0' }}>Nền tảng Zoom / Google Meet</h2>
           <p style={{ fontSize: '0.9rem', opacity: 0.9, maxWidth: 540, margin: '0 auto 20px auto', lineHeight: 1.6 }}>
@@ -1874,7 +1874,7 @@ export function ModuleRenderer({
       return renderContainer(
         <div>
           <div className={styles.blockTitleCenter}>
-            <h2 className={styles.secTitle}>Hình thức tham gia (Hybrid)</h2>
+            <h2 className={styles.secTitle}>Hình thức tham gia</h2>
           </div>
           <div className={styles.venueHybridDualWrap}>
             <div className={styles.venueHybridCard}>
@@ -2315,7 +2315,7 @@ export function ModuleRenderer({
           </p>
           <div className={styles.systemMockNotice}>
             <InfoIcon size={14} />
-            <span>Bản demo vòng loại - Dữ liệu mô phỏng AI (Đề số 08 Vibe Coding 2026).</span>
+            <span>Bản demo vòng loại - Dữ liệu mô phỏng AI.</span>
           </div>
           <div className={styles.footerBrandWatermark}>
             Event Landing Studio®

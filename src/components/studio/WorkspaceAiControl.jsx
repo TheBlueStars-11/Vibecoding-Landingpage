@@ -46,8 +46,8 @@ const MODEL_PRESETS = [
 ];
 
 const BASE_URL_PRESETS = [
-  { label: 'Vilao.ai (OpenAI Compat)', val: 'https://api.vilao.ai/v1' },
-  { label: 'Google Gemini (Native API)', val: 'https://generativelanguage.googleapis.com/v1beta' },
+  { label: 'Vilao.ai', val: 'https://api.vilao.ai/v1' },
+  { label: 'Google Gemini', val: 'https://generativelanguage.googleapis.com/v1beta' },
 ];
 
 const SAMPLE_PROMPTS = [
@@ -224,7 +224,7 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
             <h1 className={styles.mainTitle}>
               Kiểm soát AI & Nhật ký gọi API
               <span style={{ fontSize: '0.75rem', padding: '3px 10px', borderRadius: 9999, background: config.forceMock ? '#fef3c7' : '#dcfce7', color: config.forceMock ? '#b45309' : '#15803d', fontWeight: 700 }}>
-                {config.forceMock ? 'Chế độ Giả lập (Mock)' : 'Kết nối API Trực tiếp'}
+                {config.forceMock ? 'Chế độ Giả lập' : 'Kết nối API Trực tiếp'}
               </span>
             </h1>
             <p className={styles.subTitle}>
@@ -303,7 +303,7 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
           </div>
           <div>
             <div className={styles.statVal}>{stats.avgLatency} <small style={{ fontSize: '0.75rem', fontWeight: 600 }}>ms</small></div>
-            <div className={styles.statLabel}>Độ trễ TB (Latency)</div>
+            <div className={styles.statLabel}>Độ trễ trung bình</div>
           </div>
         </div>
 
@@ -357,7 +357,7 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
             {/* Bật/Tắt Mock */}
             <div className={styles.toggleBox}>
               <div>
-                <strong style={{ fontSize: '0.85rem', color: '#0f172a', display: 'block' }}>Chế độ Mock (Giả lập)</strong>
+                <strong style={{ fontSize: '0.85rem', color: '#0f172a', display: 'block' }}>Chế độ Giả lập</strong>
                 <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Bật để không tiêu tốn token và kiểm thử cục bộ</span>
               </div>
               <label className={styles.switch}>
@@ -376,7 +376,7 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
             {/* Tên Model */}
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>
-                <span>Tên Model (Model ID)</span>
+                <span>Tên Model</span>
                 <small style={{ color: '#64748b' }}>Hiện tại: {config.model}</small>
               </label>
               <input
@@ -491,7 +491,7 @@ export function WorkspaceAiControl({ project: _project, onShowToast }) {
 
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>
-                  <span>Timeout (giây)</span>
+                  <span>Thời gian chờ</span>
                   <span className={styles.rangeVal}>{config.timeoutSec || 20}s</span>
                 </label>
                 <div className={styles.rangeWrap}>

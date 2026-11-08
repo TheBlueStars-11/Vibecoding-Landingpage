@@ -160,7 +160,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
             type="button"
             className={styles.btnNewPage}
             onClick={handleOpenResetModal}
-            title="Khởi tạo landing page sự kiện mới (Đặt lại trạng thái)"
+            title="Khởi tạo landing page sự kiện mới"
           >
             <PlusIcon size={14} />
             <span className={styles.btnNewPageLabel}>Tạo trang mới</span>
@@ -253,17 +253,15 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
             </button>
           </div>
 
-          {/* Chân sidebar: Nhãn bắt buộc theo quy chế FDD mục 6.3.7 */}
-          <div className={styles.sidebarFooter}>
-            <div className={styles.mockDisclaimer}>
-              <span className={styles.mockDot} />
-              {isMock ? (
+          {/* Chân sidebar: Chỉ hiển thị nhãn khi chạy chế độ Mock */}
+          {isMock && (
+            <div className={styles.sidebarFooter}>
+              <div className={styles.mockDisclaimer}>
+                <span className={styles.mockDot} />
                 <span>Bản demo vòng loại - Dữ liệu mô phỏng AI</span>
-              ) : (
-                <span>Kết nối AI (Gemini 2.5)</span>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </aside>
 
         {/* Vùng nội dung Workspace */}

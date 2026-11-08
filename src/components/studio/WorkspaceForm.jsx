@@ -313,7 +313,7 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
                         <input
                           type="text"
                           className={styles.fieldLabelInput}
-                          placeholder="Tên trường (ví dụ: Họ và tên) *"
+                          placeholder="Tên trường *"
                           value={field.label}
                           onChange={(e) => handleUpdateField(field.key, 'label', e.target.value)}
                         />
@@ -326,10 +326,10 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
                           onChange={(e) => handleUpdateField(field.key, 'type', e.target.value)}
                           aria-label="Loại trường"
                         >
-                          <option value={FIELD_TYPES.TEXT}>Văn bản (Text)</option>
-                          <option value={FIELD_TYPES.NUMBER}>Số (Number)</option>
+                          <option value={FIELD_TYPES.TEXT}>Văn bản</option>
+                          <option value={FIELD_TYPES.NUMBER}>Số</option>
                           <option value={FIELD_TYPES.EMAIL}>Email</option>
-                          <option value={FIELD_TYPES.TEL}>Số điện thoại (Tel)</option>
+                          <option value={FIELD_TYPES.TEL}>Số điện thoại</option>
                         </select>
                       </div>
 
@@ -365,7 +365,7 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
                               checked={isDisplayName}
                               onChange={() => handleUpdateField(field.key, 'role', FIELD_ROLES.DISPLAY_NAME)}
                             />
-                            <span>Tên hiển thị (Display Name)</span>
+                            <span>Tên hiển thị</span>
                           </label>
 
                           <label className={styles.roleRadio}>
@@ -375,7 +375,7 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
                               checked={isIdentity}
                               onChange={() => handleUpdateField(field.key, 'role', FIELD_ROLES.IDENTITY)}
                             />
-                            <span>Định danh chống trùng (Identity)</span>
+                            <span>Định danh chống trùng</span>
                           </label>
 
                           <label className={styles.roleRadio}>
@@ -395,7 +395,7 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
                         <input
                           type="text"
                           className={styles.hintInput}
-                          placeholder="Văn bản gợi ý nhập (ví dụ: Nhập chính xác email để nhận vé)"
+                          placeholder="Văn bản gợi ý nhập"
                           value={field.hint || ''}
                           onChange={(e) => handleUpdateField(field.key, 'hint', e.target.value)}
                         />
@@ -415,7 +415,7 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
           <div className={styles.previewCard}>
             <div className={styles.previewHeader}>
               <EyeIcon size={16} />
-              <h3 className={styles.previewTitle}>Xem trước Form đăng ký (Live)</h3>
+              <h3 className={styles.previewTitle}>Xem trước Form đăng ký</h3>
             </div>
             <p className={styles.previewDesc}>
               Đây là giao diện biểu mẫu mà người tham dự sẽ nhìn thấy và điền trên landing page.
@@ -431,7 +431,7 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
                   <label className={styles.simulatedLabel}>
                     {field.label}
                     {field.required && (
-                      <span className={styles.requiredStar}> * (bắt buộc)</span>
+                      <span className={styles.requiredStar}> *</span>
                     )}
                   </label>
                   <input
@@ -458,7 +458,7 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
         <div className={styles.saveNotice}>
           <div className={styles.autoSaveBadge}>
             <span className={styles.savePulseDot} />
-            <span><strong>Tự động lưu:</strong> Cấu hình form được lưu liên tục theo thời gian thực (không cần nhấn lưu).</span>
+            <span><strong>Tự động lưu:</strong> Cấu hình form được lưu tự động theo thời gian thực.</span>
           </div>
           <span className={styles.lastSavedText}>Lần lưu gần nhất: {lastSavedTime}</span>
         </div>

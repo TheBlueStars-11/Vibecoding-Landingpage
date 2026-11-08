@@ -16,6 +16,7 @@
   color: #ffffff;
   padding: 64px 24px;
   position: relative;
+  isolation: isolate;
 }
 
 .heroContainer {
