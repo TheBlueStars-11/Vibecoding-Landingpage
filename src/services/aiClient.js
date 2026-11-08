@@ -1,7 +1,17 @@
 import { runAiGuard } from '../domain/aiGuard.js';
 import { generateMockContent } from './mockAi.js';
-import { TONES } from '../domain/schema.js';
+import { TONES } from '../domain/elsSchema.js';
 import { getAiConfig, recordAiLog } from './aiLogger.js';
+
+/**
+ * Khử trùng các thẻ delimiter trong prompt để chống Prompt Injection thoát khỏi vùng dữ liệu
+ */
+export function escapePromptField(val) {
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/<\/?(?:event_data|available_images|system|instruction|prompt)[^>]*>/gi, '')
+    .trim();
+}
 
 /**
  * Xây dựng prompt chuẩn hóa với rào chắn chống Prompt Injection (Mục 7.5)
@@ -23,19 +33,19 @@ export function buildPrompt(eventInfo, assets = []) {
     : (imageCaptions && Array.isArray(imageCaptions) ? imageCaptions.map((c, i) => ({ id: `img_${i + 1}`, role: 'other', caption: c })) : []);
 
   const imageDescriptions = assetList.length > 0
-    ? assetList.map((a, i) => `- ID: "${a.id || `ast_${i + 1}"`}, Vai trò: "${a.role || 'other'}", Chú thích ảnh: "${a.caption || 'Ảnh sự kiện'}"`).join('\n')
+    ? assetList.map((a, i) => `- ID: "${escapePromptField(a.id || `ast_${i + 1}`)}"` + `, Vai trò: "${escapePromptField(a.role || 'other')}", Chú thích ảnh: "${escapePromptField(a.caption || 'Ảnh sự kiện')}"`).join('\n')
     : 'Chưa có ảnh tải lên (sử dụng ảnh minh họa mặc định)';
 
   return `Bạn là copywriter marketing sự kiện tiếng Việt chuyên nghiệp cho nền tảng Event Landing Studio.
 Nhiệm vụ: Phân tích thông tin sự kiện để biên soạn nội dung landing page theo đúng quy chế: Bám sát thông tin đầu vào, tuyệt đối không bịa đặt thêm số liệu, giá vé, cam kết miễn phí, chứng chỉ hay thông tin ngoài dữ liệu được cung cấp.
 
 <event_data>
-- Tên sự kiện: ${name}
-- Thời gian: ${datetime}
-- Địa điểm: ${location}
-- Diễn giả: ${speakers}
-- Ưu đãi đăng ký sớm: ${earlyBird || 'Không có'}
-- Mô tả thêm / Ghi chú đặc thù: ${extraDescription || 'Không có'}
+- Tên sự kiện: ${escapePromptField(name)}
+- Thời gian: ${escapePromptField(datetime)}
+- Địa điểm: ${escapePromptField(location)}
+- Diễn giả: ${escapePromptField(speakers)}
+- Ưu đãi đăng ký sớm: ${escapePromptField(earlyBird) || 'Không có'}
+- Mô tả thêm / Ghi chú đặc thù: ${escapePromptField(extraDescription) || 'Không có'}
 - Giọng điệu hướng dẫn: ${toneInstruction}
 </event_data>
 

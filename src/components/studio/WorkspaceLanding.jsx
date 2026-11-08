@@ -254,7 +254,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
             enriched.customContent = {
               ...enriched.customContent,
               offer: aiResult.earlyBirdOffer || project.event?.earlyBirdOffer,
-              code: aiResult.couponCode || 'VIBE2026',
+              code: aiResult.couponCode || '',
             };
           }
         } else if (m.type === 'faq' && Array.isArray(aiResult.faq) && aiResult.faq.length > 0) {

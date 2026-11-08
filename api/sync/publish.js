@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { ensureMethod, ensurePayloadSize, sendError, sendSuccess } from '../_lib/http.js';
 
 const CACHE_FILE = path.join(os.tmpdir(), 'els-sync-cache.json');
 globalThis._elsSyncProjects = globalThis._elsSyncProjects || new Map();
@@ -17,12 +18,19 @@ function saveToDisk() {
       obj[k] = v;
     }
     fs.writeFileSync(CACHE_FILE, JSON.stringify(obj), 'utf8');
-  } catch {}
+  } catch (err) {
+    console.warn('[Sync] Không thể ghi cache dự án:', err.message);
+  }
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'Chỉ chấp nhận phương thức POST' });
+  if (!ensureMethod(req, res, ['POST'])) {
+    return;
+  }
+
+  // Cho phép payload dự án kèm metadata ảnh tối đa 2MB
+  if (!ensurePayloadSize(req, res, 2 * 1024 * 1024)) {
+    return;
   }
 
   try {
@@ -38,11 +46,9 @@ export default async function handler(req, res) {
       saveToDisk();
     }
 
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(200).json({ ok: true, count: globalThis._elsSyncProjects.size });
+    return sendSuccess(res, { count: globalThis._elsSyncProjects.size });
   } catch (err) {
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(400).json({ ok: false, error: err.message });
+    return sendError(res, err.message || 'Dữ liệu dự án không hợp lệ.', 400);
   }
 }
 

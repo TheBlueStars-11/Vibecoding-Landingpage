@@ -1,5 +1,5 @@
 import { normalizeText, normalizeSpeakers } from '../domain/normalize.js';
-import { TONES } from '../domain/schema.js';
+import { TONES } from '../domain/elsSchema.js';
 import { inferPresetAndTheme } from '../domain/moduleSchema.js';
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import styles from './StudioLayout.module.css';
 import { elsRepository } from '../../services/elsRepository.js';
 import { PROJECT_STATUS } from '../../domain/elsSchema.js';
@@ -20,7 +20,10 @@ import { WorkspaceInfo } from './WorkspaceInfo.jsx';
 import { WorkspaceForm } from './WorkspaceForm.jsx';
 import { WorkspaceLanding } from './WorkspaceLanding.jsx';
 import { WorkspaceRegistrations } from './WorkspaceRegistrations.jsx';
-import { QrCheckInModal } from './QrCheckInModal.jsx';
+
+const QrCheckInModal = lazy(() =>
+  import('./QrCheckInModal.jsx').then((m) => ({ default: m.QrCheckInModal }))
+);
 
 export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }) {
   const [project, setProject] = useState(() => elsRepository.getProjectById(projectId));
@@ -402,12 +405,16 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
       </ConfirmDialog>
 
       {/* Modal Quét QR Check-in vé sự kiện */}
-      <QrCheckInModal
-        isOpen={isQrScannerOpen}
-        onClose={() => setIsQrScannerOpen(false)}
-        project={project}
-        onShowToast={showToast}
-      />
+      {isQrScannerOpen && (
+        <Suspense fallback={null}>
+          <QrCheckInModal
+            isOpen={isQrScannerOpen}
+            onClose={() => setIsQrScannerOpen(false)}
+            project={project}
+            onShowToast={showToast}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

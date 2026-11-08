@@ -51,6 +51,11 @@ const SECRET_PATTERNS = [
     regex: /gh[pousr]_[0-9A-Za-z]{36}/g,
     isIgnored: () => false,
   },
+  {
+    name: 'Local Machine Absolute Path Leak (C:\\Users / d:\\University)',
+    regex: /(?:[cCdD]:\\(?:Users|University)\\[^\s"'`)]+|file:\/\/\/[cCdD](?:%3A|:)\/(?:Users|University)\/[^\s"'`)]+)/g,
+    isIgnored: () => false,
+  },
 ];
 
 const foundIssues = [];
@@ -68,10 +73,17 @@ function isGitTracked(fileRelPath) {
 function checkFileForSecrets(filePath) {
   const relativePath = path.relative(TARGET_DIR, filePath);
   const fileName = path.basename(filePath);
+  const ext = path.extname(filePath).toLowerCase();
+
+  // Bỏ qua các file tài liệu .md lẻ ở thư mục gốc đã bị .gitignore loại trừ (trừ README.md và docs/)
+  if (ext === '.md' && relativePath !== 'README.md' && !relativePath.startsWith(`docs${path.sep}`) && !relativePath.startsWith('docs/')) {
+    if (!isGitTracked(relativePath)) {
+      return;
+    }
+  }
 
   // Kiểm tra file .env
   if (fileName.startsWith('.env') && fileName !== '.env.example') {
-    // Nếu quét thư mục đóng gói nộp bài (submission package), sự hiện diện của .env là lỗi nghiêm trọng
     const isPackagedDir = TARGET_DIR.includes('temp_verify') || TARGET_DIR.includes('dist');
     const isTracked = isGitTracked(relativePath);
 
@@ -83,14 +95,12 @@ function checkFileForSecrets(filePath) {
       });
       return;
     } else {
-      // Trong thư mục làm việc cục bộ và file đã được .gitignore bảo vệ
       console.log(`ℹ️  [scan-secrets] File "${relativePath}" tồn tại cục bộ (được bảo vệ bởi .gitignore, sẽ bị loại bỏ khi nén zip).`);
       return;
     }
   }
 
   // Bỏ qua các file nhị phân
-  const ext = path.extname(filePath).toLowerCase();
   const textExtensions = new Set([
     '.js', '.mjs', '.cjs', '.jsx', '.ts', '.tsx',
     '.json', '.html', '.css', '.md', '.txt', '.yml', '.yaml',

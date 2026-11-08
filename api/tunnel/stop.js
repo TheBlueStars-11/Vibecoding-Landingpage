@@ -2,8 +2,12 @@
  * @file api/tunnel/stop.js
  */
 
+import { ensureMethod, sendSuccess } from '../_lib/http.js';
+
 export default function handler(req, res) {
-  res.setHeader('Content-Type', 'application/json');
-  return res.status(200).json({ ok: true });
+  if (!ensureMethod(req, res, ['POST'])) {
+    return;
+  }
+  return sendSuccess(res, {});
 }
 

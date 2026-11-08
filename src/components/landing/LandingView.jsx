@@ -6,7 +6,7 @@ import { validateRegistrationSubmission } from '../../domain/validators.js';
 import { elsRepository } from '../../services/elsRepository.js';
 import { downloadIcsFile } from '../../domain/calendar.js';
 import { createPresetModuleTree, getDeletedModuleTypes, getDeletedVariants, getSafeVariant } from '../../domain/moduleSchema.js';
-import { ModuleRenderer } from '../studio/devmode/ModuleRenderer.jsx';
+import { ModuleRenderer } from './ModuleRenderer.jsx';
 import { submitRegistrationToSync } from '../../services/realtimeSync.js';
 import { fireDoubleConfetti } from '../../lib/confetti.js';
 import { copyToClipboard } from '../../lib/clipboard.js';

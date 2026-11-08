@@ -50,7 +50,9 @@ function saveCache() {
       registrations: Array.from(devSyncRegistrations.entries()),
     };
     fs.writeFileSync(CACHE_FILE, JSON.stringify(data, null, 2), 'utf8');
-  } catch {}
+  } catch (err) {
+    console.warn('[Sync] Không thể ghi sync cache:', err.message);
+  }
 }
 
 loadCache();
@@ -68,7 +70,9 @@ function stopTunnelProcess() {
       } else {
         tunnelProcess.kill('SIGTERM');
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[Tunnel] Lỗi khi dừng tunnel:', err.message);
+    }
     tunnelProcess = null;
     activeTunnelUrl = null;
     isStartingTunnel = false;
@@ -156,7 +160,7 @@ process.on('SIGTERM', () => {
 
 /**
  * Plugin dev server hỗ trợ:
- * 1. Giả lập /api/generate và /api/save-review
+ * 1. Giả lập /api/generate
  * 2. API Đồng bộ dữ liệu sự kiện thời gian thực qua mạng LAN / Tunnel
  * 3. Server-Sent Events (SSE) để phát tín hiệu đăng ký tức thì tới màn hình Studio
  * 4. Tự động quản lý Cloudflare Tunnel
@@ -360,8 +364,8 @@ function devApiProxyPlugin() {
           return;
         }
 
-        // Giữ nguyên các handler cũ: /api/generate và /api/save-review
-        if ((pathname === '/api/generate' || pathname === '/api/save-review') && req.method === 'POST') {
+        // Handler /api/generate cho môi trường local dev
+        if (pathname === '/api/generate' && req.method === 'POST') {
           let bodyStr = '';
           req.on('data', (chunk) => {
             bodyStr += chunk;
@@ -369,8 +373,11 @@ function devApiProxyPlugin() {
           req.on('end', async () => {
             try {
               const body = bodyStr ? JSON.parse(bodyStr) : {};
-              const fakeReq = { method: 'POST', body };
+              const fakeReq = { method: 'POST', headers: req.headers || {}, body };
               const fakeRes = {
+                setHeader(k, v) {
+                  res.setHeader(k, v);
+                },
                 status(code) {
                   res.statusCode = code;
                   return this;
@@ -380,13 +387,8 @@ function devApiProxyPlugin() {
                   res.end(JSON.stringify(obj));
                 },
               };
-              if (pathname === '/api/save-review') {
-                const handler = (await import('./api/save-review.js')).default;
-                await handler(fakeReq, fakeRes);
-              } else {
-                const handler = (await import('./api/generate.js')).default;
-                await handler(fakeReq, fakeRes);
-              }
+              const handler = (await import('./api/generate.js')).default;
+              await handler(fakeReq, fakeRes);
             } catch (e) {
               res.statusCode = 500;
               res.setHeader('Content-Type', 'application/json');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ModuleRenderer.module.css';
-import { calculateCountdown } from '../../../domain/time.js';
-import { STANDALONE_DEV_MOCK_DATA, getSafeVariant } from '../../../domain/moduleSchema.js';
+import { calculateCountdown } from '../../domain/time.js';
+import { STANDALONE_DEV_MOCK_DATA, getSafeVariant } from '../../domain/moduleSchema.js';
 import {
   CalendarIcon,
   ClockIcon,
@@ -29,7 +29,7 @@ import {
   WifiIcon,
   QrCodeIcon,
   DownloadIcon,
-} from '../../ui/Icons.jsx';
+} from '../ui/Icons.jsx';
 
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #e11d48, #fb7185)',
@@ -2035,7 +2035,8 @@ export function ModuleRenderer({
   // 8. OFFER BANNER MODULE (Expanded: price-compare, card-image-left, tiers-timeline, inline-chip, ribbon, split-coupon)
   // ================================================================
   if (module.type === 'offer_banner') {
-    const offer = eventData.earlyBirdOffer || 'Giảm 30% cho 50 người đăng ký đầu tiên!';
+    const offer = custom.offer || eventData.earlyBirdOffer || 'Ưu đãi dành cho người tham dự đăng ký sớm';
+    const couponCode = custom.code || '';
     const isPriceCompare = variant === 'price-compare';
     const isCardImageLeft = variant === 'card-image-left';
     const isTiersTimeline = variant === 'tiers-timeline';
@@ -2046,16 +2047,17 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.offerPriceCompareWrap}>
           <span style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--theme-primary, #e11d48)' }}>
-            Ưu đãi đặt chỗ sớm (Early Bird)
+            Ưu đãi đặt chỗ sớm
           </span>
           <div className={styles.priceCompareBox}>
-            <span className={styles.priceOld}>500.000đ</span>
-            <span className={styles.priceNew}>Miễn phí</span>
-            <span className={styles.priceSaveBadge}>Tiết kiệm 100%</span>
+            <span className={styles.priceNew}>{offer}</span>
+            <span className={styles.priceSaveBadge}>Đăng ký sớm</span>
           </div>
-          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 16px 0' }}>{offer}</p>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 16px 0' }}>
+            Áp dụng cho khách tham dự hoàn tất đăng ký sớm tại chương trình {eventData.eventName || 'sự kiện'}.
+          </p>
           <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
-            Nhận vé ưu đãi ngay
+            Nhận ưu đãi ngay
           </button>
         </div>
       );
@@ -2074,13 +2076,13 @@ export function ModuleRenderer({
             )}
           </div>
           <div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase' }}>Quà tặng đính kèm</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase' }}>Quyền lợi đăng ký sớm</span>
             <h3 style={{ margin: '4px 0 8px 0', fontSize: '1.2rem', color: '#0f172a' }}>{offer}</h3>
             <p style={{ margin: '0 0 14px 0', fontSize: '0.85rem', color: '#64748b' }}>
-              Bao gồm tài liệu Ebook độc quyền và mã code mẫu sẵn sàng ứng dụng vào dự án của bạn.
+              Dành cho khách tham dự hoàn tất đăng ký tham gia {eventData.eventName || 'chương trình'}.
             </p>
             <button type="button" className={styles.btnHeroCta} onClick={scrollToForm} style={{ padding: '8px 18px', fontSize: '0.875rem' }}>
-              Đăng ký để nhận
+              Đăng ký tham dự
             </button>
           </div>
         </div>
@@ -2091,19 +2093,19 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.offerTiersTimelineWrap}>
           <div className={`${styles.tiersTimelineStep} ${styles.tiersTimelineActive}`}>
-            <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--theme-primary, #e11d48)' }}>Đợt 1: Early Bird</strong>
-            <span style={{ fontSize: '0.8rem', color: '#1e293b' }}>Miễn phí 100%</span>
+            <strong style={{ display: 'block', fontSize: '0.9rem', color: 'var(--theme-primary, #e11d48)' }}>Đợt 1: Đăng ký sớm</strong>
+            <span style={{ fontSize: '0.8rem', color: '#1e293b' }}>{offer}</span>
             <small style={{ display: 'block', fontSize: '0.7rem', color: '#059669', fontWeight: 700 }}>Đang mở</small>
           </div>
           <div className={styles.tiersTimelineStep}>
             <strong style={{ display: 'block', fontSize: '0.9rem', color: '#64748b' }}>Đợt 2: Tiêu chuẩn</strong>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>199.000đ</span>
-            <small style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8' }}>Sắp mở</small>
+            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Vé tham dự tiêu chuẩn</span>
+            <small style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8' }}>Giai đoạn kế tiếp</small>
           </div>
           <div className={styles.tiersTimelineStep}>
-            <strong style={{ display: 'block', fontSize: '0.9rem', color: '#64748b' }}>Đợt 3: Vé trễ</strong>
-            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>299.000đ</span>
-            <small style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8' }}>Chưa mở</small>
+            <strong style={{ display: 'block', fontSize: '0.9rem', color: '#64748b' }}>Đợt 3: Sát ngày sự kiện</strong>
+            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Theo số lượng chỗ trống</span>
+            <small style={{ display: 'block', fontSize: '0.7rem', color: '#94a3b8' }}>Trước giờ khai mạc</small>
           </div>
         </div>
       );
@@ -2130,11 +2132,11 @@ export function ModuleRenderer({
               <SparklesIcon size={22} style={{ color: '#d97706', flexShrink: 0 }} />
             )}
             <div className={styles.couponLeftText}>
-              <strong style={{ display: 'block', fontSize: '0.95rem', color: '#92400e' }}>Phiếu ưu đãi đăng ký sớm</strong>
+              <strong style={{ display: 'block', fontSize: '0.95rem', color: '#92400e' }}>Ưu đãi đăng ký sớm</strong>
               <span style={{ fontSize: '0.85rem', color: '#b45309' }}>{offer}</span>
             </div>
           </div>
-          <div className={styles.couponRight}>MÃ: EARLY2026</div>
+          <div className={styles.couponRight}>{couponCode ? `MÃ: ${couponCode}` : 'ƯU ĐÃI SỚM'}</div>
         </div>
       );
     }
@@ -2155,12 +2157,27 @@ export function ModuleRenderer({
   // 10. FAQ MODULE
   // ================================================================
   if (module.type === 'faq') {
+    const speakerNames = Array.isArray(eventData.speakers) && eventData.speakers.length > 0
+      ? eventData.speakers.map((s) => (typeof s === 'string' ? s : s.name)).filter(Boolean).join(', ')
+      : 'các chuyên gia và diễn giả của chương trình';
     const defaultFaqs = [
-      { q: 'Sự kiện có thu phí tham dự không?', a: 'Sự kiện hoàn toàn miễn phí cho sinh viên và người đăng ký sớm.' },
-      { q: 'Tôi có nhận được chứng chỉ sau buổi học không?', a: 'Có, toàn bộ người tham gia đầy đủ sẽ nhận chứng nhận điện tử sau sự kiện.' },
-      { q: 'Tôi cần chuẩn bị gì khi đến tham dự?', a: 'Bạn nên mang theo laptop để cùng thực hành các bài tập demo trực tiếp.' },
+      {
+        q: 'Sự kiện diễn ra vào thời gian và địa điểm nào?',
+        a: `Chương trình diễn ra vào ngày ${eventData.eventDate || 'theo thông báo'} lúc ${eventData.eventTime || '09:00'} (GMT+7) tại ${eventData.venue || 'địa điểm tổ chức sự kiện'}.`,
+      },
+      {
+        q: 'Ai là diễn giả chia sẻ tại chương trình?',
+        a: `Sự kiện có sự tham gia chia sẻ của ${speakerNames}.`,
+      },
+      {
+        q: 'Làm thế nào để đăng ký giữ chỗ và nhận ưu đãi?',
+        a: eventData.earlyBirdOffer
+          ? `Bạn hãy điền thông tin tại biểu mẫu đăng ký trên trang này để nhận ngay ưu đãi: ${eventData.earlyBirdOffer}.`
+          : 'Bạn chỉ cần hoàn tất biểu mẫu đăng ký trực tuyến ngay trên trang để nhận mã QR xác nhận tham dự.',
+      },
     ];
-    const faqs = (aiData?.faq && Array.isArray(aiData.faq) && aiData.faq.length > 0) ? aiData.faq : defaultFaqs;
+    const customFaqs = Array.isArray(custom.items) && custom.items.length > 0 ? custom.items : null;
+    const faqs = customFaqs || ((aiData?.faq && Array.isArray(aiData.faq) && aiData.faq.length > 0) ? aiData.faq : defaultFaqs);
 
     return renderContainer(
       <div className={styles.faqWrap}>
@@ -2469,13 +2486,17 @@ export function ModuleRenderer({
   // 15. STATS MODULE (Expanded: cards, big-number, inline-text, row)
   // ================================================================
   if (module.type === 'stats') {
+    const speakerCount = Array.isArray(eventData.speakers) && eventData.speakers.length > 0 ? eventData.speakers.length : 1;
+    const agendaCount = Array.isArray(eventData.agenda) && eventData.agenda.length > 0 ? eventData.agenda.length : 3;
+    const capacityVal = Number(eventData.capacity) > 0 ? String(eventData.capacity) : 'Trực tiếp';
     const defaultStats = [
-      { num: '3+', label: 'Giờ nội dung thực chiến', sub: 'Từ lý thuyết đến ứng dụng' },
-      { num: '3', label: 'Diễn giả chuyên gia', sub: 'Kinh nghiệm hàng đầu lĩnh vực' },
-      { num: '150', label: 'Suất tham dự trực tiếp', sub: 'Hội trường chuẩn quốc tế' },
-      { num: '100%', label: 'Miễn phí hoàn toàn', sub: 'Tài trợ bởi Ban Tổ Chức' },
+      { num: String(agendaCount), label: 'Phiên nội dung chuyên đề', sub: 'Lịch trình bài bản' },
+      { num: String(speakerCount), label: 'Diễn giả chia sẻ', sub: 'Kinh nghiệm thực tiễn' },
+      { num: capacityVal, label: Number(eventData.capacity) > 0 ? 'Chỉ tiêu tham dự' : 'Hình thức tổ chức', sub: eventData.venue || 'Không gian sự kiện' },
+      { num: '100%', label: 'Tâm huyết tổ chức', sub: 'Trải nghiệm chuyên nghiệp' },
     ];
-    const statsList = (aiData?.stats && Array.isArray(aiData.stats) && aiData.stats.length > 0) ? aiData.stats : defaultStats;
+    const customStats = Array.isArray(custom.stats) && custom.stats.length > 0 ? custom.stats : null;
+    const statsList = customStats || ((aiData?.stats && Array.isArray(aiData.stats) && aiData.stats.length > 0) ? aiData.stats : defaultStats);
 
     const isCards = variant === 'cards';
     const isBigNumber = variant === 'big-number';
@@ -2498,9 +2519,9 @@ export function ModuleRenderer({
     if (isBigNumber) {
       return renderContainer(
         <div className={styles.statsBigNumberWrap}>
-          <div className={styles.statsBigNumHuge}>{statsList[0]?.num || '100%'}</div>
-          <h3 style={{ margin: '0 0 6px 0', fontSize: '1.25rem', color: '#0f172a' }}>{statsList[0]?.label || 'Miễn phí hoàn toàn'}</h3>
-          <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>Được tài trợ trọn gói từ các đối tác công nghệ.</p>
+          <div className={styles.statsBigNumHuge}>{statsList[0]?.num || String(speakerCount)}</div>
+          <h3 style={{ margin: '0 0 6px 0', fontSize: '1.25rem', color: '#0f172a' }}>{statsList[0]?.label || 'Diễn giả & Chuyên gia'}</h3>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: '#64748b' }}>{statsList[0]?.sub || `Đồng hành tại ${eventData.eventName || 'sự kiện'}.`}</p>
         </div>
       );
     }
@@ -2509,7 +2530,12 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.statsInlineTextWrap}>
           <SparklesIcon size={14} style={{ color: 'var(--theme-primary, #e11d48)', display: 'inline-block', verticalAlign: 'middle', marginRight: 6 }} />
-          <strong>3+ Giờ thực chiến</strong> · <strong>3 Diễn giả</strong> · <strong>150 Chỗ ngồi</strong> · <strong>100% Miễn phí</strong>
+          {statsList.map((st, idx) => (
+            <span key={idx}>
+              {idx > 0 && ' · '}
+              <strong>{st.num || st.value} {st.label}</strong>
+            </span>
+          ))}
         </div>
       );
     }

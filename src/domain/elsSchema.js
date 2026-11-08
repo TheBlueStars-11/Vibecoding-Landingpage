@@ -36,6 +36,27 @@ export const ASSET_ROLES = {
   OTHER: 'other',
 };
 
+export const TONES = {
+  PROFESSIONAL: 'professional',
+  FRIENDLY: 'friendly',
+  PREMIUM: 'premium',
+};
+
+/**
+ * ĐỊNH DANH TRƯỜNG DỮ LIỆU NỘI DUNG AI DUY NHẤT (Single Source of Truth - SYS-05)
+ */
+export const AI_FIELDS = {
+  HEADLINE: 'headline',
+  DESCRIPTION: 'description',
+  BENEFITS: 'benefits',
+  BULLETS: 'bullets',
+  DESIGN_REASONING: 'designReasoning',
+  RECOMMENDED_PRESET: 'recommendedPreset',
+  RECOMMENDED_SPEAKER_VARIANT: 'recommendedSpeakerVariant',
+  COLOR_THEME: 'colorTheme',
+  IMAGE_ASSIGNMENTS: 'imageAssignments',
+};
+
 /**
  * ĐỊNH DANH TRƯỜNG DỮ LIỆU SỰ KIỆN DUY NHẤT (Single Source of Truth - SYS-05)
  */
