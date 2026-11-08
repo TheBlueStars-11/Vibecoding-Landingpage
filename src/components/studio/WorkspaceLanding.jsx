@@ -17,7 +17,6 @@ import {
   CheckIcon,
   AlertCircleIcon,
   CopyIcon,
-  CodeIcon,
   PaletteIcon,
   RocketIcon,
   PencilIcon,
@@ -25,10 +24,6 @@ import {
 } from '../ui/Icons.jsx';
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
 import { publishProjectToSync } from '../../services/realtimeSync.js';
-
-const DevModeWorkspace = React.lazy(() =>
-  import('./devmode/DevModeWorkspace.jsx').then((m) => ({ default: m.DevModeWorkspace }))
-);
 
 // Trợ giúp khởi tạo giá trị nội dung AI với fallback thông minh
 function getInitialAiValues(project) {
@@ -53,7 +48,6 @@ function getInitialAiValues(project) {
 }
 
 export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange, onShowToast, onNavigate }) {
-  const [isDevMode, setIsDevMode] = useState(false);
   const [deviceMode, setDeviceMode] = useState('laptop'); // 'laptop' (1280px) | 'phone' (375px)
   const [previewKey, setPreviewKey] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -465,19 +459,6 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
 
   const isMock = project.ai?.source === 'mock' || !project.ai?.source;
 
-  if (isDevMode) {
-    return (
-      <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Đang tải công cụ Dev Mode...</div>}>
-        <DevModeWorkspace
-          project={project}
-          onUpdateProject={onUpdateProject}
-          onShowToast={onShowToast}
-          onExitDevMode={() => setIsDevMode(false)}
-        />
-      </React.Suspense>
-    );
-  }
-
   return (
     <div className={styles.workspaceContainer}>
       {/* ============================================================ */}
@@ -620,23 +601,6 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
               <PlusIcon size={14} />
               <span className={styles.btnFullText}>Tạo trang mới</span>
               <span className={styles.btnShortText}>Tạo mới</span>
-            </button>
-
-            <button
-              type="button"
-              className={styles.btnToggleDevMode}
-              onClick={() => {
-                if (onNavigate) {
-                  onNavigate(`p/${project.id}/devmode`);
-                } else {
-                  setIsDevMode(true);
-                }
-              }}
-              title="Mở không gian thiết kế module độc lập"
-            >
-              <CodeIcon size={14} />
-              <span className={styles.btnFullText}>Chế độ lập trình</span>
-              <span className={styles.btnShortText}>Dev Mode</span>
             </button>
 
             <button
@@ -857,24 +821,6 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
               >
                 <RefreshCwIcon size={14} />
                 <span>Cập nhật theo chủ đề</span>
-              </button>
-
-              <button
-                type="button"
-                className={styles.btnOpenDevModeSidebar}
-                onClick={() => {
-                  if (onNavigate) {
-                    onNavigate(`p/${project.id}/devmode`);
-                  } else {
-                    setIsDevMode(true);
-                  }
-                }}
-                title="Mở không gian Dev Mode độc lập để kéo kích thước, đổi variant và kiểm tra auditor"
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <CodeIcon size={14} /> Tùy biến chi tiết (Dev Mode)
-                </span>
-                <span>↗</span>
               </button>
             </div>
           </div>

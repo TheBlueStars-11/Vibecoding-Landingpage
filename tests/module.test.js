@@ -191,9 +191,11 @@ describe('Module Schema & Catalog', () => {
     assert.notEqual(badAgenda.variant, 'timeline-compact');
     assert.equal(badAgenda.variant, 'timeline');
 
-    // 5. Toàn bộ 5 presets đều không chứa bất kỳ biến thể nào bị xóa và không chứa module thanh thông báo khẩn
+    // 5. Toàn bộ 5 presets đều không chứa bất kỳ biến thể nào bị xóa và không chứa module thanh thông báo khẩn hoặc nút đăng ký dính
     assert.ok(PERMANENT_DELETED_MODULE_TYPES.includes('announcement_bar'));
     assert.ok(getDeletedModuleTypes().includes('announcement_bar'));
+    assert.ok(PERMANENT_DELETED_MODULE_TYPES.includes('sticky_cta'));
+    assert.ok(getDeletedModuleTypes().includes('sticky_cta'));
 
     for (const presetKey of Object.keys(PRESET_TEMPLATES)) {
       const tree = createPresetModuleTree(presetKey);
@@ -201,6 +203,11 @@ describe('Module Schema & Catalog', () => {
         tree.some((m) => m.type === 'announcement_bar'),
         false,
         `Preset ${presetKey} must not contain announcement_bar`
+      );
+      assert.equal(
+        tree.some((m) => m.type === 'sticky_cta'),
+        false,
+        `Preset ${presetKey} must not contain sticky_cta`
       );
       for (const mod of tree) {
         assert.equal(

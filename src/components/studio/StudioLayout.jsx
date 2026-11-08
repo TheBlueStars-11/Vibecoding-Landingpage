@@ -11,22 +11,16 @@ import {
   SparklesIcon,
   UsersIcon,
   ExternalLinkIcon,
-  CodeIcon,
-  CpuIcon,
   PlusIcon,
   QrCodeIcon,
+  QrScanPortraitIcon,
 } from '../ui/Icons.jsx';
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
 import { WorkspaceInfo } from './WorkspaceInfo.jsx';
 import { WorkspaceForm } from './WorkspaceForm.jsx';
 import { WorkspaceLanding } from './WorkspaceLanding.jsx';
 import { WorkspaceRegistrations } from './WorkspaceRegistrations.jsx';
-import { WorkspaceAiControl } from './WorkspaceAiControl.jsx';
 import { QrCheckInModal } from './QrCheckInModal.jsx';
-
-const DevModeWorkspace = React.lazy(() =>
-  import('./devmode/DevModeWorkspace.jsx').then((m) => ({ default: m.DevModeWorkspace }))
-);
 
 export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }) {
   const [project, setProject] = useState(() => elsRepository.getProjectById(projectId));
@@ -75,6 +69,15 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
 
     return () => unsub();
   }, [projectId]);
+
+  // Tự động chuyển hướng về landing nếu URL trỏ vào các trang devmode cũ đã bị loại bỏ
+  useEffect(() => {
+    if (activeWorkspace === 'devmode' || activeWorkspace === 'ai' || activeWorkspace === 'ai-control') {
+      if (project?.id) {
+        onNavigate(`p/${project.id}/landing`);
+      }
+    }
+  }, [activeWorkspace, onNavigate, project?.id]);
 
   // Nếu không tìm thấy dự án
   if (!project) {
@@ -229,28 +232,6 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
               <span className={styles.navLabel}>4. Đơn đăng ký</span>
               {regCount > 0 && <span className={styles.navBadge}>{regCount}</span>}
             </button>
-
-            <button
-              type="button"
-              className={`${styles.navItem} ${styles.navItemDev} ${activeWorkspace === 'devmode' ? styles.activeNavItemDev : ''}`}
-              onClick={() => onNavigate(`p/${project.id}/devmode`)}
-              aria-current={activeWorkspace === 'devmode' ? 'page' : undefined}
-            >
-              <CodeIcon size={18} className={styles.navIcon} />
-              <span className={styles.navLabel}>5. Module Dev Mode</span>
-              <span className={styles.devBadge}>DEV</span>
-            </button>
-
-            <button
-              type="button"
-              className={`${styles.navItem} ${styles.navItemAi} ${activeWorkspace === 'ai' || activeWorkspace === 'ai-control' ? styles.activeNavItemAi : ''}`}
-              onClick={() => onNavigate(`p/${project.id}/ai`)}
-              aria-current={activeWorkspace === 'ai' || activeWorkspace === 'ai-control' ? 'page' : undefined}
-            >
-              <CpuIcon size={18} className={styles.navIcon} />
-              <span className={styles.navLabel}>6. Kiểm soát AI & API</span>
-              <span className={styles.aiBadge}>API</span>
-            </button>
           </div>
 
           {/* Chân sidebar: Chỉ hiển thị nhãn khi chạy chế độ Mock */}
@@ -265,7 +246,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
         </aside>
 
         {/* Vùng nội dung Workspace */}
-        <main className={`${styles.mainViewport} ${activeWorkspace === 'devmode' ? styles.mainViewportDev : ''} ${(activeWorkspace === 'ai' || activeWorkspace === 'ai-control') ? styles.mainViewportAi : ''}`} id="main-content">
+        <main className={styles.mainViewport} id="main-content">
           <div key={`${project.id}-${activeWorkspace}`} className={styles.workspaceTransition}>
             {activeWorkspace === 'info' && (
               <WorkspaceInfo
@@ -302,25 +283,6 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
                 onOpenQrScanner={() => setIsQrScannerOpen(true)}
               />
             )}
-
-            {activeWorkspace === 'devmode' && (
-              <React.Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Đang tải công cụ Dev Mode...</div>}>
-                <DevModeWorkspace
-                  project={project}
-                  onUpdateProject={handleUpdateProject}
-                  onShowToast={showToast}
-                  onExitDevMode={() => onNavigate(`p/${project.id}/landing`)}
-                />
-              </React.Suspense>
-            )}
-
-            {(activeWorkspace === 'ai' || activeWorkspace === 'ai-control') && (
-              <WorkspaceAiControl
-                project={project}
-                onShowToast={showToast}
-                onNavigate={onNavigate}
-              />
-            )}
           </div>
         </main>
       </div>
@@ -349,6 +311,20 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
           <span>Form</span>
         </button>
 
+        {/* Nút trung tâm: Quét QR Check-in với icon ngắm quét dọc chuẩn mobile */}
+        <button
+          type="button"
+          className={styles.mobileQrCenterBtn}
+          onClick={() => setIsQrScannerOpen(true)}
+          aria-label="Quét QR Check-in vé người tham dự"
+          title="Mở máy ảnh quét mã QR vé tham dự"
+        >
+          <div className={styles.mobileQrCenterBadge}>
+            <QrScanPortraitIcon size={22} />
+          </div>
+          <span className={styles.mobileQrCenterLabel}>Quét QR</span>
+        </button>
+
         <button
           type="button"
           className={`${styles.tabBarItem} ${activeWorkspace === 'landing' ? styles.activeTabItem : ''}`}
@@ -356,7 +332,7 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
           aria-current={activeWorkspace === 'landing' ? 'page' : undefined}
         >
           <SparklesIcon size={20} />
-          <span>Landing</span>
+          <span>Preview</span>
         </button>
 
         <button
@@ -370,26 +346,6 @@ export function StudioLayout({ projectId, activeWorkspace = 'info', onNavigate }
             {regCount > 0 && <span className={styles.mobileBadge}>{regCount}</span>}
           </div>
           <span>Đơn ({regCount})</span>
-        </button>
-
-        <button
-          type="button"
-          className={`${styles.tabBarItem} ${activeWorkspace === 'devmode' ? styles.activeTabItem : ''}`}
-          onClick={() => onNavigate(`p/${project.id}/devmode`)}
-          aria-current={activeWorkspace === 'devmode' ? 'page' : undefined}
-        >
-          <CodeIcon size={20} />
-          <span>Dev Mode</span>
-        </button>
-
-        <button
-          type="button"
-          className={`${styles.tabBarItem} ${activeWorkspace === 'ai' || activeWorkspace === 'ai-control' ? styles.activeTabItem : ''}`}
-          onClick={() => onNavigate(`p/${project.id}/ai`)}
-          aria-current={activeWorkspace === 'ai' || activeWorkspace === 'ai-control' ? 'page' : undefined}
-        >
-          <CpuIcon size={20} />
-          <span>Kiểm soát AI</span>
         </button>
       </nav>
 

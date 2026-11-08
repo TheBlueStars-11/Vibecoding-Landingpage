@@ -307,7 +307,7 @@ export const MODULE_CATALOG = {
  * Danh sách đen vĩnh viễn các module và biến thể đã bị loại bỏ/xóa bỏ vĩnh viễn khỏi hệ thống app
  * (Theo nhật ký đánh giá thực tế MODULE_DEV_REVIEW_LOG và yêu cầu xóa vĩnh viễn)
  */
-export const PERMANENT_DELETED_MODULE_TYPES = ['announcement_bar'];
+export const PERMANENT_DELETED_MODULE_TYPES = ['announcement_bar', 'sticky_cta'];
 
 export const PERMANENT_DELETED_VARIANTS = {
   hero: ['image-left', 'poster-fullbleed'],
@@ -502,7 +502,6 @@ export const PRESET_TEMPLATES = {
       { type: 'organizer', variant: 'card' },
       { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
-      { type: 'sticky_cta', variant: 'bar' },
     ],
   },
   techtalk: {
@@ -525,7 +524,6 @@ export const PRESET_TEMPLATES = {
       { type: 'form', variant: 'split-benefit' },
       { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
-      { type: 'sticky_cta', variant: 'rail-card' },
     ],
   },
   community: {
@@ -549,7 +547,6 @@ export const PRESET_TEMPLATES = {
       { type: 'form', variant: 'card' },
       { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
-      { type: 'sticky_cta', variant: 'bar' },
     ],
   },
   gala: {
@@ -571,7 +568,6 @@ export const PRESET_TEMPLATES = {
       { type: 'form', variant: 'card' },
       { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
-      { type: 'sticky_cta', variant: 'rail-card' },
     ],
   },
   compact: {
@@ -588,7 +584,6 @@ export const PRESET_TEMPLATES = {
       { type: 'form', variant: 'card' },
       { type: 'final_cta', variant: 'banner' },
       { type: 'footer', variant: 'simple' },
-      { type: 'sticky_cta', variant: 'bar' },
     ],
   },
 };

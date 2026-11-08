@@ -234,68 +234,6 @@
   transform: scale(0.98);
 }
 
-/* Thẻ Dev Mode độc lập trong sidebar */
-.navItemDev {
-  border: 1px dashed rgba(225, 29, 72, 0.35);
-  background: rgba(225, 29, 72, 0.03);
-}
-
-.navItemDev:hover {
-  background: rgba(225, 29, 72, 0.08);
-  color: #be123c;
-  border-color: #be123c;
-}
-
-.activeNavItemDev {
-  background: linear-gradient(135deg, rgba(225, 29, 72, 0.12) 0%, rgba(244, 63, 94, 0.12) 100%);
-  color: #be123c;
-  font-weight: 700;
-  border: 1px solid #e11d48;
-  transform: translateX(3px);
-}
-
-.devBadge {
-  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
-  color: #ffffff;
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 6px;
-  letter-spacing: 0.5px;
-  box-shadow: 0 1px 3px rgba(225, 29, 72, 0.3);
-}
-
-/* Thẻ Kiểm soát AI trong sidebar */
-.navItemAi {
-  border: 1px dashed rgba(6, 182, 212, 0.45);
-  background: rgba(6, 182, 212, 0.03);
-}
-
-.navItemAi:hover {
-  background: rgba(6, 182, 212, 0.09);
-  color: #0891b2;
-  border-color: #0891b2;
-}
-
-.activeNavItemAi {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(225, 29, 72, 0.08) 100%);
-  color: #0e7490;
-  font-weight: 700;
-  border: 1px solid #0891b2;
-  transform: translateX(3px);
-}
-
-.aiBadge {
-  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-  color: #ffffff;
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 6px;
-  letter-spacing: 0.5px;
-  box-shadow: 0 1px 3px rgba(6, 182, 212, 0.3);
-}
-
 .navIcon {
   flex-shrink: 0;
 }
@@ -342,18 +280,6 @@
   max-width: 1300px;
   width: 100%;
   overflow-y: auto;
-}
-
-.mainViewportDev {
-  padding: 0;
-  max-width: none;
-  overflow: hidden;
-  height: calc(100vh - 64px);
-}
-
-.mainViewportAi {
-  padding: 16px 24px;
-  max-width: 1560px;
 }
 
 .workspaceTransition {
@@ -438,6 +364,54 @@
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 999px;
+}
+
+/* Nút Quét QR trung tâm trên mobile bar */
+.mobileQrCenterBtn {
+  flex: 1.1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 0 6px 0;
+  position: relative;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+
+.mobileQrCenterBtn:active {
+  transform: scale(0.92);
+}
+
+.mobileQrCenterBadge {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.42);
+  margin-top: -16px;
+  border: 3px solid #ffffff;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.mobileQrCenterBtn:hover .mobileQrCenterBadge {
+  box-shadow: 0 6px 18px rgba(225, 29, 72, 0.55);
+}
+
+.mobileQrCenterLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #be123c;
+  margin-top: 3px;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 
 /* Not Found View */

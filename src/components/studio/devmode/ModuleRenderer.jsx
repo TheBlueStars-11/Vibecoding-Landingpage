@@ -167,7 +167,6 @@ const SCENE_MAP = {
   form: '06 · ĐĂNG KÝ',
   faq: '06 · ĐĂNG KÝ',
   final_cta: '06 · ĐĂNG KÝ',
-  sticky_cta: '06 · ĐĂNG KÝ',
   sponsors: 'CREDITS · ĐỐI TÁC',
   organizer: 'CREDITS · BAN TỔ CHỨC',
   footer: 'CREDITS · BẢN QUYỀN',
@@ -2883,58 +2882,6 @@ export function ModuleRenderer({
         </div>
       </div>
     );
-  }
-
-  // ================================================================
-  // 23. STICKY_CTA MODULE (Expanded: rail-card, bar)
-  // ================================================================
-  if (module.type === 'sticky_cta') {
-    const isLiveLanding = !isDevMode;
-    const isRailCard = variant === 'rail-card';
-
-    if (isRailCard) {
-      const railContent = (
-        <aside className={styles.stickyRailCard} aria-label="Đăng ký nhanh">
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--cin-accent, #fde68a)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              ✦ GIỮ CHỖ SỰ KIỆN
-            </span>
-            <strong style={{ fontSize: '0.9rem', color: '#ffffff' }}>
-              {eventData.eventName ? (eventData.eventName.length > 24 ? `${eventData.eventName.slice(0, 24)}...` : eventData.eventName) : 'Vibe Coding 2026'}
-            </strong>
-          </div>
-          <button
-            type="button"
-            className={styles.cdCinematicCtaBtn}
-            style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-            onClick={scrollToForm}
-          >
-            Đăng ký ↗
-          </button>
-        </aside>
-      );
-      if (isLiveLanding) {
-        return railContent;
-      }
-      return renderContainer(railContent);
-    }
-
-    const stickyContent = (
-      <div className={`${styles.stickyCtaBar} ${isLiveLanding ? styles.stickyCtaFixed : ''}`}>
-        <div className={styles.stickyCtaTextGroup}>
-          <div className={styles.stickyCtaTitle}>{eventData.eventName || 'Hội thảo AI 2026'}</div>
-          <div className={styles.stickyCtaOffer}>{aiData?.earlyBirdOffer || 'Ưu đãi tặng tài liệu độc quyền khi đăng ký sớm'}</div>
-        </div>
-        <button type="button" className={styles.stickyCtaBtn} onClick={scrollToForm}>
-          Đăng ký ngay
-        </button>
-      </div>
-    );
-
-    if (isLiveLanding) {
-      return stickyContent;
-    }
-    return renderContainer(stickyContent);
   }
 
   // ================================================================

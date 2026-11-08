@@ -476,6 +476,37 @@ export function QrCodeIcon({ size = 16, className = '' }) {
   );
 }
 
+export function QrScanPortraitIcon({ size = 20, className = '' }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {/* 4 góc khung ngắm quét dọc chuẩn tỉ lệ màn hình smartphone */}
+      <path d="M4 6V3.5A1.5 1.5 0 0 1 5.5 2H9" />
+      <path d="M15 2h3.5A1.5 1.5 0 0 1 20 3.5V6" />
+      <path d="M4 18v2.5A1.5 1.5 0 0 0 5.5 22H9" />
+      <path d="M15 22h3.5a1.5 1.5 0 0 0 1.5-1.5V18" />
+      {/* Cụm mã QR bên trong */}
+      <rect x="7" y="5.5" width="3" height="3" rx="0.5" fill="currentColor" stroke="none" />
+      <rect x="14" y="5.5" width="3" height="3" rx="0.5" fill="currentColor" stroke="none" />
+      <rect x="7" y="15.5" width="3" height="3" rx="0.5" fill="currentColor" stroke="none" />
+      <rect x="14" y="15.5" width="3" height="3" rx="0.5" fill="currentColor" stroke="none" />
+      <rect x="11" y="9.5" width="2" height="2" rx="0.5" fill="currentColor" stroke="none" />
+      {/* Tia laser quét ngang */}
+      <line x1="2.5" y1="12" x2="21.5" y2="12" stroke="currentColor" strokeWidth="2.2" />
+    </svg>
+  );
+}
+
 export function FileTextIcon({ size = 16, className = '' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">

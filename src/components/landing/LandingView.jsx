@@ -301,15 +301,10 @@ export function LandingView({
       });
   }, [project.moduleLayout, project.modulePreset]);
 
-  const hasStickyCta = useMemo(() => {
-    return moduleTree.some((m) => m.type === 'sticky_cta' && !m.hidden);
-  }, [moduleTree]);
-
   return (
     <div
       className={`${styles.landingWrapper} ${deviceMode === 'phone' ? 'phone-device-preview' : ''}`}
       data-device={deviceMode}
-      style={hasStickyCta ? { paddingBottom: '92px' } : undefined}
     >
       {countdown.isPast && (
         <div style={{
