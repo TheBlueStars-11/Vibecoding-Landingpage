@@ -84,8 +84,7 @@ export function LandingView({
       formValues,
       formFields,
       existing,
-      countdown.isPast,
-      event.capacity
+      countdown.isPast
     );
 
     if (!validation.isValid) {

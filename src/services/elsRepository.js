@@ -438,20 +438,9 @@ export const elsRepository = {
     }
 
     const registrations = this.getRegistrations(projectId);
-
-    // 3. Kiểm tra sức chứa (Capacity check)
     const project = this.getProjectById(projectId);
-    const capacity = Number(project?.event?.capacity || project?.capacity || 0);
-    if (capacity > 0 && registrations.length >= capacity) {
-      throw new ElsError(
-        `Sự kiện đã đạt giới hạn sức chứa tối đa (${capacity} người tham dự). Đăng ký hiện đã đóng.`,
-        ERROR_CODES.CAPACITY_EXCEEDED,
-        ERROR_CATEGORIES.BUSINESS,
-        'Vui lòng theo dõi các đợt mở đăng ký tiếp theo hoặc liên hệ ban tổ chức.'
-      );
-    }
 
-    // 4. Chống trùng identityKey
+    // 3. Chống trùng identityKey (Không giới hạn số lượng đơn đăng ký - đăng ký vô hạn)
     const isDuplicate = registrations.some((r) => r.identityKey === identityKey);
     if (isDuplicate) {
       throw new ElsError(

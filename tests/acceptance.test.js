@@ -485,20 +485,19 @@ describe('BẢNG KIỂM THỬ BỔ SUNG (TX-01 -> TX-14): ĐỘ ỔN ĐỊNH & K
     assert.ok(check.error.includes('đã đăng ký'));
   });
 
-  // TX-09: Hết chỗ (capacity) -> Khóa đăng ký với thông báo rõ ràng (ADR-11)
-  it('TX-09: Sự kiện đạt giới hạn sức chứa (capacity) -> Khóa đăng ký và thông báo rõ ràng', () => {
+  // TX-09: Không giới hạn số lượng đơn đăng ký -> Cho phép đăng ký vô hạn
+  it('TX-09: Xóa giới hạn đơn đăng ký -> Cho phép đăng ký vô hạn ngay cả khi số lượng người tham dự lớn', () => {
     const existing = [
       { id: '1', identityKey: 'a@ex.com' },
       { id: '2', identityKey: 'b@ex.com' },
     ];
-    const capacityLimit = 2; // Đã đủ 2 người
+    const capacityLimit = 2; // Trước đây giới hạn 2 người, nay cho phép đăng ký vô hạn
 
     const formFields = createDefaultFormFields();
     const newSub = { fld_name: 'Nguyễn Văn C', fld_email: 'c@ex.com' };
 
     const res = validateRegistrationSubmission(newSub, formFields, existing, false, capacityLimit);
-    assert.equal(res.isValid, false, 'Phải từ chối đăng ký khi sự kiện đã đầy chỗ');
-    assert.ok(res.error.includes('giới hạn') || res.error.includes('tối đa') || res.error.includes('đủ số lượng'));
+    assert.equal(res.isValid, true, 'Phải cho phép đăng ký vô hạn không bị chặn bởi giới hạn sức chứa');
   });
 
   // TX-10: Ưu đãi đăng ký sớm quá hạn

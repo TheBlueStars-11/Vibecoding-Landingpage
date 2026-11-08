@@ -194,8 +194,7 @@ export function validateRegistrationSubmission(
   values = {},
   formFields = [],
   existingRegistrations = [],
-  isEventPast = false,
-  capacity = 0
+  isEventPast = false
 ) {
   const errors = {};
 
@@ -204,15 +203,6 @@ export function validateRegistrationSubmission(
       isValid: false,
       error: 'Sự kiện đã kết thúc, không thể tiếp nhận thêm đơn đăng ký.',
       errors: { general: 'Sự kiện đã kết thúc.' },
-    };
-  }
-
-  const maxCap = Number(capacity || 0);
-  if (maxCap > 0 && existingRegistrations.length >= maxCap) {
-    return {
-      isValid: false,
-      error: `Sự kiện đã đạt giới hạn tối đa (${maxCap} người). Cổng đăng ký tạm thời đóng.`,
-      errors: { general: `Sự kiện đã đủ số lượng tham dự (${maxCap} người).` },
     };
   }
 

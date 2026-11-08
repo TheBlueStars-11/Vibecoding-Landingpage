@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import styles from './WorkspaceInfo.module.css';
 import { elsRepository } from '../../services/elsRepository.js';
 import { validateProjectInfo } from '../../domain/validators.js';
 import { compressImage } from '../../domain/imageCompressor.js';
 import { createAssetImage, generateId, ASSET_ROLES } from '../../domain/elsSchema.js';
-import { createDefaultSampleAssets } from '../../domain/sampleAssets.js';
 import {
   UploadIcon,
   TrashIcon,
@@ -13,7 +12,6 @@ import {
   MoveDownIcon,
   AlertCircleIcon,
   CheckIcon,
-  SparklesIcon,
 } from '../ui/Icons.jsx';
 
 export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, onShowToast }) {
@@ -42,19 +40,16 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
 
-  // Validation
+  // Validation & Auto-save tức thì (kể cả khi chuyển sang Workspace khác ngay lập tức)
   const [errors, setErrors] = useState({});
-  const [isDirty, setIsDirty] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState(() => {
     return new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   });
   const fileInputRef = useRef(null);
-  const saveTimeoutRef = useRef(null);
 
-  // Hàm thực thi lưu dự án an toàn theo thời gian thực
-  const performSave = useCallback((dataToSave = eventData) => {
+  // Hàm thực thi lưu dự án tức thì vào LocalStorage và đồng bộ ngay state ứng dụng
+  const performSave = useCallback((dataToSave) => {
     try {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       const exactName = dataToSave.eventName || project.name;
       const updatedProject = {
         ...project,
@@ -64,7 +59,6 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       };
       elsRepository.saveProject(updatedProject);
       onUpdateProject?.(updatedProject);
-      setIsDirty(false);
       const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       onSaveStatusChange?.('saved', timeStr);
       setLastSavedTime(timeStr);
@@ -72,28 +66,13 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       console.error('Lỗi autosave:', err);
       onSaveStatusChange?.('error');
     }
-  }, [eventData, project, onUpdateProject, onSaveStatusChange]);
+  }, [project, onUpdateProject, onSaveStatusChange]);
 
-  // Debounced Autosave (400ms) - Tự động lưu liên tục theo thời gian thực
-  useEffect(() => {
-    if (!isDirty) return;
-
-    onSaveStatusChange?.('saving');
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-    saveTimeoutRef.current = setTimeout(() => {
-      performSave(eventData);
-    }, 400);
-
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    };
-  }, [eventData, isDirty, performSave, onSaveStatusChange]);
-
-  // Xử lý thay đổi trường đơn
+  // Xử lý thay đổi trường đơn (Lưu tự động tức thì)
   const handleFieldChange = (field, value) => {
-    setEventData((prev) => ({ ...prev, [field]: value }));
-    setIsDirty(true);
+    const nextData = { ...eventData, [field]: value };
+    setEventData(nextData);
+    performSave(nextData);
     if (errors[field]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -107,14 +86,15 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
   // XỬ LÝ DIỄN GIẢ
   // ==========================
   const handleSpeakerChange = (id, key, val) => {
-    setEventData((prev) => ({
-      ...prev,
-      speakers: prev.speakers.map((s) => (s.id === id ? { ...s, [key]: val } : s)),
-    }));
-    setIsDirty(true);
+    const nextData = {
+      ...eventData,
+      speakers: eventData.speakers.map((s) => (s.id === id ? { ...s, [key]: val } : s)),
+    };
+    setEventData(nextData);
+    performSave(nextData);
     if (errors.speakers) {
-      setErrors((prev) => {
-        const next = { ...prev };
+      setErrors((prevErr) => {
+        const next = { ...prevErr };
         delete next.speakers;
         return next;
       });
@@ -126,11 +106,12 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       onShowToast?.('Tối đa 8 diễn giả cho một sự kiện.', 'error');
       return;
     }
-    setEventData((prev) => ({
-      ...prev,
-      speakers: [...prev.speakers, { id: generateId('spk'), name: '', title: '' }],
-    }));
-    setIsDirty(true);
+    const nextData = {
+      ...eventData,
+      speakers: [...eventData.speakers, { id: generateId('spk'), name: '', title: '' }],
+    };
+    setEventData(nextData);
+    performSave(nextData);
   };
 
   const handleRemoveSpeaker = (id) => {
@@ -138,25 +119,27 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       onShowToast?.('Cần ít nhất 1 diễn giả cho sự kiện.', 'error');
       return;
     }
-    setEventData((prev) => ({
-      ...prev,
-      speakers: prev.speakers.filter((s) => s.id !== id),
-    }));
-    setIsDirty(true);
+    const nextData = {
+      ...eventData,
+      speakers: eventData.speakers.filter((s) => s.id !== id),
+    };
+    setEventData(nextData);
+    performSave(nextData);
   };
 
   // ==========================
   // XỬ LÝ CHƯƠNG TRÌNH (AGENDA)
   // ==========================
   const handleAgendaChange = (id, key, val) => {
-    setEventData((prev) => ({
-      ...prev,
-      agenda: prev.agenda.map((item) => (item.id === id ? { ...item, [key]: val } : item)),
-    }));
-    setIsDirty(true);
+    const nextData = {
+      ...eventData,
+      agenda: eventData.agenda.map((item) => (item.id === id ? { ...item, [key]: val } : item)),
+    };
+    setEventData(nextData);
+    performSave(nextData);
     if (errors.agenda) {
-      setErrors((prev) => {
-        const next = { ...prev };
+      setErrors((prevErr) => {
+        const next = { ...prevErr };
         delete next.agenda;
         return next;
       });
@@ -164,11 +147,12 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
   };
 
   const handleAddAgendaItem = () => {
-    setEventData((prev) => ({
-      ...prev,
-      agenda: [...prev.agenda, { id: generateId('ag'), time: '10:00', title: '' }],
-    }));
-    setIsDirty(true);
+    const nextData = {
+      ...eventData,
+      agenda: [...eventData.agenda, { id: generateId('ag'), time: '10:00', title: '' }],
+    };
+    setEventData(nextData);
+    performSave(nextData);
   };
 
   const handleRemoveAgendaItem = (id) => {
@@ -176,11 +160,12 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       onShowToast?.('Chương trình cần có ít nhất 1 mục.', 'error');
       return;
     }
-    setEventData((prev) => ({
-      ...prev,
-      agenda: prev.agenda.filter((item) => item.id !== id),
-    }));
-    setIsDirty(true);
+    const nextData = {
+      ...eventData,
+      agenda: eventData.agenda.filter((item) => item.id !== id),
+    };
+    setEventData(nextData);
+    performSave(nextData);
   };
 
   const handleMoveAgendaItem = (index, direction) => {
@@ -190,8 +175,9 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
     const temp = items[index];
     items[index] = items[targetIdx];
     items[targetIdx] = temp;
-    setEventData((prev) => ({ ...prev, agenda: items }));
-    setIsDirty(true);
+    const nextData = { ...eventData, agenda: items };
+    setEventData(nextData);
+    performSave(nextData);
   };
 
   // ==========================
@@ -273,31 +259,11 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       };
       elsRepository.saveProject(updatedProject);
       onUpdateProject?.(updatedProject);
-      setIsDirty(false);
       const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       onSaveStatusChange?.('saved', timeStr);
       onShowToast?.('Đã lưu toàn bộ thông tin sự kiện thành công.', 'success');
     } catch (err) {
       onShowToast?.(`Không thể lưu: ${err.message}`, 'error');
-    }
-  };
-
-  // Nạp riêng bộ 6 ảnh mẫu AI
-  const handleLoadSampleImagesOnly = (e) => {
-    e?.preventDefault?.();
-    e?.stopPropagation?.();
-    try {
-      const projId = project?.id || 'default_project';
-      const speakerIds = eventData.speakers?.map((s) => s.id) || [];
-      const sampleAssets = createDefaultSampleAssets(projId, speakerIds);
-      elsRepository.saveAssets(projId, sampleAssets);
-      setAssets(sampleAssets);
-      const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-      onSaveStatusChange?.('saved', timeStr);
-      onShowToast?.('Đã nạp thành công 6 ảnh mẫu AI (Diễn giả, Poster, Hội trường, Giải thưởng)!', 'success');
-    } catch (err) {
-      console.error('Lỗi khi nạp ảnh mẫu:', err);
-      onShowToast?.(`Lỗi khi nạp ảnh mẫu: ${err.message}`, 'error');
     }
   };
 
@@ -582,16 +548,6 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
                   Đã tải {assets.length}/8 ảnh · {(totalAssetsSizeKB / 1024).toFixed(1)} MB
                 </p>
               </div>
-              <button
-                type="button"
-                className={styles.btnDevAutofill}
-                onClick={handleLoadSampleImagesOnly}
-                title="Tự động nạp 6 ảnh mẫu AI"
-                style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: 6, margin: 0 }}
-              >
-                <SparklesIcon size={14} />
-                <span>Nạp 6 ảnh mẫu AI</span>
-              </button>
             </div>
 
             {/* Vùng Dropzone Upload */}

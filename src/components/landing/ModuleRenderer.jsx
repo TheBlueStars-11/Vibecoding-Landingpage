@@ -744,10 +744,6 @@ export function ModuleRenderer({
     const isCinemaWide = variant === 'cinema-wide';
 
     const attendeesCount = custom.regCount ?? regCount ?? 0;
-    const hasCapacity = (custom.maxCapacity != null && Number(custom.maxCapacity) > 0) || (custom.capacity != null && Number(custom.capacity) > 0);
-    const maxCapacity = Number(custom.maxCapacity || custom.capacity || 0);
-    const capacityPercent = hasCapacity ? Math.min(100, Math.round((attendeesCount / maxCapacity) * 100)) : 0;
-    const seatsRemaining = hasCapacity ? Math.max(0, maxCapacity - attendeesCount) : 0;
 
     const renderRegCol = () => (
       <div className={styles.cdCinematicRegCol}>
@@ -765,30 +761,6 @@ export function ModuleRenderer({
         <div className={styles.cdCinematicSubtext}>
           {custom.regLabel || 'Người tham dự đã đăng ký giữ chỗ'}
         </div>
-
-        {hasCapacity && (
-          <div className={styles.cdCapacityBox}>
-            <div className={styles.cdCapacityHeader}>
-              <span className={styles.cdCapacityLabel}>Tỷ lệ lấp đầy hội trường</span>
-              <span className={styles.cdCapacityVal}>{capacityPercent}%</span>
-            </div>
-            <div className={styles.cdCapacityTrack}>
-              <div className={styles.cdCapacityFill} style={{ width: `${capacityPercent}%` }} />
-            </div>
-            <div className={styles.cdCapacityFooter}>
-              <span className={styles.cdCapacityRemain}>
-                {seatsRemaining > 0 ? `Chỉ còn ${seatsRemaining} chỗ ưu đãi` : 'Hội trường đã đạt sức chứa dự kiến'}
-              </span>
-              <button
-                type="button"
-                className={styles.cdCinematicCtaBtn}
-                onClick={scrollToForm}
-              >
-                Giữ chỗ ngay ↗
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     );
 
@@ -842,22 +814,6 @@ export function ModuleRenderer({
               <div className={styles.cdCinematicSubtext}>
                 {custom.regLabel || 'Người tham dự đã đăng ký giữ chỗ'}
               </div>
-              {hasCapacity && (
-                <div className={styles.cdCapacityBox} style={{ marginTop: 12 }}>
-                  <div className={styles.cdCapacityHeader}>
-                    <span className={styles.cdCapacityLabel}>Tỷ lệ lấp đầy hội trường</span>
-                    <span className={styles.cdCapacityVal}>{capacityPercent}%</span>
-                  </div>
-                  <div className={styles.cdCapacityTrack}>
-                    <div className={styles.cdCapacityFill} style={{ width: `${capacityPercent}%` }} />
-                  </div>
-                  {seatsRemaining > 0 && (
-                    <div className={styles.cdCapacityRemain} style={{ marginTop: 4 }}>
-                      Còn {seatsRemaining} chỗ ưu đãi
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -1524,9 +1480,6 @@ export function ModuleRenderer({
       { key: 'fld_phone', label: 'Số điện thoại', type: 'tel', required: false },
     ];
 
-    const maxCapacity = Number(eventData.capacity || 0);
-    const isCapacityFull = maxCapacity > 0 && regCount >= maxCapacity;
-
     const isSplitBenefit = variant === 'split-benefit';
     const isWithImage = variant === 'with-image';
     const isCompact = variant === 'compact';
@@ -1609,11 +1562,6 @@ export function ModuleRenderer({
               </div>
               <p className={styles.formSub}>Điền biểu mẫu để nhận vé mời và mã xác nhận tức thì.</p>
             </div>
-            {isCapacityFull && (
-              <div className={styles.formGeneralError} style={{ background: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5', marginBottom: 12 }}>
-                Sự kiện đã đạt số lượng người tham dự tối đa ({maxCapacity} người). Cổng đăng ký tạm thời đóng.
-              </div>
-            )}
             {countdown.isPast && (
               <div className={styles.formGeneralError} style={{ background: '#fff1f2', color: '#be123c', borderColor: '#fecdd3', marginBottom: 12, fontWeight: 600 }}>
                 ⏰ Sự kiện đã diễn ra và kết thúc. Cổng đăng ký trực tuyến đã đóng.
@@ -1634,7 +1582,7 @@ export function ModuleRenderer({
                     placeholder={f.hint || `Nhập ${f.label.toLowerCase()}...`}
                     value={formProps.formValues?.[f.key] || ''}
                     onChange={(e) => formProps.onInputChange?.(f.key, e.target.value)}
-                    disabled={formProps.isSubmitting || isCapacityFull || countdown.isPast}
+                    disabled={formProps.isSubmitting || countdown.isPast}
                   />
                   {formProps.formErrors?.[f.key] && (
                     <span className={styles.fieldErrorText}>{formProps.formErrors[f.key]}</span>
@@ -1644,15 +1592,13 @@ export function ModuleRenderer({
               <button
                 type="submit"
                 className={`${styles.btnSubmitDemo} ${styles.btnSubmitActive}`}
-                disabled={formProps.isSubmitting || countdown.isPast || isCapacityFull}
+                disabled={formProps.isSubmitting || countdown.isPast}
               >
                 {formProps.isSubmitting
                   ? 'Đang gửi thông tin...'
-                  : isCapacityFull
-                    ? `Đã hết chỗ (${regCount}/${maxCapacity})`
-                    : countdown.isPast
-                      ? 'Sự kiện đã kết thúc'
-                      : 'Hoàn tất đăng ký ngay'}
+                  : countdown.isPast
+                    ? 'Sự kiện đã kết thúc'
+                    : 'Hoàn tất đăng ký ngay'}
               </button>
               <p className={styles.formPrivacy} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                 <LockIcon size={12} /> Thông tin của bạn được bảo mật tuyệt đối.
@@ -2660,7 +2606,6 @@ export function ModuleRenderer({
     const firstSpeakerName = Array.isArray(eventData.speakers) && eventData.speakers[0]?.name
       ? eventData.speakers[0].name
       : 'diễn giả chương trình';
-    const capacityNum = Number(eventData.capacity || 0);
     const customBento = Array.isArray(custom.items) && custom.items.length > 0 ? custom.items : null;
     const aiBento = Array.isArray(aiData?.bentoHighlights) && aiData.bentoHighlights.length > 0 ? aiData.bentoHighlights : null;
     const bentoItems = customBento || aiBento || [
@@ -2680,8 +2625,8 @@ export function ModuleRenderer({
         desc: benefits[1] || 'Trực tiếp đặt câu hỏi và trao đổi kinh nghiệm thực tế tại sự kiện.',
       },
       {
-        tag: '04 / QUY MÔ & ĐỊA ĐIỂM',
-        title: capacityNum > 0 ? `Giới hạn ${capacityNum} suất tham dự` : (eventData.venue || 'Không gian sự kiện'),
+        tag: '04 / KHÔNG GIAN & ĐỊA ĐIỂM',
+        title: eventData.venue || 'Không gian sự kiện',
         desc: eventData.venueNotes || `Tổ chức tại ${eventData.venue || 'địa điểm sự kiện'} với quy trình check-in mã QR nhanh chóng.`,
       },
     ];
@@ -2772,8 +2717,8 @@ export function ModuleRenderer({
           </div>
           <div className={`${styles.bentoItem} ${styles.bentoSpan6}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706' }}>{bentoItems[3]?.tag || '04 / QUY MÔ & ĐỊA ĐIỂM'}</span>
-              <h3 className={styles.bentoItemTitle}>{bentoItems[3]?.title || (capacityNum > 0 ? `Giới hạn ${capacityNum} suất tham dự` : (eventData.venue || 'Không gian sự kiện'))}</h3>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706' }}>{bentoItems[3]?.tag || '04 / KHÔNG GIAN & ĐỊA ĐIỂM'}</span>
+              <h3 className={styles.bentoItemTitle}>{bentoItems[3]?.title || (eventData.venue || 'Không gian sự kiện')}</h3>
               <p className={styles.bentoItemDesc}>{bentoItems[3]?.desc || benefits[2] || `Tổ chức tại ${eventData.venue || 'hội trường trung tâm'}.`}</p>
             </div>
           </div>

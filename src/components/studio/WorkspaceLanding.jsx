@@ -360,6 +360,30 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
     onShowToast?.(`Đã đổi màu chủ đạo: ${themeName}`, 'success');
   };
 
+  // Tự động lưu ngay chỉnh sửa AI thủ công vào dự án khi người dùng nhập liệu
+  const autoSaveAiEdit = (nextEditableAi) => {
+    try {
+      const exactEventName = project.event?.eventName || project.name || nextEditableAi.headline;
+      const updatedProject = {
+        ...project,
+        ai: {
+          ...project.ai,
+          headline: exactEventName,
+          description: nextEditableAi.description,
+          benefits: nextEditableAi.benefits,
+          edited: true,
+          updatedAt: new Date().toISOString(),
+        },
+      };
+      elsRepository.saveProject(updatedProject);
+      onUpdateProject?.(updatedProject);
+      const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      onSaveStatusChange?.('saved', timeStr);
+    } catch (err) {
+      console.error('Lỗi autosave nội dung AI:', err);
+    }
+  };
+
   // Áp dụng chỉnh sửa AI thủ công (Tên sự kiện luôn giữ nguyên theo mục Thông tin chung)
   const handleApplyEdits = () => {
     try {
@@ -837,8 +861,10 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
                   className={styles.editTextarea}
                   value={editableAi.description}
                   onChange={(e) => {
-                    setEditableAi((p) => ({ ...p, description: e.target.value }));
+                    const nextAi = { ...editableAi, description: e.target.value };
+                    setEditableAi(nextAi);
                     setHasUnappliedEdits(true);
+                    autoSaveAiEdit(nextAi);
                   }}
                 />
               </div>
@@ -855,8 +881,10 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
                     onChange={(e) => {
                       const copy = [...editableAi.benefits];
                       copy[idx] = e.target.value;
-                      setEditableAi((p) => ({ ...p, benefits: copy }));
+                      const nextAi = { ...editableAi, benefits: copy };
+                      setEditableAi(nextAi);
                       setHasUnappliedEdits(true);
+                      autoSaveAiEdit(nextAi);
                     }}
                   />
                 ))}

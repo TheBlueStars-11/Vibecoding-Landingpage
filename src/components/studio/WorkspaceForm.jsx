@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import styles from './WorkspaceForm.module.css';
 import { elsRepository } from '../../services/elsRepository.js';
 import { validateFormFields } from '../../domain/validators.js';
@@ -22,28 +22,24 @@ import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
 
 export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, onShowToast }) {
   const [fields, setFields] = useState(() => project.formFields || createDefaultFormFields());
-  const [isDirty, setIsDirty] = useState(false);
   const [isRestoreConfirmOpen, setIsRestoreConfirmOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState('editor'); // 'editor' | 'preview'
   const [lastSavedTime, setLastSavedTime] = useState(() => {
     return new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   });
-  const saveTimeoutRef = useRef(null);
 
   // Validate mỗi khi fields thay đổi
   const validationResult = useMemo(() => validateFormFields(fields), [fields]);
 
-  // Hàm thực thi lưu cấu hình form theo thời gian thực
-  const performSave = useCallback((fieldsToSave = fields) => {
+  // Hàm thực thi lưu cấu hình form tức thì vào LocalStorage và đồng bộ ngay state ứng dụng
+  const performSave = useCallback((fieldsToSave) => {
     try {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       const updatedProject = {
         ...project,
         formFields: fieldsToSave,
       };
       elsRepository.saveProject(updatedProject);
       onUpdateProject?.(updatedProject);
-      setIsDirty(false);
       const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       onSaveStatusChange?.('saved', timeStr);
       setLastSavedTime(timeStr);
@@ -51,45 +47,23 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
       console.error('Lỗi autosave form fields:', err);
       onSaveStatusChange?.('error');
     }
-  }, [fields, project, onUpdateProject, onSaveStatusChange]);
-
-  // Debounced Autosave (400ms) - Tự động lưu form liên tục theo thời gian thực
-  useEffect(() => {
-    if (!isDirty) return;
-
-    onSaveStatusChange?.('saving');
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-    saveTimeoutRef.current = setTimeout(() => {
-      performSave(fields);
-    }, 400);
-
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    };
-  }, [fields, isDirty, performSave, onSaveStatusChange]);
+  }, [project, onUpdateProject, onSaveStatusChange]);
 
   const activeFields = fields.filter((f) => !f.deleted);
 
-  // Thay đổi thuộc tính của 1 trường
+  // Thay đổi thuộc tính của 1 trường (Lưu tự động tức thì)
   const handleUpdateField = (key, prop, value) => {
-    setFields((prev) =>
-      prev.map((f) => {
-        if (f.key !== key) return f;
-        const updated = { ...f, [prop]: value };
-
-        // Nếu đặt role là displayName -> các trường khác bỏ displayName
-        if (prop === 'role' && value === FIELD_ROLES.DISPLAY_NAME) {
-          prev.forEach((other) => {
-            if (other.key !== key && other.role === FIELD_ROLES.DISPLAY_NAME) {
-              other.role = null;
-            }
-          });
+    const nextFields = fields.map((f) => {
+      if (f.key !== key) {
+        if (prop === 'role' && value === FIELD_ROLES.DISPLAY_NAME && f.role === FIELD_ROLES.DISPLAY_NAME) {
+          return { ...f, role: null };
         }
-        return updated;
-      })
-    );
-    setIsDirty(true);
+        return f;
+      }
+      return { ...f, [prop]: value };
+    });
+    setFields(nextFields);
+    performSave(nextFields);
   };
 
   // Thêm trường mới
@@ -109,8 +83,9 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
       deleted: false,
     };
 
-    setFields((prev) => [...prev, newField]);
-    setIsDirty(true);
+    const nextFields = [...fields, newField];
+    setFields(nextFields);
+    performSave(nextFields);
     onShowToast?.('Đã thêm trường mới. Hãy đặt tên và kiểu dữ liệu.', 'info');
   };
 
@@ -134,8 +109,9 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
       }
     }
 
-    setFields((prev) => prev.map((f) => (f.key === key ? { ...f, deleted: true } : f)));
-    setIsDirty(true);
+    const nextFields = fields.map((f) => (f.key === key ? { ...f, deleted: true } : f));
+    setFields(nextFields);
+    performSave(nextFields);
     onShowToast?.(`Đã gỡ trường "${target?.label}". Dữ liệu các đơn cũ vẫn được bảo lưu an toàn.`, 'info');
   };
 
@@ -148,22 +124,22 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
     const keyA = activeFields[index].key;
     const keyB = activeFields[targetIdx].key;
 
-    setFields((prev) => {
-      const idxA = prev.findIndex((f) => f.key === keyA);
-      const idxB = prev.findIndex((f) => f.key === keyB);
-      const copy = [...prev];
-      const temp = copy[idxA];
-      copy[idxA] = copy[idxB];
-      copy[idxB] = temp;
-      return copy;
-    });
-    setIsDirty(true);
+    const idxA = fields.findIndex((f) => f.key === keyA);
+    const idxB = fields.findIndex((f) => f.key === keyB);
+    const nextFields = [...fields];
+    const temp = nextFields[idxA];
+    nextFields[idxA] = nextFields[idxB];
+    nextFields[idxB] = temp;
+
+    setFields(nextFields);
+    performSave(nextFields);
   };
 
   // Khôi phục mặc định
   const handleRestoreDefaults = () => {
-    setFields(createDefaultFormFields());
-    setIsDirty(true);
+    const nextFields = createDefaultFormFields();
+    setFields(nextFields);
+    performSave(nextFields);
     setIsRestoreConfirmOpen(false);
     onShowToast?.('Đã khôi phục bộ 3 trường mặc định (Họ và tên, Email, Số điện thoại).', 'success');
   };
@@ -182,7 +158,6 @@ export function WorkspaceForm({ project, onUpdateProject, onSaveStatusChange, on
       };
       elsRepository.saveProject(updatedProject);
       onUpdateProject?.(updatedProject);
-      setIsDirty(false);
       const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       onSaveStatusChange?.('saved', timeStr);
       onShowToast?.('Đã lưu cấu hình form thành công.', 'success');
