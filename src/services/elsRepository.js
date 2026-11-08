@@ -10,6 +10,7 @@ import {
   createProject,
   createRegistrationRecord,
 } from '../domain/elsSchema.js';
+import { buildSystemSampleProjects } from '../domain/sampleProjects.js';
 import { ElsError, ERROR_CODES, ERROR_CATEGORIES } from '../domain/errors.js';
 
 // Kênh BroadcastChannel để đồng bộ realtime giữa các tab cùng trình duyệt
@@ -150,9 +151,15 @@ function migrateFromLegacyIfNeeded() {
     console.warn('Lỗi migration dữ liệu cũ:', err);
   }
 
-  // Khởi tạo mảng rỗng nếu chưa có
-  safeSetItem(ELS_STORAGE_KEYS.PROJECTS, []);
-  safeSetItem(ELS_STORAGE_KEYS.META, { schemaVersion: ELS_SCHEMA_VERSION });
+  // Khởi tạo 3 dự án mẫu hệ thống nếu kho chưa có dữ liệu
+  const samples = buildSystemSampleProjects();
+  const initialProjects = samples.map((s) => s.project);
+  safeSetItem(ELS_STORAGE_KEYS.PROJECTS, initialProjects);
+  for (const s of samples) {
+    safeSetItem(`${ELS_STORAGE_KEYS.ASSETS_PREFIX}${s.project.id}`, s.assets);
+    safeSetItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${s.project.id}`, s.registrations);
+  }
+  safeSetItem(ELS_STORAGE_KEYS.META, { schemaVersion: ELS_SCHEMA_VERSION, sampleSeeded: true });
 }
 
 // Khởi chạy kiểm tra migration khi load module
@@ -199,6 +206,64 @@ export const elsRepository = {
   // ======================
   getProjects() {
     return safeGetItem(ELS_STORAGE_KEYS.PROJECTS, []) || [];
+  },
+
+  /**
+   * Đảm bảo 3 dự án mẫu hệ thống luôn được lưu sẵn trong ứng dụng.
+   * Nếu forceReset = true, khôi phục lại nguyên bản cả 3 dự án mẫu, ảnh nguồn và đơn đăng ký mẫu.
+   */
+  ensureSampleProjects({ forceReset = false } = {}) {
+    if (typeof window === 'undefined' || !window.localStorage) return [];
+    const currentProjects = this.getProjects();
+    const samples = buildSystemSampleProjects();
+    let nextProjects = [...currentProjects];
+    let changed = false;
+
+    for (const bundle of samples) {
+      const { project: sampleProj, assets: sampleAssets, registrations: sampleRegs } = bundle;
+      const existingIdx = nextProjects.findIndex((p) => p.id === sampleProj.id);
+
+      if (existingIdx === -1) {
+        nextProjects.push(sampleProj);
+        safeSetItem(`${ELS_STORAGE_KEYS.ASSETS_PREFIX}${sampleProj.id}`, sampleAssets);
+        safeSetItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${sampleProj.id}`, sampleRegs);
+        changed = true;
+      } else if (forceReset) {
+        nextProjects[existingIdx] = sampleProj;
+        safeSetItem(`${ELS_STORAGE_KEYS.ASSETS_PREFIX}${sampleProj.id}`, sampleAssets);
+        safeSetItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${sampleProj.id}`, sampleRegs);
+        changed = true;
+      } else {
+        // Đảm bảo cờ isSample và sampleTag luôn tồn tại trên dự án mẫu đã lưu
+        const existing = nextProjects[existingIdx];
+        if (!existing.isSample || !existing.sampleTag) {
+          nextProjects[existingIdx] = {
+            ...existing,
+            isSample: true,
+            sampleTag: sampleProj.sampleTag,
+            sampleScenario: sampleProj.sampleScenario,
+          };
+          changed = true;
+        }
+        // Nếu khóa assets hoặc registrations chưa từng được khởi tạo, tự động bổ sung
+        const rawAssets = window.localStorage.getItem(`${ELS_STORAGE_KEYS.ASSETS_PREFIX}${sampleProj.id}`);
+        if (rawAssets === null) {
+          safeSetItem(`${ELS_STORAGE_KEYS.ASSETS_PREFIX}${sampleProj.id}`, sampleAssets);
+        }
+        const rawRegs = window.localStorage.getItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${sampleProj.id}`);
+        if (rawRegs === null) {
+          safeSetItem(`${ELS_STORAGE_KEYS.REGISTRATIONS_PREFIX}${sampleProj.id}`, sampleRegs);
+        }
+      }
+    }
+
+    if (changed) {
+      safeSetItem(ELS_STORAGE_KEYS.PROJECTS, nextProjects);
+      this._notifyChannel('projects_seeded', {});
+      this._dispatchLocalEvent('projects_seeded', {});
+    }
+
+    return nextProjects;
   },
 
   createProject(initialData = {}) {
@@ -835,4 +900,13 @@ export const elsRepository = {
     return xmlContent;
   },
 };
+
+if (typeof window !== 'undefined') {
+  try {
+    elsRepository.ensureSampleProjects();
+  } catch (err) {
+    console.warn('Không thể khởi tạo sẵn bộ dự án mẫu:', err);
+  }
+}
+
 

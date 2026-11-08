@@ -17,6 +17,8 @@ import {
 } from '../src/domain/elsSchema.js';
 
 import { createDefaultSampleAssets } from '../src/domain/sampleAssets.js';
+import { buildSystemSampleProjects, SAMPLE_PROJECT_IDS } from '../src/domain/sampleProjects.js';
+import { runResponsiveScan } from '../src/domain/moduleAuditor.js';
 import { elsRepository, formatXmlCell } from '../src/services/elsRepository.js';
 
 import {
@@ -324,5 +326,105 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
         `API serverless không được chứa khối catch rỗng nuốt lỗi: ${path.relative(process.cwd(), file)}`
       );
     }
+  });
+
+  it('System Sample Projects Audit: kiểm định toàn diện 3 Dự án mẫu hệ thống (Đủ 6 ảnh, 0 ảnh, 2 ảnh chọn lọc) đạt 0 lỗi, 0 cảnh báo, 0 gợi ý', () => {
+    const samples = buildSystemSampleProjects();
+    assert.equal(samples.length, 3);
+    assert.deepEqual(
+      samples.map((s) => s.project.id),
+      SAMPLE_PROJECT_IDS
+    );
+
+    // Kịch bản 1: Đầy đủ 6 ảnh (Poster, 3 Diễn giả, Hội trường, Quà tặng)
+    const [s1, s2, s3] = samples;
+    assert.equal(s1.project.isSample, true);
+    assert.equal(s1.assets.length, 6);
+    assert.equal(s1.project.event.speakers.length, 3);
+    assert.equal(s1.project.event.agenda.length, 6);
+    assert.equal(s1.registrations.length, 5);
+    assert.ok(s1.registrations.some((r) => r.checkedIn === true));
+    assert.ok(s1.registrations.some((r) => r.checkedIn === false));
+
+    // Kịch bản 2: Không có ảnh (0 ảnh) - Thuần Typography & Bản đồ SVG
+    assert.equal(s2.project.isSample, true);
+    assert.equal(s2.assets.length, 0);
+    assert.equal(s2.project.event.speakers.length, 3);
+    assert.equal(s2.project.formFields.length, 4);
+    assert.equal(s2.registrations.length, 3);
+    const s2SpeakersMod = s2.project.moduleLayout.find((m) => m.type === 'speakers');
+    const s2VenueMod = s2.project.moduleLayout.find((m) => m.type === 'venue');
+    assert.equal(s2SpeakersMod.variant, 'trio-typographic');
+    assert.equal(s2VenueMod.variant, 'map-left');
+
+    // Kịch bản 3: Ảnh chọn lọc (2 ảnh: 1 diễn giả + 1 quà tặng, không có ảnh địa điểm) & Form tùy biến
+    assert.equal(s3.project.isSample, true);
+    assert.equal(s3.assets.length, 2);
+    assert.equal(s3.project.event.speakers.length, 1);
+    assert.equal(s3.project.formFields.length, 4);
+    assert.equal(s3.registrations.length, 4);
+    const s3SpeakersMod = s3.project.moduleLayout.find((m) => m.type === 'speakers');
+    assert.equal(s3SpeakersMod.variant, 'solo-spotlight');
+
+    // Đánh giá tự động từng dự án qua bộ Validator (WS1 + WS2) và Responsive Module Auditor (5 kích thước màn hình)
+    for (const { project, assets } of samples) {
+      const infoValidation = validateProjectInfo(project.event, assets);
+      assert.equal(
+        infoValidation.isValid,
+        true,
+        `Dự án mẫu "${project.name}" gặp lỗi thông tin WS1: ${JSON.stringify(infoValidation.errors)}`
+      );
+
+      const formValidation = validateFormFields(project.formFields);
+      assert.equal(
+        formValidation.isValid,
+        true,
+        `Dự án mẫu "${project.name}" gặp lỗi Form WS2: ${JSON.stringify(formValidation.errors)}`
+      );
+      assert.equal(formValidation.warnings.length, 0);
+
+      const scan = runResponsiveScan(project.moduleLayout, project.event, assets);
+      assert.equal(
+        scan.summary.totalErrors,
+        0,
+        `Dự án mẫu "${project.name}" có lỗi bố cục: ${JSON.stringify(scan.resultsByBreakpoint)}`
+      );
+      assert.equal(
+        scan.summary.totalWarnings,
+        0,
+        `Dự án mẫu "${project.name}" có cảnh báo bố cục: ${JSON.stringify(scan.resultsByBreakpoint)}`
+      );
+      assert.equal(
+        scan.summary.totalSuggestions,
+        0,
+        `Dự án mẫu "${project.name}" còn gợi ý tối ưu chưa xử lý: ${JSON.stringify(scan.resultsByBreakpoint)}`
+      );
+    }
+
+    // Kiểm tra cơ chế lưu sẵn và khôi phục trong elsRepository
+    const store = new Map();
+    globalThis.window = {
+      localStorage: {
+        getItem: (k) => (store.has(k) ? store.get(k) : null),
+        setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k),
+      },
+    };
+
+    const seeded = elsRepository.ensureSampleProjects();
+    assert.equal(seeded.length, 3);
+    assert.equal(elsRepository.getAssets('prj_sample_ai_summit').length, 6);
+    assert.equal(elsRepository.getAssets('prj_sample_biz_strategy').length, 0);
+    assert.equal(elsRepository.getAssets('prj_sample_student_fest').length, 2);
+    assert.equal(elsRepository.getRegistrationCount('prj_sample_ai_summit'), 5);
+    assert.equal(elsRepository.getRegistrationCount('prj_sample_biz_strategy'), 3);
+    assert.equal(elsRepository.getRegistrationCount('prj_sample_student_fest'), 4);
+
+    // Nếu người dùng xóa thử 1 dự án mẫu rồi bấm khôi phục, hệ thống khôi phục đủ 3 dự án mẫu
+    elsRepository.deleteProject('prj_sample_ai_summit');
+    assert.equal(elsRepository.getProjects().length, 2);
+    elsRepository.ensureSampleProjects({ forceReset: true });
+    assert.equal(elsRepository.getProjects().length, 3);
+    assert.equal(elsRepository.getAssets('prj_sample_ai_summit').length, 6);
   });
 });

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import styles from './HomeDashboard.module.css';
 import { elsRepository } from '../../services/elsRepository.js';
 import { createProject, PROJECT_STATUS } from '../../domain/elsSchema.js';
+import { SAMPLE_PROJECT_IDS } from '../../domain/sampleProjects.js';
 import { validateProjectName } from '../../domain/validators.js';
 import { Lozenge } from '../ui/Lozenge.jsx';
 import { ConfirmDialog } from '../ui/ConfirmDialog.jsx';
@@ -16,6 +17,7 @@ import {
   UsersIcon,
   ClockIcon,
   ExternalLinkIcon,
+  RefreshCwIcon,
 } from '../ui/Icons.jsx';
 
 /**
@@ -55,7 +57,10 @@ function formatDateTime(isoString) {
 }
 
 export function HomeDashboard({ onNavigate }) {
-  const [projects, setProjects] = useState(() => elsRepository.getProjects());
+  const [projects, setProjects] = useState(() => {
+    elsRepository.ensureSampleProjects();
+    return elsRepository.getProjects();
+  });
   const [regCounts, setRegCounts] = useState(() => {
     const list = elsRepository.getProjects();
     const counts = {};
@@ -115,14 +120,19 @@ export function HomeDashboard({ onNavigate }) {
   const filteredProjects = useMemo(() => {
     let result = [...projects];
 
-    if (filterStatus !== 'all') {
+    if (filterStatus === 'sample') {
+      result = result.filter((p) => p.isSample || SAMPLE_PROJECT_IDS.includes(p.id));
+    } else if (filterStatus !== 'all') {
       result = result.filter((p) => p.status === filterStatus);
     }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
-        (p) => p.name.toLowerCase().includes(q) || (p.event?.eventName || '').toLowerCase().includes(q)
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.event?.eventName || '').toLowerCase().includes(q) ||
+          (p.sampleTag || '').toLowerCase().includes(q)
       );
     }
 
@@ -131,6 +141,19 @@ export function HomeDashboard({ onNavigate }) {
 
     return result;
   }, [projects, filterStatus, searchQuery]);
+
+  // Khôi phục lại nguyên bản 3 dự án mẫu hệ thống
+  const handleResetSamples = () => {
+    try {
+      elsRepository.ensureSampleProjects({ forceReset: true });
+      loadData();
+      setToastMessage('Đã khôi phục nguyên bản 3 Dự án mẫu hệ thống.');
+      setToastType('success');
+    } catch (err) {
+      setToastMessage(`Không thể khôi phục dự án mẫu: ${err.message}`);
+      setToastType('error');
+    }
+  };
 
   // Xử lý tạo dự án mới
   const handleCreateSubmit = (e) => {
@@ -329,6 +352,15 @@ export function HomeDashboard({ onNavigate }) {
             <button
               type="button"
               role="tab"
+              aria-selected={filterStatus === 'sample'}
+              className={`${styles.filterBtn} ${styles.sampleFilterBtn} ${filterStatus === 'sample' ? styles.activeSampleFilter : ''}`}
+              onClick={() => setFilterStatus('sample')}
+            >
+              ★ Dự án mẫu ({projects.filter((p) => p.isSample || SAMPLE_PROJECT_IDS.includes(p.id)).length})
+            </button>
+            <button
+              type="button"
+              role="tab"
               aria-selected={filterStatus === PROJECT_STATUS.DRAFT}
               className={`${styles.filterBtn} ${filterStatus === PROJECT_STATUS.DRAFT ? styles.activeFilter : ''}`}
               onClick={() => setFilterStatus(PROJECT_STATUS.DRAFT)}
@@ -346,19 +378,31 @@ export function HomeDashboard({ onNavigate }) {
             </button>
           </div>
 
-          {(projects.length >= 5 || searchQuery) && (
-            <div className={styles.searchBox}>
-              <SearchIcon size={16} className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Tìm dự án theo tên..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={styles.searchInput}
-                aria-label="Tìm kiếm dự án"
-              />
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className={styles.btnResetSamples}
+              onClick={handleResetSamples}
+              title="Khôi phục lại nguyên bản 3 Dự án mẫu hệ thống"
+            >
+              <RefreshCwIcon size={14} />
+              <span>Khôi phục 3 mẫu gốc</span>
+            </button>
+
+            {(projects.length >= 4 || searchQuery) && (
+              <div className={styles.searchBox}>
+                <SearchIcon size={16} className={styles.searchIcon} />
+                <input
+                  type="text"
+                  placeholder="Tìm dự án theo tên..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={styles.searchInput}
+                  aria-label="Tìm kiếm dự án"
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Danh sách dự án */}
@@ -394,6 +438,7 @@ export function HomeDashboard({ onNavigate }) {
           <div className={styles.projectGrid}>
             {filteredProjects.map((project) => {
               const regCount = regCounts[project.id] || 0;
+              const isSample = Boolean(project.isSample || SAMPLE_PROJECT_IDS.includes(project.id));
               const dateDisplay = project.event?.eventDate
                 ? `${project.event.eventDate} lúc ${project.event.eventTime || '09:00'}`
                 : 'Chưa đặt ngày';
@@ -401,12 +446,23 @@ export function HomeDashboard({ onNavigate }) {
               return (
                 <article
                   key={project.id}
-                  className={styles.projectCard}
+                  className={`${styles.projectCard} ${isSample ? styles.sampleProjectCard : ''}`}
                   onClick={() => onNavigate(`p/${project.id}/info`)}
                 >
+                  {isSample && (
+                    <div className={styles.sampleBannerRow}>
+                      <span className={styles.sampleBadgePill}>
+                        ★ DỰ ÁN MẪU HỆ THỐNG
+                      </span>
+                      {project.sampleTag && (
+                        <span className={styles.sampleTagText}>{project.sampleTag}</span>
+                      )}
+                    </div>
+                  )}
+
                   <div className={styles.cardHeader}>
                     <Lozenge status={project.status} />
-                    <span className={styles.regBadge}>
+                    <span className={`${styles.regBadge} ${isSample ? styles.sampleRegBadge : ''}`}>
                       <UsersIcon size={14} />
                       <strong>{regCount}</strong> lượt đăng ký
                     </span>
@@ -415,6 +471,12 @@ export function HomeDashboard({ onNavigate }) {
                   <h3 className={styles.projectTitle} title={project.name}>
                     {project.name}
                   </h3>
+
+                  {isSample && project.sampleScenario && (
+                    <p className={styles.sampleScenarioNote}>
+                      {project.sampleScenario}
+                    </p>
+                  )}
 
                   <div className={styles.projectMeta}>
                     <div className={styles.metaRow}>
@@ -430,10 +492,10 @@ export function HomeDashboard({ onNavigate }) {
                   <div className={styles.cardActions} onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
-                      className={styles.btnOpen}
+                      className={`${styles.btnOpen} ${isSample ? styles.btnOpenSample : ''}`}
                       onClick={() => onNavigate(`p/${project.id}/info`)}
                     >
-                      Mở không gian làm việc
+                      {isSample ? 'Khám phá dự án mẫu' : 'Mở không gian làm việc'}
                     </button>
 
                     {project.status === PROJECT_STATUS.PUBLISHED && (

@@ -294,6 +294,38 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
+.sampleFilterBtn {
+  color: #4f46e5;
+}
+
+.activeSampleFilter {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+.btnResetSamples {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  border: 1px solid #c7d2fe;
+  background-color: #eef2ff;
+  color: #4338ca;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 36px;
+}
+
+.btnResetSamples:hover {
+  background-color: #e0e7ff;
+  border-color: #818cf8;
+  color: #312e81;
+}
+
 .searchBox {
   position: relative;
   min-width: 240px;
@@ -349,6 +381,93 @@
   transform: translateY(-4px);
   box-shadow: 0 16px 36px -4px rgba(225, 29, 72, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
   border-color: #fda4af;
+}
+
+/* Ô Dự án mẫu hệ thống: Màu sắc khác biệt rõ rệt (Indigo-Violet & Gold) so với dự án thường */
+.sampleProjectCard {
+  background: linear-gradient(145deg, #eef2ff 0%, #f5f3ff 55%, #fef3c7 100%);
+  border: 2px solid #818cf8;
+  box-shadow: 0 8px 24px -4px rgba(79, 70, 229, 0.14), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+}
+
+.sampleProjectCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 55%, #d97706 100%);
+}
+
+.sampleProjectCard:hover {
+  transform: translateY(-5px);
+  border-color: #4f46e5;
+  box-shadow: 0 18px 38px -4px rgba(79, 70, 229, 0.24), 0 6px 12px -2px rgba(15, 23, 42, 0.06);
+}
+
+.sampleBannerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(99, 102, 241, 0.3);
+}
+
+.sampleBadgePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.sampleTagText {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #4338ca;
+  background-color: rgba(255, 255, 255, 0.75);
+  border: 1px solid #c7d2fe;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.sampleScenarioNote {
+  margin: 0 0 14px 0;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  color: #312e81;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.sampleRegBadge {
+  background-color: rgba(255, 255, 255, 0.85);
+  border: 1px solid #c7d2fe;
+  color: #3730a3;
+}
+
+.btnOpenSample {
+  background: linear-gradient(135deg, #4f46e5 0%, #6d28d9 100%);
+  color: #ffffff;
+  border-color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+}
+
+.btnOpenSample:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #5b21b6 100%);
+  color: #ffffff;
+  border-color: #4338ca;
 }
 
 .cardHeader {

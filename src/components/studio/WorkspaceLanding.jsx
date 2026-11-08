@@ -36,7 +36,7 @@ function getInitialAiValues(project) {
     Array.isArray(project?.event?.speakers) && project.event.speakers.length > 0
       ? `Giao lưu và kết nối trực tiếp cùng ${project.event.speakers.map((s) => s.name).filter(Boolean).slice(0, 2).join(', ')}.`
       : 'Mở rộng mạng lưới quan hệ chất lượng cao trong ngành.',
-    'Nhận trọn bộ tài liệu chuyên sâu và chứng nhận tham gia.',
+    'Tham gia thảo luận trực tiếp và nhận bộ tài liệu tổng hợp từ chương trình.',
   ];
   return {
     headline: project?.ai?.headline || project?.event?.eventName || project?.name || '',

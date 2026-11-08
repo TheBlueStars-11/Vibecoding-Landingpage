@@ -276,7 +276,7 @@ export function ModuleRenderer({
     Array.isArray(eventData.speakers) && eventData.speakers.length > 0
       ? `Giao lưu và kết nối trực tiếp cùng ${eventData.speakers.map((s) => s.name).filter(Boolean).slice(0, 2).join(', ')}.`
       : 'Mở rộng mạng lưới quan hệ chất lượng cao trong ngành.',
-    'Nhận trọn bộ tài liệu chuyên sâu và chứng nhận tham gia.',
+    'Tham gia thảo luận trực tiếp và nhận bộ tài liệu tổng hợp từ chương trình.',
   ];
 
   const benefits = hasValidCandidates
@@ -1804,8 +1804,8 @@ export function ModuleRenderer({
   // 6. VENUE MODULE (Expanded: map-left, text-only, online-card, hybrid-dual, image-left)
   // ================================================================
   if (module.type === 'venue') {
-    const venueName = eventData.venue || 'Trung tâm Đổi mới Sáng tạo Quốc gia (NIC)';
-    const venueAddress = eventData.venueAddress || 'Tòa nhà HITC, 239 Xuân Thủy, Cầu Giấy, Hà Nội';
+    const venueName = eventData.venue || 'Trung tâm Tổ chức Sự kiện';
+    const venueAddress = eventData.venueAddress || eventData.venue || 'Khu vực trung tâm hội nghị';
     const isMapLeft = variant === 'map-left';
     const isTextOnly = variant === 'text-only';
     const isOnlineCard = variant === 'online-card';
@@ -1823,9 +1823,9 @@ export function ModuleRenderer({
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px 0' }}>{venueName}</h3>
               <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '0 0 14px 0' }}>{venueAddress}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.85rem', color: '#334155' }}>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ClockIcon size={14} /> <strong>Giờ đón tiếp:</strong> 08:00 - 08:30</div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><MapPinIcon size={14} /> <strong>Bãi gửi xe:</strong> Tầng hầm B1 & B2 - Miễn phí</div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WifiIcon size={14} /> <strong>Tiện ích:</strong> Wifi tốc độ cao & máy chiếu 4K</div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ClockIcon size={14} /> <strong>Giờ bắt đầu:</strong> {eventData.eventTime || '08:30'}</div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><MapPinIcon size={14} /> <strong>Khu vực đón tiếp:</strong> Sảnh chính hội trường</div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WifiIcon size={14} /> <strong>Tiện ích:</strong> Không gian hội thảo tiêu chuẩn & khu vực networking</div>
               </div>
             </div>
           </div>
@@ -1858,9 +1858,9 @@ export function ModuleRenderer({
           <span className={styles.venueOnlinePlatformBadge} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <LaptopIcon size={14} /> Sự kiện Trực tuyến
           </span>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 10px 0' }}>Nền tảng Zoom / Google Meet</h2>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 10px 0' }}>{venueName}</h2>
           <p style={{ fontSize: '0.9rem', opacity: 0.9, maxWidth: 540, margin: '0 auto 20px auto', lineHeight: 1.6 }}>
-            Buổi hội thảo được phát sóng trực tiếp chất lượng cao. Link phòng họp và mã truy cập sẽ được gửi tự động qua email của bạn 24h trước khi sự kiện bắt đầu.
+            Chương trình được phát sóng trực tiếp chất lượng cao. Đường dẫn tham dự và mã vé sẽ được gửi qua thông tin liên hệ sau khi hoàn tất đăng ký.
           </p>
           <button type="button" className={styles.btnHeroCta} onClick={scrollToForm} style={{ display: 'inline-flex', margin: '0 auto' }}>
             Đăng ký để nhận link trực tuyến
@@ -1890,11 +1890,11 @@ export function ModuleRenderer({
               <strong style={{ fontSize: '1rem', color: '#059669', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <GlobeIcon size={14} /> Trực tuyến qua Video Live
               </strong>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem' }}>Zoom Meetings HD</h4>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Đường truyền riêng cho 500 người tham dự online.</p>
+              <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem' }}>Phát sóng trực tuyến HD</h4>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Hỗ trợ người tham dự theo dõi từ xa thuận tiện.</p>
               <div style={{ marginTop: 'auto', background: '#f8fafc', padding: 16, borderRadius: 12 }}>
                 <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                  <LockIcon size={12} /> Link phòng học sẽ gửi qua Email & SMS đã đăng ký.
+                  <LockIcon size={12} /> Thông tin truy cập sẽ được gửi sau khi đăng ký.
                 </p>
               </div>
             </div>
@@ -1903,25 +1903,27 @@ export function ModuleRenderer({
       );
     }
 
-    // Default image-left
+    // Default image-left (tự động hiển thị bản đồ định vị khi sự kiện không tải ảnh hội trường)
     return renderContainer(
       <div className={styles.venueWrap}>
         <div className={styles.blockTitleCenter}>
           <h2 className={styles.secTitle}>Địa điểm tổ chức</h2>
-          <p className={styles.secDesc}>Không gian hội thảo tiêu chuẩn quốc tế</p>
+          <p className={styles.secDesc}>Không gian đón tiếp và kết nối người tham dự</p>
         </div>
         <div className={`${styles.venueCard} ${styles.venueImgLeft}`}>
-          {venueAsset && (
-            <div className={styles.venueVisual}>
+          <div className={styles.venueVisual}>
+            {venueAsset ? (
               <img src={getAssetSrc(venueAsset)} alt={venueAsset.caption || 'Địa điểm'} className={styles.venueImg} />
-            </div>
-          )}
+            ) : (
+              renderMapSlot(venueAddress)
+            )}
+          </div>
           <div className={styles.venueInfoBody}>
             <MapPinIcon size={24} className={styles.venueIcon} />
             <div>
               <h4 className={styles.venueName}>{venueName}</h4>
               <p className={styles.venueAddressText}>{venueAddress}</p>
-              <p className={styles.venueGuide}>{eventData.venueNotes || 'Được trang bị máy lạnh, màn hình LED và wifi tốc độ cao cho người tham dự.'}</p>
+              <p className={styles.venueGuide}>{eventData.venueNotes || 'Không gian sự kiện được trang bị hệ thống âm thanh, màn hình trình chiếu và khu vực check-in QR thuận tiện.'}</p>
             </div>
           </div>
         </div>
@@ -2715,40 +2717,45 @@ export function ModuleRenderer({
       );
     }
 
+    const firstSpeakerName = Array.isArray(eventData.speakers) && eventData.speakers[0]?.name
+      ? eventData.speakers[0].name
+      : 'các chuyên gia khách mời';
+    const capacityNum = Number(eventData.capacity || 0);
+
     return renderContainer(
       <div>
         <div className={styles.blockTitleCenter}>
           <h2 className={styles.secTitle}>Tổng quan tiêu điểm (Bento Grid)</h2>
-          <p className={styles.secDesc}>Bố cục hiện đại kết hợp nhiều góc nhìn sự kiện</p>
+          <p className={styles.secDesc}>Những giá trị cốt lõi dành cho người tham dự {eventData.eventName || 'sự kiện'}</p>
         </div>
         <div className={styles.bentoGrid}>
           <div className={`${styles.bentoItem} ${styles.bentoSpan8}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--theme-primary, #e11d48)' }}>01 / THỰC CHIẾN</span>
-              <h3 className={styles.bentoItemTitle}>Lộ trình từ ý tưởng đến Landing Page hoàn chỉnh</h3>
-              <p className={styles.bentoItemDesc}>Làm chủ các công cụ hỗ trợ AI coding và phương pháp xây dựng giao diện chuẩn tương thích trong vòng 15 phút.</p>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--theme-primary, #e11d48)' }}>01 / GIÁ TRỊ TRỌNG TÂM</span>
+              <h3 className={styles.bentoItemTitle}>{benefits[0] || headline}</h3>
+              <p className={styles.bentoItemDesc}>{description}</p>
             </div>
-            <div style={{ marginTop: 16 }}><span className={styles.icPill}><ZapIcon size={12} /> Live Demo</span></div>
+            <div style={{ marginTop: 16 }}><span className={styles.icPill}><ZapIcon size={12} /> {eventData.eventTime || '09:00'} · {eventData.eventDate || 'Sắp diễn ra'}</span></div>
           </div>
           <div className={`${styles.bentoItem} ${styles.bentoSpan4}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#059669' }}>02 / QUÀ TẶNG</span>
-              <h3 className={styles.bentoItemTitle}>Trọn bộ Ebook & Tài liệu mẫu</h3>
-              <p className={styles.bentoItemDesc}>Gửi tặng trực tiếp qua email cho các bạn tham gia đầy đủ buổi hội thảo.</p>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#059669' }}>02 / QUYỀN LỢI ĐĂNG KÝ SỚM</span>
+              <h3 className={styles.bentoItemTitle}>Ưu đãi dành cho người tham dự</h3>
+              <p className={styles.bentoItemDesc}>{eventData.earlyBirdOffer || benefits[1] || 'Đăng ký sớm để giữ chỗ ưu tiên tại sự kiện.'}</p>
             </div>
           </div>
           <div className={`${styles.bentoItem} ${styles.bentoSpan6}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0891b2' }}>03 / NETWORKING</span>
-              <h3 className={styles.bentoItemTitle}>Kết nối hơn 150+ kỹ sư công nghệ</h3>
-              <p className={styles.bentoItemDesc}>Không gian giao lưu thân mật tại phòng chờ trước và sau sự kiện.</p>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0891b2' }}>03 / KẾT NỐI CHUYÊN GIA</span>
+              <h3 className={styles.bentoItemTitle}>Giao lưu cùng {firstSpeakerName}</h3>
+              <p className={styles.bentoItemDesc}>{benefits[1] || 'Trực tiếp đặt câu hỏi và trao đổi kinh nghiệm thực tế tại sự kiện.'}</p>
             </div>
           </div>
           <div className={`${styles.bentoItem} ${styles.bentoSpan6}`}>
             <div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706' }}>04 / CHỨNG NHẬN</span>
-              <h3 className={styles.bentoItemTitle}>Chứng chỉ NFT số hóa độc quyền</h3>
-              <p className={styles.bentoItemDesc}>Xác nhận sự tham dự và năng lực thực hành từ ban tổ chức.</p>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706' }}>04 / QUY MÔ & ĐỊA ĐIỂM</span>
+              <h3 className={styles.bentoItemTitle}>{capacityNum > 0 ? `Giới hạn ${capacityNum} suất tham dự` : (eventData.venue || 'Không gian sự kiện chuyên nghiệp')}</h3>
+              <p className={styles.bentoItemDesc}>{benefits[2] || `Tổ chức tại ${eventData.venue || 'hội trường trung tâm'} với quy trình check-in mã QR nhanh chóng.`}</p>
             </div>
           </div>
         </div>
@@ -2870,16 +2877,20 @@ export function ModuleRenderer({
 
     return renderContainer(
       <div className={styles.finalCtaBanner}>
-        <h2 className={styles.finalCtaTitle}>{renderEditorialHeadline('Đừng bỏ lỡ cơ hội tham gia *sự kiện công nghệ 2026*')}</h2>
+        <h2 className={styles.finalCtaTitle}>{renderEditorialHeadline(`Đừng bỏ lỡ cơ hội tham gia *${eventData.eventName || 'sự kiện đặc biệt này'}*`)}</h2>
         <p className={styles.finalCtaSub}>
-          Chỉ còn số lượng có hạn các suất tham dự miễn phí. Đăng ký ngay hôm nay để nhận trọn bộ quà tặng và giữ chỗ tại hội trường!
+          {eventData.earlyBirdOffer
+            ? `Ưu đãi đăng ký sớm: ${eventData.earlyBirdOffer}. Đăng ký ngay hôm nay để nhận mã vé QR giữ chỗ tại sự kiện!`
+            : 'Số lượng chỗ ngồi có giới hạn. Hoàn tất đăng ký ngay hôm nay để nhận mã vé QR tham dự chương trình!'}
         </p>
         <button type="button" className={styles.finalCtaBtn} onClick={scrollToForm}>
-          Giữ chỗ miễn phí ngay ↗
+          Đăng ký giữ chỗ ngay ↗
         </button>
-        <div className={styles.finalCtaUrgency} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <FlameIcon size={14} /> Hơn {regCount || 128} người đã đăng ký hôm nay
-        </div>
+        {regCount > 0 && (
+          <div className={styles.finalCtaUrgency} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <FlameIcon size={14} /> Đã có {regCount} người đăng ký tham dự
+          </div>
+        )}
       </div>
     );
   }
