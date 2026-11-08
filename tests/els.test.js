@@ -1,5 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 
 import {
   generateRegistrationCode,
@@ -8,6 +10,7 @@ import {
   createProject,
   createRegistrationRecord,
   EVENT_FIELDS,
+  AI_FIELDS,
   normalizeEventInput,
   FIELD_ROLES,
   ASSET_ROLES,
@@ -281,5 +284,45 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
       () => elsRepository.createProject({ name: 'Dự án tràn bộ nhớ' }),
       (err) => err.message.includes('Bộ nhớ trình duyệt (localStorage) đã đầy')
     );
+  });
+
+  it('Code Hygiene & Layering Guard: đảm bảo không có component gọi trực tiếp localStorage hoặc dùng dangerouslySetInnerHTML [SYS-05, SYS-12]', () => {
+    assert.equal(AI_FIELDS.HEADLINE, 'headline');
+    assert.equal(AI_FIELDS.DESCRIPTION, 'description');
+    assert.equal(AI_FIELDS.BENEFITS, 'benefits');
+
+    const walkFiles = (dir, list = []) => {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walkFiles(full, list);
+        else if (/\.(js|jsx)$/.test(entry.name)) list.push(full);
+      }
+      return list;
+    };
+
+    const componentFiles = walkFiles(path.resolve('src/components'));
+    for (const file of componentFiles) {
+      const code = fs.readFileSync(file, 'utf8');
+      assert.equal(
+        /\blocalStorage\.(getItem|setItem|removeItem|clear)\b/.test(code),
+        false,
+        `Component không được gọi trực tiếp localStorage: ${path.relative(process.cwd(), file)}`
+      );
+      assert.equal(
+        code.includes('dangerouslySetInnerHTML'),
+        false,
+        `Không được sử dụng dangerouslySetInnerHTML trong: ${path.relative(process.cwd(), file)}`
+      );
+    }
+
+    const apiFiles = walkFiles(path.resolve('api'));
+    for (const file of apiFiles) {
+      const code = fs.readFileSync(file, 'utf8');
+      assert.equal(
+        /catch\s*\(\s*\)\s*\{\s*\}|catch\s*\{\s*\}/.test(code),
+        false,
+        `API serverless không được chứa khối catch rỗng nuốt lỗi: ${path.relative(process.cwd(), file)}`
+      );
+    }
   });
 });

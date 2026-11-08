@@ -1,6 +1,6 @@
 import { runAiGuard } from '../domain/aiGuard.js';
 import { generateMockContent } from './mockAi.js';
-import { TONES } from '../domain/schema.js';
+import { TONES } from '../domain/elsSchema.js';
 import { getAiConfig, recordAiLog } from './aiLogger.js';
 
 /**

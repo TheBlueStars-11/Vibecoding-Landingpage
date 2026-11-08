@@ -20,7 +20,8 @@ export function sanitizeEndpointUrl(rawUrl) {
       u.searchParams.set('token', '***MASKED***');
     }
     return u.toString();
-  } catch {
+  } catch (err) {
+    console.warn('[HTTP] URL không hợp lệ khi khử trùng:', err.message);
     return rawUrl.replace(/([?&](?:key|apiKey|token)=)[^&]+/gi, '$1***MASKED***');
   }
 }
