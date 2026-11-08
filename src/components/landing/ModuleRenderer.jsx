@@ -57,63 +57,7 @@ const getAvatarBg = (seed = '', idx = 0) => {
 };
 
 /**
- * Tìm vị trí ngắt dòng tự nhiên và phân tách phần nhấn mạnh font chữ hợp lý
- */
-function findSmartHeadlineSplit(text) {
-  const trimmed = text.trim();
-
-  // 1. Phân tách theo dấu hai chấm ':' (thường là ranh giới Tên sự kiện : Chủ đề/Slogan)
-  const colonIndex = trimmed.indexOf(':');
-  if (colonIndex > 4 && colonIndex < trimmed.length - 3) {
-    return {
-      firstPart: trimmed.slice(0, colonIndex + 1).trim(),
-      secondPart: trimmed.slice(colonIndex + 1).trim(),
-    };
-  }
-
-  // 2. Phân tách theo gạch ngang dài '—' hoặc ' - '
-  const dashMatch = trimmed.match(/^(.*?)(?:\s+[—–-]\s+)(.+)$/);
-  if (dashMatch && dashMatch[1].length >= 4 && dashMatch[2].length >= 3) {
-    return {
-      firstPart: dashMatch[1].trim(),
-      secondPart: dashMatch[2].trim(),
-    };
-  }
-
-  // 3. Phân tách theo thanh đứng '|'
-  const pipeIndex = trimmed.indexOf('|');
-  if (pipeIndex > 4 && pipeIndex < trimmed.length - 3) {
-    return {
-      firstPart: trimmed.slice(0, pipeIndex).trim(),
-      secondPart: trimmed.slice(pipeIndex + 1).trim(),
-    };
-  }
-
-  // 4. Nếu không có dấu phân cách, tách ở các từ khóa punchline kết thúc (2-4 từ cuối)
-  const words = trimmed.split(/\s+/);
-  if (words.length >= 6) {
-    const punchlineCount = Math.min(4, Math.max(2, Math.round(words.length * 0.35)));
-    const splitIndex = words.length - punchlineCount;
-    return {
-      firstPart: words.slice(0, splitIndex).join(' '),
-      secondPart: words.slice(splitIndex).join(' '),
-    };
-  }
-
-  if (words.length >= 4) {
-    return {
-      firstPart: words.slice(0, -2).join(' '),
-      secondPart: words.slice(-2).join(' '),
-    };
-  }
-
-  return null;
-}
-
-/**
- * Hiển thị tiêu đề theo phong cách Resolvo (Sans hình học kết hợp Serif Italic nghệ thuật)
- * Có hỗ trợ tùy chọn addNewline để tự động xuống dòng tại khoảng cách ngữ nghĩa hợp lý
- * trước phần chữ nhấn mạnh bằng font serif italic.
+ * Hiển thị tiêu đề giữ nguyên hoàn toàn nội dung gốc (chỉ xử lý in nghiêng nếu có dấu *...* tường minh)
  */
 function renderEditorialHeadline(text, { addNewline = false } = {}) {
   if (!text) return null;
@@ -135,17 +79,6 @@ function renderEditorialHeadline(text, { addNewline = false } = {}) {
       }
       return addNewline && i < parts.length - 1 ? part.trimEnd() : part;
     });
-  }
-
-  const smartSplit = findSmartHeadlineSplit(text);
-  if (smartSplit) {
-    return (
-      <>
-        {smartSplit.firstPart}
-        {addNewline ? <br className={styles.headlineBr} /> : ' '}
-        <em className={styles.editorialItalic}>{smartSplit.secondPart}</em>
-      </>
-    );
   }
 
   return text;
@@ -226,18 +159,26 @@ export function ModuleRenderer({
   const mock = STANDALONE_DEV_MOCK_DATA;
 
   // 1. Phân loại ảnh & Gán ảnh AI (AI Image Assignment)
+  // Chỉ lấy ảnh có vai trò liên quan trực tiếp đến sự kiện ('hero' hoặc 'other') cho Hero, tuyệt đối không lấy ảnh diễn giả/địa điểm/quà tặng làm Hero
   const getAssetSrc = (a) => a?.dataUrl || a?.url || '';
+  const eventHeroAssets = assets.filter((a) => a.role === 'hero' || a.role === 'other');
 
-  const heroAsset = (custom.heroImageId && assets.find((a) => a.id === custom.heroImageId))
-    || (aiData?.imageAssignments?.heroImageId && assets.find((a) => a.id === aiData.imageAssignments.heroImageId))
-    || assets.find((a) => a.role === 'hero')
-    || assets.find((a) => a.role === 'other')
-    || assets[0];
+  const heroAsset = (custom.heroImageId && eventHeroAssets.find((a) => a.id === custom.heroImageId))
+    || (aiData?.imageAssignments?.heroImageId && eventHeroAssets.find((a) => a.id === aiData.imageAssignments.heroImageId))
+    || (aiData?.imageAssignments?.hero && eventHeroAssets.find((a) => a.id === aiData.imageAssignments.hero))
+    || eventHeroAssets[0]
+    || null;
 
   const speakerAssets = assets.filter((a) => a.role === 'speaker');
 
   const getSpeakerAsset = (idx) => {
-    const assignedId = aiData?.imageAssignments?.speakerImageIds?.[idx];
+    const spk = eventData.speakers?.[idx];
+    if (spk?.assetId) {
+      const bySpkId = speakerAssets.find((a) => a.id === spk.assetId) || assets.find((a) => a.id === spk.assetId);
+      if (bySpkId) return bySpkId;
+    }
+    const assignedId = aiData?.imageAssignments?.speakerImageIds?.[idx]
+      || aiData?.imageAssignments?.speakers?.find?.((s) => s.speakerIndex === idx)?.assetId;
     if (assignedId) {
       const found = assets.find((a) => a.id === assignedId);
       if (found) return found;
@@ -247,17 +188,19 @@ export function ModuleRenderer({
 
   const venueAsset = (custom.venueImageId && assets.find((a) => a.id === custom.venueImageId))
     || (aiData?.imageAssignments?.venueImageId && assets.find((a) => a.id === aiData.imageAssignments.venueImageId))
+    || (aiData?.imageAssignments?.venue && assets.find((a) => a.id === aiData.imageAssignments.venue))
     || assets.find((a) => a.role === 'venue')
     || null;
 
   const giftAsset = (custom.giftImageId && assets.find((a) => a.id === custom.giftImageId))
     || (aiData?.imageAssignments?.giftImageId && assets.find((a) => a.id === aiData.imageAssignments.giftImageId))
+    || (aiData?.imageAssignments?.gift && assets.find((a) => a.id === aiData.imageAssignments.gift))
     || assets.find((a) => a.role === 'gift')
     || assets.find((a) => a.role === 'other')
     || null;
 
-  // 2. Nội dung tổng hợp
-  const headline = isCustom && custom.headline !== undefined ? custom.headline : (aiData.headline || eventData.eventName || 'Sự kiện 2026');
+  // 2. Nội dung tổng hợp: Tên sự kiện trong mục Thông tin chung luôn được giữ nguyên 100% ở Preview
+  const headline = isCustom && custom.headline ? custom.headline : (eventData.eventName || aiData.headline || 'Sự kiện 2026');
   const description = isCustom && custom.description !== undefined ? custom.description : (aiData.description || 'Tham gia cùng chúng tôi để kết nối và tiếp cận những nội dung giá trị nhất.');
 
   // Lấy danh sách benefits thực tế (ưu tiên custom -> aiData -> thông tin sự kiện -> mặc định)
@@ -481,12 +424,17 @@ export function ModuleRenderer({
   // 1. HERO MODULE (Expanded: cinema-letterbox, poster-fullbleed, center-text, benefits-band, stack-cards, split-card, image-left, image-right, center)
   // ================================================================
   if (module.type === 'hero') {
-    const isCenter = variant === 'center';
-    const isCenterText = variant === 'center-text';
-    const isBenefitsBand = variant === 'benefits-band';
-    const isStackCards = variant === 'stack-cards';
-    const isSplitCard = variant === 'split-card';
-    const isCinemaLetterbox = variant === 'cinema-letterbox';
+    // Nếu không có ảnh liên quan đến sự kiện (heroAsset === null), bắt buộc dùng module Hero không có ảnh ('split-card') thay vì biến thể có ảnh
+    const effectiveHeroVariant = (!heroAsset && (variant === 'image-right' || variant === 'image-left' || variant === 'center' || variant === 'poster-fullbleed'))
+      ? 'split-card'
+      : variant;
+
+    const isCenter = effectiveHeroVariant === 'center';
+    const isCenterText = effectiveHeroVariant === 'center-text';
+    const isBenefitsBand = effectiveHeroVariant === 'benefits-band';
+    const isStackCards = effectiveHeroVariant === 'stack-cards';
+    const isSplitCard = effectiveHeroVariant === 'split-card';
+    const isCinemaLetterbox = effectiveHeroVariant === 'cinema-letterbox';
 
     // Trang trí hình học trừu tượng (abstract SVG circles) cho Hero - luôn ở layer nền
     const renderHeroAbstractDecor = () => (
@@ -1140,20 +1088,20 @@ export function ModuleRenderer({
     const isTrioTypo = variant === 'trio-typographic';
     const isSoloSpotlight = variant === 'solo-spotlight';
 
-    // Biến thể 1: trio-typographic (Thuần chữ sang trọng cho 3 diễn giả)
+    // Biến thể 1: trio-typographic (Thuần chữ sang trọng, tự động cân đối theo số lượng khách mời)
     if (isTrioTypo) {
       return renderContainer(
-        <div>
+        <div className={styles.speakersContainer}>
           <div className={styles.blockTitleCenter}>
-            <h2 className={styles.secTitle}>Khách mời & Chuyên gia</h2>
-            <p className={styles.secDesc}>Hội tụ những gương mặt tiên phong trong công nghệ</p>
+            <h2 className={styles.secTitle}>Diễn giả khách mời</h2>
+            <p className={styles.secDesc}>Hội tụ những gương mặt chuyên gia đồng hành tại sự kiện</p>
           </div>
-          <div className={styles.spkTrioTypographicGrid}>
+          <div className={styles.spkTrioTypographicGrid} data-speaker-count={rawSpeakers.length}>
             {rawSpeakers.map((spk, idx) => (
               <div key={spk.id || idx} className={styles.spkTrioTypoItem}>
-                <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>{spk.name}</h4>
+                <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>{spk.name}</h4>
                 <div className={styles.spkTypoLine} />
-                <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b', lineHeight: 1.5 }}>{spk.title}</p>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>{spk.title}</p>
               </div>
             ))}
           </div>
@@ -1161,46 +1109,53 @@ export function ModuleRenderer({
       );
     }
 
-    // Biến thể 2: solo-spotlight (1 Diễn giả tâm điểm nổi bật)
-    if (isSoloSpotlight) {
+    // Biến thể 2: solo-spotlight (Khi có đúng 1 diễn giả tâm điểm; nếu có từ 2 diễn giả trở lên sẽ tự động hiển thị dạng thẻ cân đối để không bị ẩn khách mời)
+    if (isSoloSpotlight && rawSpeakers.length === 1) {
       const spk = rawSpeakers[0] || { name: 'TS. Nguyễn Văn An', title: 'Viện trưởng Viện Nghiên cứu Trí tuệ Nhân tạo' };
       const asset = getSpeakerAsset(0);
+      const speakerBio = spk.bio || (eventData.eventName
+        ? `Diễn giả khách mời đồng hành và trực tiếp chia sẻ chuyên sâu tại ${eventData.eventName}.`
+        : 'Diễn giả khách mời chia sẻ kinh nghiệm thực tiễn và giao lưu trực tiếp cùng người tham dự.');
 
       return renderContainer(
-        <div className={styles.spkSoloSpotlightWrap}>
-          <div className={styles.spkSoloSpotlightCard}>
-            <div className={styles.spkSoloSpotlightAvatar}>
-              {asset ? (
-                <img src={getAssetSrc(asset)} alt={spk.name} />
-              ) : (
-                <div className={styles.spkInitialsAvatar} style={{ background: getAvatarBg(spk.name, 0) }}>
-                  {getInitials(spk.name)}
-                </div>
-              )}
-            </div>
-            <div>
-              <span className={styles.spkSoloBadge}>
-                <MicIcon size={12} /> Diễn giả chính (Keynote)
-              </span>
-              <h3 style={{ margin: '0 0 6px 0', fontSize: '1.35rem', fontWeight: 800, color: '#0f172a' }}>{spk.name}</h3>
-              <p style={{ margin: '0 0 10px 0', fontSize: '0.9rem', color: 'var(--theme-primary, #e11d48)', fontWeight: 600 }}>{spk.title}</p>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b', lineHeight: 1.5 }}>
-                Hơn 15 năm kinh nghiệm nghiên cứu và triển khai các hệ thống trí tuệ nhân tạo quy mô lớn. Tác giả nhiều công trình khoa học quốc tế.
-              </p>
+        <div className={styles.speakersContainer}>
+          <div className={styles.blockTitleCenter}>
+            <h2 className={styles.secTitle}>Diễn giả khách mời</h2>
+            <p className={styles.secDesc}>Gặp gỡ chuyên gia đồng hành tại chương trình</p>
+          </div>
+          <div className={styles.spkSoloSpotlightWrap}>
+            <div className={styles.spkSoloSpotlightCard}>
+              <div className={styles.spkSoloSpotlightAvatar}>
+                {asset ? (
+                  <img src={getAssetSrc(asset)} alt={spk.name} />
+                ) : (
+                  <div className={styles.spkInitialsAvatar} style={{ background: getAvatarBg(spk.name, 0) }}>
+                    {getInitials(spk.name)}
+                  </div>
+                )}
+              </div>
+              <div className={styles.spkSoloSpotlightContent}>
+                <span className={styles.spkSoloBadge}>
+                  <MicIcon size={12} /> Diễn giả chính
+                </span>
+                <h3 className={styles.spkSoloName}>{spk.name}</h3>
+                <p className={styles.spkSoloTitle}>{spk.title}</p>
+                <p className={styles.spkSoloBio}>{speakerBio}</p>
+              </div>
             </div>
           </div>
         </div>
       );
     }
 
-    // Biến thể 3 & Mặc định: portrait-cards (Thẻ chân dung tỷ lệ 4:5 - Ảnh trên, chữ trang trọng bên dưới)
+    // Biến thể 3 & Mặc định: portrait-cards (Tự động co giãn kích thước chuẩn mực dù có 1, 2, 3 hay 8 diễn giả)
     return renderContainer(
       <div className={styles.speakersContainer}>
         <div className={`${styles.blockTitleCenter} ${styles.speakersTitleSpaced}`}>
           <h2 className={styles.secTitle}>Diễn giả khách mời</h2>
           <p className={styles.secDesc}>Gặp gỡ các chuyên gia đầu ngành trong lĩnh vực</p>
         </div>
-        <div className={styles.spkPortraitCards}>
+        <div className={styles.spkPortraitCards} data-speaker-count={rawSpeakers.length}>
           {rawSpeakers.map((spk, idx) => {
             const asset = getSpeakerAsset(idx);
             return (

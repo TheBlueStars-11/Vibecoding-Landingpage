@@ -20,6 +20,7 @@ import { createDefaultSampleAssets } from '../src/domain/sampleAssets.js';
 import { buildSystemSampleProjects, SAMPLE_PROJECT_IDS } from '../src/domain/sampleProjects.js';
 import { runResponsiveScan } from '../src/domain/moduleAuditor.js';
 import { elsRepository, formatXmlCell } from '../src/services/elsRepository.js';
+import { generateMockContent } from '../src/services/mockAi.js';
 
 import {
   validateProjectName,
@@ -357,14 +358,28 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
     assert.equal(s2SpeakersMod.variant, 'trio-typographic');
     assert.equal(s2VenueMod.variant, 'map-left');
 
-    // Kịch bản 3: Ảnh chọn lọc (2 ảnh: 1 diễn giả + 1 quà tặng, không có ảnh địa điểm) & Form tùy biến
+    // Kịch bản 3: Ảnh chọn lọc (2 ảnh: 1 diễn giả + 1 quà tặng, không có ảnh sự kiện/địa điểm) & Form tùy biến
     assert.equal(s3.project.isSample, true);
     assert.equal(s3.assets.length, 2);
     assert.equal(s3.project.event.speakers.length, 1);
     assert.equal(s3.project.formFields.length, 4);
     assert.equal(s3.registrations.length, 4);
+    const s3HeroMod = s3.project.moduleLayout.find((m) => m.type === 'hero');
     const s3SpeakersMod = s3.project.moduleLayout.find((m) => m.type === 'speakers');
+    // Mẫu 3 không có ảnh sự kiện/poster -> bắt buộc dùng module Hero không có ảnh ('benefits-band')
+    assert.equal(s3HeroMod.variant, 'benefits-band');
     assert.equal(s3SpeakersMod.variant, 'solo-spotlight');
+
+    // Tên sự kiện trong mục Thông tin chung phải giữ nguyên 100% ở Preview (ai.headline === event.eventName)
+    for (const { project } of samples) {
+      assert.equal(project.ai.headline, project.event.eventName);
+      assert.equal(project.name, project.event.eventName);
+    }
+
+    // Khi không có ảnh liên quan đến sự kiện (chỉ có ảnh diễn giả/quà tặng), generateMockContent tuyệt đối không gán ảnh diễn giả vào heroImageId
+    const mockNoEventImg = generateMockContent(s3.project.event, s3.assets);
+    assert.equal(mockNoEventImg.headline, s3.project.event.eventName);
+    assert.equal(mockNoEventImg.imageAssignments.heroImageId, null);
 
     // Đánh giá tự động từng dự án qua bộ Validator (WS1 + WS2) và Responsive Module Auditor (5 kích thước màn hình)
     for (const { project, assets } of samples) {
@@ -426,5 +441,20 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
     elsRepository.ensureSampleProjects({ forceReset: true });
     assert.equal(elsRepository.getProjects().length, 3);
     assert.equal(elsRepository.getAssets('prj_sample_ai_summit').length, 6);
+
+    // Kiểm tra thứ tự sắp xếp: Dự án người dùng luôn đứng trước, 3 Dự án mẫu hệ thống luôn nằm ở vị trí sau cùng
+    const userProject = elsRepository.createProject({ name: 'Sự kiện Người Dùng Tự Tạo 2026' });
+    const allList = [...elsRepository.getProjects()];
+    allList.sort((a, b) => {
+      const aSample = Boolean(a.isSample || SAMPLE_PROJECT_IDS.includes(a.id));
+      const bSample = Boolean(b.isSample || SAMPLE_PROJECT_IDS.includes(b.id));
+      if (aSample !== bSample) return aSample ? 1 : -1;
+      return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+    });
+    assert.equal(allList[0].id, userProject.id);
+    assert.deepEqual(
+      allList.slice(-3).map((p) => p.id),
+      SAMPLE_PROJECT_IDS
+    );
   });
 });

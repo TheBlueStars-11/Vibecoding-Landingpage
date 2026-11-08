@@ -281,7 +281,12 @@ export function LandingView({
     },
   };
 
-  // Áp dụng các bố cục vào Landing Page (tự động loại bỏ vĩnh viễn các module và biến thể đã bị xóa)
+  // Áp dụng các bố cục vào Landing Page (tự động loại bỏ vĩnh viễn các module và biến thể đã bị xóa, đồng thời dùng Hero không ảnh nếu không có ảnh sự kiện)
+  const hasEventHeroAsset = useMemo(
+    () => assets.some((a) => a.role === 'hero' || a.role === 'other'),
+    [assets]
+  );
+
   const moduleTree = useMemo(() => {
     const raw = Array.isArray(project.moduleLayout) && project.moduleLayout.length > 0
       ? project.moduleLayout
@@ -294,12 +299,20 @@ export function LandingView({
       .filter((m) => !deletedTypes.includes(m.type) && !m.hidden)
       .map((m) => {
         const delList = deletedVariants[m.type] || [];
-        if (delList.includes(m.variant)) {
-          return { ...m, variant: getSafeVariant(m.type, m.variant) };
+        let nextVariant = delList.includes(m.variant) ? getSafeVariant(m.type, m.variant) : m.variant;
+        if (
+          m.type === 'hero' &&
+          !hasEventHeroAsset &&
+          (nextVariant === 'image-right' || nextVariant === 'image-left' || nextVariant === 'center' || nextVariant === 'poster-fullbleed')
+        ) {
+          nextVariant = 'split-card';
+        }
+        if (nextVariant !== m.variant) {
+          return { ...m, variant: nextVariant };
         }
         return m;
       });
-  }, [project.moduleLayout, project.modulePreset]);
+  }, [project.moduleLayout, project.modulePreset, hasEventHeroAsset]);
 
   return (
     <div

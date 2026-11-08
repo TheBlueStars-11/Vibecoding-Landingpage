@@ -21,7 +21,7 @@ export function generateMockContent(eventData = {}, assets = []) {
   let benefits = [];
 
   if (tone === TONES.PREMIUM) {
-    headline = `Khám phá đỉnh cao cùng ${name}`;
+    headline = name;
     description = `Chào mừng quý vị đến với ${name} tại ${location}. Sự kiện mang đến những góc nhìn chiến lược độc quyền cùng ${mainSpeaker}, mở ra cơ hội bứt phá toàn diện.`;
     benefits = [
       `Tiếp cận tri thức và chiến lược cao cấp từ chuyên gia ${mainSpeaker}.`,
@@ -29,7 +29,7 @@ export function generateMockContent(eventData = {}, assets = []) {
       earlyBird ? `Đặc quyền ưu đãi độc quyền: ${earlyBird}.` : 'Nhận bộ tài liệu phân tích chuyên sâu độc quyền tại sự kiện.',
     ];
   } else if (tone === TONES.FRIENDLY) {
-    headline = `Tham gia ngay: ${name}!`;
+    headline = name;
     description = `Đừng bỏ lỡ ${name} diễn ra tại ${location}! Cùng gặp gỡ ${mainSpeaker} để học hỏi, kết nối bạn bè và tích lũy những kinh nghiệm thực chiến cực kỳ bổ ích.`;
     benefits = [
       `Lắng nghe những câu chuyện và bài học thực tế từ ${mainSpeaker}.`,
@@ -38,7 +38,7 @@ export function generateMockContent(eventData = {}, assets = []) {
     ];
   } else {
     // PROFESSIONAL (Mặc định)
-    headline = `${name} — Nâng tầm tri thức, đột phá tương lai`;
+    headline = name;
     description = `Sự kiện ${name} được tổ chức tại ${location} với sự đồng hành của ${mainSpeaker}. Chương trình cung cấp kiến thức thực chiến, cập nhật xu hướng mới nhất và giải pháp tối ưu cho người tham dự.`;
     benefits = [
       `Nắm vững phương pháp và công cụ thực chiến từ ${mainSpeaker}.`,
@@ -47,8 +47,8 @@ export function generateMockContent(eventData = {}, assets = []) {
     ];
   }
 
-  // Tự động phân bổ ảnh vào từng module thích hợp
-  const heroAsset = assets.find((a) => a.role === 'hero') || assets[0];
+  // Tự động phân bổ ảnh vào từng module thích hợp (Chỉ gán Hero khi có ảnh sự kiện/poster, không lấy ảnh diễn giả/địa điểm/quà tặng làm Hero)
+  const heroAsset = assets.find((a) => a.role === 'hero' || a.role === 'other') || null;
   const venueAsset = assets.find((a) => a.role === 'venue');
   const speakerAssets = assets.filter((a) => a.role === 'speaker');
   const giftAsset = assets.find((a) => a.role === 'gift');

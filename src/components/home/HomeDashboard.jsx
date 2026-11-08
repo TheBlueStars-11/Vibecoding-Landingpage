@@ -136,8 +136,13 @@ export function HomeDashboard({ onNavigate }) {
       );
     }
 
-    // Sắp xếp updatedAt giảm dần
-    result.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+    // Sắp xếp: Dự án người dùng lên trước (mới nhất trước), Dự án mẫu hệ thống luôn nằm ở vị trí sau cùng
+    result.sort((a, b) => {
+      const aSample = Boolean(a.isSample || SAMPLE_PROJECT_IDS.includes(a.id));
+      const bSample = Boolean(b.isSample || SAMPLE_PROJECT_IDS.includes(b.id));
+      if (aSample !== bSample) return aSample ? 1 : -1;
+      return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+    });
 
     return result;
   }, [projects, filterStatus, searchQuery]);

@@ -39,7 +39,7 @@ function getInitialAiValues(project) {
     'Tham gia thảo luận trực tiếp và nhận bộ tài liệu tổng hợp từ chương trình.',
   ];
   return {
-    headline: project?.ai?.headline || project?.event?.eventName || project?.name || '',
+    headline: project?.event?.eventName || project?.ai?.headline || project?.name || '',
     description: project?.ai?.description || 'Tham gia cùng chúng tôi để kết nối và tiếp cận những nội dung giá trị nhất.',
     benefits: hasValidBenefits
       ? rawBenefits.map((b, idx) => (b && typeof b === 'string' && b.trim() ? b.trim() : defaultBenefits[idx] || ''))
@@ -234,6 +234,12 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
     const chosenSpeakerVariant = getSafeVariant('speakers', aiResult.recommendedSpeakerVariant ||
       (speakerCount === 1 ? 'solo-spotlight' : 'portrait-cards'));
 
+    const exactEventName = project.event?.eventName || project.name || aiResult.headline || 'Sự kiện 2026';
+    const eventHeroAssets = assets.filter((a) => a.role === 'hero' || a.role === 'other');
+    const validHeroAsset = (aiResult.imageAssignments?.heroImageId && eventHeroAssets.find((a) => a.id === aiResult.imageAssignments.heroImageId))
+      || eventHeroAssets[0]
+      || null;
+
     const baseTree = createPresetModuleTree(chosenPreset);
     const deletedTypes = getDeletedModuleTypes();
     const enrichedTree = baseTree
@@ -242,8 +248,15 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
         const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
         if (m.type === 'speakers') {
           enriched.variant = chosenSpeakerVariant;
-        } else if (m.type === 'hero' && aiResult.imageAssignments?.heroImageId) {
-          enriched.customContent = { ...enriched.customContent, heroImageId: aiResult.imageAssignments.heroImageId };
+        } else if (m.type === 'hero') {
+          if (validHeroAsset) {
+            enriched.customContent = { ...enriched.customContent, heroImageId: validHeroAsset.id };
+          } else {
+            // Không có ảnh liên quan đến sự kiện -> Bắt buộc dùng module Hero không có ảnh
+            if (enriched.variant === 'image-right' || enriched.variant === 'image-left' || enriched.variant === 'center') {
+              enriched.variant = 'split-card';
+            }
+          }
         } else if (m.type === 'venue' && aiResult.imageAssignments?.venueImageId) {
           enriched.customContent = { ...enriched.customContent, venueImageId: aiResult.imageAssignments.venueImageId };
         } else if (m.type === 'offer_banner') {
@@ -273,10 +286,14 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
         ...aiResult,
         source: aiResult.source || 'mock',
         generatedAt: new Date().toISOString(),
-        headline: aiResult.headline,
+        headline: exactEventName,
         description: aiResult.description,
         benefits: aiResult.benefits || aiResult.bullets || ['', '', ''],
         designReasoning: chosenReasoning,
+        imageAssignments: {
+          ...(aiResult.imageAssignments || {}),
+          heroImageId: validHeroAsset?.id || null,
+        },
         edited: false,
       },
       modulePreset: chosenPreset,
@@ -287,7 +304,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
     elsRepository.saveProject(updatedProject);
     onUpdateProject?.(updatedProject);
     setEditableAi({
-      headline: aiResult.headline,
+      headline: exactEventName,
       description: aiResult.description,
       benefits: aiResult.benefits || aiResult.bullets || ['', '', ''],
     });
@@ -302,14 +319,22 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
   const handleSelectPreset = (presetId) => {
     const template = PRESET_TEMPLATES[presetId];
     if (!template) return;
+    const eventHeroAssets = assets.filter((a) => a.role === 'hero' || a.role === 'other');
+    const validHeroAsset = (project.ai?.imageAssignments?.heroImageId && eventHeroAssets.find((a) => a.id === project.ai.imageAssignments.heroImageId))
+      || eventHeroAssets[0]
+      || null;
     const baseTree = createPresetModuleTree(presetId);
     const deletedTypes = getDeletedModuleTypes();
     const enrichedTree = baseTree
       .filter((m) => !deletedTypes.includes(m.type))
       .map((m) => {
         const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
-        if (m.type === 'hero' && project.ai?.imageAssignments?.heroImageId) {
-          enriched.customContent = { ...enriched.customContent, heroImageId: project.ai.imageAssignments.heroImageId };
+        if (m.type === 'hero') {
+          if (validHeroAsset) {
+            enriched.customContent = { ...enriched.customContent, heroImageId: validHeroAsset.id };
+          } else if (enriched.variant === 'image-right' || enriched.variant === 'image-left' || enriched.variant === 'center') {
+            enriched.variant = 'split-card';
+          }
         } else if (m.type === 'venue' && project.ai?.imageAssignments?.venueImageId) {
           enriched.customContent = { ...enriched.customContent, venueImageId: project.ai.imageAssignments.venueImageId };
         } else if (m.type === 'offer_banner' && project.ai?.imageAssignments?.giftImageId) {
@@ -339,14 +364,22 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
       description: project.event?.description || '',
     };
     const inferred = inferPresetAndTheme(eventInfo);
+    const eventHeroAssets = assets.filter((a) => a.role === 'hero' || a.role === 'other');
+    const validHeroAsset = (project.ai?.imageAssignments?.heroImageId && eventHeroAssets.find((a) => a.id === project.ai.imageAssignments.heroImageId))
+      || eventHeroAssets[0]
+      || null;
     const baseTree = createPresetModuleTree(inferred.presetId);
     const deletedTypes = getDeletedModuleTypes();
     const enrichedTree = baseTree
       .filter((m) => !deletedTypes.includes(m.type))
       .map((m) => {
         const enriched = { ...m, variant: getSafeVariant(m.type, m.variant) };
-        if (m.type === 'hero' && project.ai?.imageAssignments?.heroImageId) {
-          enriched.customContent = { ...enriched.customContent, heroImageId: project.ai.imageAssignments.heroImageId };
+        if (m.type === 'hero') {
+          if (validHeroAsset) {
+            enriched.customContent = { ...enriched.customContent, heroImageId: validHeroAsset.id };
+          } else if (enriched.variant === 'image-right' || enriched.variant === 'image-left' || enriched.variant === 'center') {
+            enriched.variant = 'split-card';
+          }
         } else if (m.type === 'venue' && project.ai?.imageAssignments?.venueImageId) {
           enriched.customContent = { ...enriched.customContent, venueImageId: project.ai.imageAssignments.venueImageId };
         } else if (m.type === 'offer_banner' && project.ai?.imageAssignments?.giftImageId) {
@@ -386,14 +419,15 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
     onShowToast?.(`Đã đổi màu chủ đạo: ${themeName}`, 'success');
   };
 
-  // Áp dụng chỉnh sửa AI thủ công
+  // Áp dụng chỉnh sửa AI thủ công (Tên sự kiện luôn giữ nguyên theo mục Thông tin chung)
   const handleApplyEdits = () => {
     try {
+      const exactEventName = project.event?.eventName || project.name || editableAi.headline;
       const updatedProject = {
         ...project,
         ai: {
           ...project.ai,
-          headline: editableAi.headline,
+          headline: exactEventName,
           description: editableAi.description,
           benefits: editableAi.benefits,
           edited: true,
@@ -402,6 +436,7 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
       };
       elsRepository.saveProject(updatedProject);
       onUpdateProject?.(updatedProject);
+      setEditableAi((p) => ({ ...p, headline: exactEventName }));
       setHasUnappliedEdits(false);
       setPreviewKey((k) => k + 1);
       onShowToast?.('Đã áp dụng thay đổi nội dung vào landing page.', 'success');
@@ -844,15 +879,13 @@ export function WorkspaceLanding({ project, onUpdateProject, onSaveStatusChange,
               )}
 
               <div className={styles.editGroup}>
-                <label className={styles.editLabel}>Tiêu đề</label>
+                <label className={styles.editLabel}>Tên sự kiện</label>
                 <input
                   type="text"
                   className={styles.editInput}
-                  value={editableAi.headline}
-                  onChange={(e) => {
-                    setEditableAi((p) => ({ ...p, headline: e.target.value }));
-                    setHasUnappliedEdits(true);
-                  }}
+                  value={project.event?.eventName || project.name || editableAi.headline}
+                  readOnly
+                  title="Tên sự kiện được giữ nguyên hoàn toàn theo mục Thông tin chung"
                 />
               </div>
 

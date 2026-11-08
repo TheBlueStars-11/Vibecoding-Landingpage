@@ -188,7 +188,7 @@ export function buildSystemSampleProjects() {
     ai: {
       source: 'ai',
       generatedAt: '2026-11-08T08:00:00.000Z',
-      headline: 'Làm Chủ Kỷ Nguyên AI & Vibe Coding Thực Chiến 2026',
+      headline: 'Hội nghị Công nghệ AI & Vibe Coding Vietnam 2026',
       description: 'Sự kiện công nghệ quy tụ hơn 150 kỹ sư phần mềm, nhà thiết kế sản phẩm và lãnh đạo kỹ thuật tại Trung tâm Đổi mới Sáng tạo Quốc gia (NIC). Trực tiếp trải nghiệm quy trình phát triển sản phẩm tốc độ cao và kết nối cùng 3 chuyên gia đầu ngành.',
       benefits: [
         'Trực tiếp theo dõi màn Live Coding xây dựng sản phẩm hoàn chỉnh từ ý tưởng đến giao diện đa thiết bị.',
@@ -377,7 +377,7 @@ export function buildSystemSampleProjects() {
     ai: {
       source: 'ai',
       generatedAt: '2026-11-08T08:30:00.000Z',
-      headline: 'Chiến Lược Quản Trị Tinh Gọn & Bứt Phá Doanh Thu SME 2026',
+      headline: 'Diễn Đàn Chiến Lược Quản Trị & Tăng Trưởng Doanh Nghiệp SME 2026',
       description: 'Diễn đàn chuyên sâu dành riêng cho 80 nhà sáng lập, CEO và giám đốc điều hành doanh nghiệp vừa và nhỏ. Không cần hình ảnh cầu kỳ, chương trình tập trung 100% vào bộ khung giải pháp thực tiễn về dòng tiền, vận hành và mở rộng thị phần.',
       benefits: [
         'Sở hữu bộ Khung Ma trận Quản trị OKR/KPI 2026 và phiên tư vấn 1-1 dành cho 30 lãnh đạo đăng ký sớm.',
@@ -491,7 +491,7 @@ export function buildSystemSampleProjects() {
 
   const p3ModuleLayout = [
     createModuleInstance('nav', { variant: 'bar', styles: { padding: 'compact', background: 'default' } }),
-    createModuleInstance('hero', { variant: 'center', styles: { padding: 'normal', background: 'default' } }),
+    createModuleInstance('hero', { variant: 'benefits-band', styles: { padding: 'normal', background: 'default' } }),
     createModuleInstance('countdown', { variant: 'circles', styles: { padding: 'normal', background: 'default' } }),
     createModuleInstance('bento', { variant: 'grid-asymmetric', styles: { padding: 'normal', background: 'default' } }),
     createModuleInstance('benefits', { variant: 'recap-chips', styles: { padding: 'normal', background: 'default' } }),
@@ -543,7 +543,7 @@ export function buildSystemSampleProjects() {
     ai: {
       source: 'ai',
       generatedAt: '2026-11-08T09:00:00.000Z',
-      headline: 'Đánh Thức Ý Tưởng Khởi Nghiệp & Sáng Tạo Công Nghệ Sinh Viên 2026',
+      headline: 'Ngày Hội Khởi Nghiệp & Đổi Mới Sáng Tạo Sinh Viên 2026',
       description: 'Ngày hội kết nối cộng đồng sinh viên đam mê công nghệ, khởi nghiệp và đổi mới sáng tạo từ các trường đại học trên toàn quốc. Cơ hội trình bày ý tưởng sản phẩm, nhận học bổng ươm tạo và gặp gỡ trực tiếp cố vấn khởi nghiệp.',
       benefits: [
         'Nhận gói Học bổng Ươm tạo Khởi nghiệp và bộ Kit Sổ tay Pitching Deck cho 100 sinh viên đăng ký sớm.',
@@ -630,10 +630,10 @@ export function buildSystemSampleProjects() {
     }),
   ];
 
-  // Đặt thời điểm cập nhật lệch nhau vài phút để giữ đúng thứ tự hiển thị Mẫu 1 -> Mẫu 2 -> Mẫu 3
-  p1Project.updatedAt = '2026-11-08T09:30:00.000Z';
-  p2Project.updatedAt = '2026-11-08T09:20:00.000Z';
-  p3Project.updatedAt = '2026-11-08T09:10:00.000Z';
+  // Đặt mốc thời gian cơ sở cho dự án mẫu hệ thống để luôn nằm sau các dự án người dùng mới tạo, giữ đúng thứ tự Mẫu 1 -> Mẫu 2 -> Mẫu 3
+  p1Project.updatedAt = '2026-01-01T09:30:00.000Z';
+  p2Project.updatedAt = '2026-01-01T09:20:00.000Z';
+  p3Project.updatedAt = '2026-01-01T09:10:00.000Z';
 
   return [
     { project: p1Project, assets: p1Assets, registrations: p1Registrations },

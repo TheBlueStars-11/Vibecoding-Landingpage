@@ -55,10 +55,12 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
   const performSave = useCallback((dataToSave = eventData) => {
     try {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      const exactName = dataToSave.eventName || project.name;
       const updatedProject = {
         ...project,
-        name: dataToSave.eventName || project.name,
+        name: exactName,
         event: dataToSave,
+        ...(project.ai ? { ai: { ...project.ai, headline: exactName } } : {}),
       };
       elsRepository.saveProject(updatedProject);
       onUpdateProject?.(updatedProject);
@@ -262,10 +264,12 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
     }
 
     try {
+      const exactName = eventData.eventName || project.name;
       const updatedProject = {
         ...project,
-        name: eventData.eventName,
+        name: exactName,
         event: eventData,
+        ...(project.ai ? { ai: { ...project.ai, headline: exactName } } : {}),
       };
       elsRepository.saveProject(updatedProject);
       onUpdateProject?.(updatedProject);

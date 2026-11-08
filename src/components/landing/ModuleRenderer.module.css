@@ -3393,48 +3393,78 @@
 }
 
 .speakersTitleSpaced {
-  margin-bottom: 36px !important;
+  margin-bottom: 24px !important;
 }
 
 .spkPortraitCards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 24px;
-  max-width: 1080px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 20px;
+  max-width: 980px;
   margin: 0 auto;
 }
 
 .spkPortraitCard {
+  flex: 0 1 210px;
+  width: 100%;
+  max-width: 220px;
   display: flex;
   flex-direction: column;
   background: var(--surface-card, #ffffff);
   border: 1px solid var(--border-subtle, rgba(226, 232, 240, 0.85));
-  border-radius: 16px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.2s ease;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.spkPortraitCards[data-speaker-count="1"] .spkPortraitCard,
+.spkPortraitCards[data-speaker-count="2"] .spkPortraitCard {
+  flex: 0 1 220px;
+  max-width: 230px;
+}
+
+.spkPortraitCards[data-speaker-count="5"] .spkPortraitCard,
+.spkPortraitCards[data-speaker-count="6"] .spkPortraitCard,
+.spkPortraitCards[data-speaker-count="7"] .spkPortraitCard,
+.spkPortraitCards[data-speaker-count="8"] .spkPortraitCard {
+  flex: 0 1 190px;
+  max-width: 200px;
 }
 
 .spkPortraitCard:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 14px 30px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -4px rgba(15, 23, 42, 0.11), 0 4px 10px -2px rgba(15, 23, 42, 0.05);
   border-color: var(--theme-border-subtle, rgba(99, 102, 241, 0.3));
 }
 
 .spkPortraitMedia {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  height: 188px;
+  aspect-ratio: 1 / 1;
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  flex-shrink: 0;
+}
+
+.spkPortraitCards[data-speaker-count="5"] .spkPortraitMedia,
+.spkPortraitCards[data-speaker-count="6"] .spkPortraitMedia,
+.spkPortraitCards[data-speaker-count="7"] .spkPortraitMedia,
+.spkPortraitCards[data-speaker-count="8"] .spkPortraitMedia {
+  height: 168px;
 }
 
 .spkPortraitImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
   display: block;
-  transition: transform 0.4s ease;
+  transition: transform 0.35s ease;
 }
 
 .spkPortraitCard:hover .spkPortraitImg {
@@ -3448,13 +3478,13 @@
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  font-size: 2.25rem;
+  font-size: 1.85rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 .spkPortraitInfo {
-  padding: 16px 18px 20px 18px;
+  padding: 12px 14px 16px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3464,8 +3494,8 @@
 }
 
 .spkPortraitName {
-  margin: 0 0 6px 0;
-  font-size: 1.05rem;
+  margin: 0 0 4px 0;
+  font-size: 0.96rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.015em;
@@ -3474,9 +3504,9 @@
 
 .spkPortraitTitle {
   margin: 0;
-  font-size: 0.835rem;
+  font-size: 0.78rem;
   color: #64748b;
-  line-height: 1.48;
+  line-height: 1.42;
   font-weight: 500;
 }
 
@@ -5338,10 +5368,42 @@
   }
 
   .spkPortraitCards {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    max-width: 300px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    max-width: 100%;
     margin: 0 auto;
+  }
+
+  .spkPortraitCard {
+    flex: 0 1 calc(50% - 6px);
+    max-width: 165px;
+  }
+
+  .spkPortraitCards[data-speaker-count="1"] .spkPortraitCard {
+    flex: 0 1 200px;
+    max-width: 200px;
+  }
+
+  .spkPortraitMedia {
+    height: 145px;
+  }
+
+  .spkPortraitCards[data-speaker-count="1"] .spkPortraitMedia {
+    height: 170px;
+  }
+
+  .spkPortraitInfo {
+    padding: 10px 10px 12px 10px;
+  }
+
+  .spkPortraitName {
+    font-size: 0.86rem;
+  }
+
+  .spkPortraitTitle {
+    font-size: 0.74rem;
   }
 
   /* Tiêu đề chung & Hero */
@@ -6163,21 +6225,27 @@
 
 /* Speakers Trio Typographic */
 .spkTrioTypographicGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  max-width: 960px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 18px;
+  max-width: 920px;
   margin: 0 auto;
 }
 
 .spkTrioTypoItem {
+  flex: 1 1 230px;
+  max-width: 285px;
+  width: 100%;
   background: var(--surface-card, #ffffff);
   border-left: 4px solid var(--theme-primary, #e11d48);
   border-top: 1px solid var(--border-surface, #e2e8f0);
   border-right: 1px solid var(--border-surface, #e2e8f0);
   border-bottom: 1px solid var(--border-surface, #e2e8f0);
   border-radius: 0 12px 12px 0;
-  padding: 20px;
+  padding: 16px 18px;
+  box-sizing: border-box;
 }
 
 .spkTypoLine {
@@ -6190,28 +6258,29 @@
 
 /* Speakers Solo Spotlight */
 .spkSoloSpotlightWrap {
-  max-width: 760px;
+  max-width: 620px;
   margin: 0 auto;
 }
 
 .spkSoloSpotlightCard {
   display: flex;
-  gap: 28px;
+  gap: 20px;
   align-items: center;
   background: var(--surface-card, #ffffff);
   border: 1px solid var(--border-surface, #e2e8f0);
-  border-radius: 20px;
-  padding: 32px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 6px 24px rgba(15, 23, 42, 0.06);
 }
 
 .spkSoloSpotlightAvatar {
-  width: 130px;
-  height: 130px;
-  min-width: 130px;
-  border-radius: 20px;
+  width: 96px;
+  height: 96px;
+  min-width: 96px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.1);
+  flex-shrink: 0;
 }
 
 .spkSoloSpotlightAvatar img {
@@ -6220,17 +6289,45 @@
   object-fit: cover;
 }
 
+.spkSoloSpotlightContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.spkSoloName {
+  margin: 0 0 4px 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.spkSoloTitle {
+  margin: 0 0 8px 0;
+  font-size: 0.85rem;
+  color: var(--theme-primary, #e11d48);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.spkSoloBio {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
 .spkSoloBadge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: var(--theme-badge-bg, rgba(79, 70, 229, 0.1));
+  gap: 5px;
+  background: var(--theme-badge-bg, rgba(225, 29, 72, 0.1));
   color: var(--theme-badge-color, var(--theme-primary, #e11d48));
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   text-transform: uppercase;
 }
 
@@ -8084,14 +8181,27 @@
   }
 
   .spkTrioTypographicGrid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: center;
     gap: 12px;
+  }
+
+  .spkTrioTypoItem {
+    max-width: 100%;
+    flex: 1 1 auto;
   }
 
   .spkSoloSpotlightCard {
     flex-direction: column;
     text-align: center;
-    padding: 24px 18px;
+    padding: 18px 16px;
+    gap: 14px;
+  }
+
+  .spkSoloSpotlightAvatar {
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
   }
 
   .spkDuoSplitGrid {
@@ -8430,8 +8540,32 @@
 
 :global([data-device="phone"]) .spkPortraitCards,
 :global(.phone-device-preview) .spkPortraitCards {
-  grid-template-columns: 1fr !important;
-  gap: 16px !important;
-  max-width: 280px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  max-width: 100% !important;
   margin: 0 auto !important;
+}
+
+:global([data-device="phone"]) .spkPortraitCard,
+:global(.phone-device-preview) .spkPortraitCard {
+  flex: 0 1 calc(50% - 6px) !important;
+  max-width: 162px !important;
+}
+
+:global([data-device="phone"]) .spkPortraitCards[data-speaker-count="1"] .spkPortraitCard,
+:global(.phone-device-preview) .spkPortraitCards[data-speaker-count="1"] .spkPortraitCard {
+  flex: 0 1 200px !important;
+  max-width: 200px !important;
+}
+
+:global([data-device="phone"]) .spkPortraitMedia,
+:global(.phone-device-preview) .spkPortraitMedia {
+  height: 142px !important;
+}
+
+:global([data-device="phone"]) .spkPortraitCards[data-speaker-count="1"] .spkPortraitMedia,
+:global(.phone-device-preview) .spkPortraitCards[data-speaker-count="1"] .spkPortraitMedia {
+  height: 168px !important;
 }
