@@ -18,6 +18,7 @@ import {
   SparklesIcon,
   CopyIcon,
   DownloadIcon,
+  FileSpreadsheetIcon,
   CheckIcon,
   SearchIcon,
   TrashIcon,
@@ -433,7 +434,17 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
     if (!project?.id) return;
     try {
       elsRepository.exportToCSV(project.id, project.formFields || []);
-      onShowToast?.('Đã xuất danh sách đơn ra file CSV (Excel) thành công!', 'success');
+      onShowToast?.('Đã xuất danh sách người tham gia ra file CSV thành công!', 'success');
+    } catch (err) {
+      onShowToast?.(err.message || 'Chưa có đơn đăng ký nào để xuất.', 'error');
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!project?.id) return;
+    try {
+      elsRepository.exportToExcel(project.id, project.formFields || []);
+      onShowToast?.('Đã xuất danh sách người tham gia ra file Excel (.xls) thành công!', 'success');
     } catch (err) {
       onShowToast?.(err.message || 'Chưa có đơn đăng ký nào để xuất.', 'error');
     }
@@ -510,10 +521,21 @@ export function WorkspaceRegistrations({ project, onShowToast, onOpenQrScanner }
 
           <button
             type="button"
+            className={styles.btnExcel}
+            onClick={handleExportExcel}
+            disabled={registrations.length === 0}
+            title="Xuất danh sách người tham gia ra file bảng tính Excel (.xls) có màu sắc và định dạng chuẩn"
+          >
+            <FileSpreadsheetIcon size={16} />
+            <span>Xuất Excel</span>
+          </button>
+
+          <button
+            type="button"
             className={styles.btnPrimary}
             onClick={handleExportCsv}
             disabled={registrations.length === 0}
-            title="Xuất file CSV mã hóa UTF-8 xem tốt trên Excel"
+            title="Xuất danh sách người tham gia ra file CSV UTF-8 tiêu chuẩn"
           >
             <DownloadIcon size={16} />
             <span>Xuất CSV</span>

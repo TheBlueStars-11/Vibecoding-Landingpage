@@ -14,6 +14,7 @@ import {
 } from '../src/domain/elsSchema.js';
 
 import { createDefaultSampleAssets } from '../src/domain/sampleAssets.js';
+import { elsRepository, formatXmlCell } from '../src/services/elsRepository.js';
 
 import {
   validateProjectName,
@@ -215,5 +216,51 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
     // 1 ảnh poster/other
     const posterAsset = assets.find((a) => a.role === ASSET_ROLES.OTHER);
     assert.ok(posterAsset);
+  });
+
+  it('formatXmlCell: chống Formula Injection và mã hóa an toàn ký tự XML đặc biệt', () => {
+    // Formula Injection
+    assert.equal(formatXmlCell('=cmd|/C calc'), '&apos;=cmd|/C calc');
+    assert.equal(formatXmlCell('+1+2'), '&apos;+1+2');
+    assert.equal(formatXmlCell('-5*5'), '&apos;-5*5');
+    assert.equal(formatXmlCell('@SUM(A1:A10)'), '&apos;@SUM(A1:A10)');
+
+    // Ký tự XML đặc biệt
+    assert.equal(formatXmlCell('Tom & Jerry <Tech> "Vibe" \'2026\''), 'Tom &amp; Jerry &lt;Tech&gt; &quot;Vibe&quot; &apos;2026&apos;');
+  });
+
+  it('exportToExcel: sinh dữ liệu bảng tính SpreadsheetML XML đầy đủ cột và style', () => {
+    const store = new Map();
+    globalThis.window = {
+      localStorage: {
+        getItem: (k) => store.get(k) || null,
+        setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k),
+      },
+    };
+
+    const testProjId = 'test_proj_excel_' + Date.now();
+    const fields = createDefaultFormFields();
+
+    // Thêm đơn đăng ký thử nghiệm
+    const rec = elsRepository.addRegistration(testProjId, {
+      values: {
+        fld_name: 'Nguyễn Văn Excel',
+        fld_email: 'excel@vibecoding.vn',
+      },
+      source: 'preview',
+      displayName: 'Nguyễn Văn Excel',
+      identityKey: 'excel@vibecoding.vn',
+    });
+
+    const xml = elsRepository.exportToExcel(testProjId, fields);
+    assert.ok(typeof xml === 'string');
+    assert.ok(xml.includes('<?xml version="1.0" encoding="UTF-8"?>'));
+    assert.ok(xml.includes('urn:schemas-microsoft-com:office:spreadsheet'));
+    assert.ok(xml.includes('HeaderStyle'));
+    assert.ok(xml.includes('Mã đăng ký'));
+    assert.ok(xml.includes(rec.code));
+    assert.ok(xml.includes('Nguyễn Văn Excel'));
+    assert.ok(xml.includes('excel@vibecoding.vn'));
   });
 });

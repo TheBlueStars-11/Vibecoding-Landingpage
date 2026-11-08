@@ -6,65 +6,6 @@
   /* Chừa không gian cho action bar */
 }
 
-/* Thanh công cụ đỉnh Workspace 1 */
-.workspaceTopBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 24px;
-  background: linear-gradient(135deg, #fff5f7 0%, #ffe4e8 100%);
-  border: 1px solid #fecdd3;
-  border-radius: 18px;
-  box-shadow: 0 4px 18px rgba(225, 29, 72, 0.06);
-  gap: 16px;
-}
-
-.workspaceTopBarLeft {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.workspaceMainTitle {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0;
-}
-
-.workspaceSubDesc {
-  font-size: 0.85rem;
-  color: #64748b;
-}
-
-.btnDevAutofill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 16px;
-  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.btnDevAutofill:hover {
-  background: linear-gradient(135deg, #be123c 0%, #9f1239 100%);
-  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
-  transform: translateY(-1px);
-}
-
-.btnDevAutofill:active {
-  transform: translateY(0);
-}
-
 /* Tóm tắt lỗi */
 .errorSummary {
   background-color: #fef2f2;

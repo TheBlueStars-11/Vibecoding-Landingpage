@@ -13,7 +13,6 @@ import {
   MoveDownIcon,
   AlertCircleIcon,
   CheckIcon,
-  CodeIcon,
   SparklesIcon,
 } from '../ui/Icons.jsx';
 
@@ -279,93 +278,6 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
     }
   };
 
-  // ==============================================================
-  // ĐIỀN DỮ LIỆU MẪU ĐẦY ĐỦ TỰ ĐỘNG (DEV MODE AUTO-FILL)
-  // Gồm cả thông tin sự kiện, 3 diễn giả, và 6 ảnh mẫu chất lượng cao (AI)
-  // ==============================================================
-  const handleDevAutofill = (e) => {
-    e?.preventDefault?.();
-    e?.stopPropagation?.();
-    try {
-      const projId = project?.id || 'default_project';
-
-      // 1. Tạo ngày sự kiện trong tương lai (15 ngày tới)
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 15);
-      const eventDateStr = futureDate.toISOString().split('T')[0];
-
-      // Ngày hết hạn Early Bird (7 ngày tới)
-      const earlyBirdDate = new Date();
-      earlyBirdDate.setDate(earlyBirdDate.getDate() + 7);
-      const earlyBirdStr = earlyBirdDate.toISOString().split('T')[0];
-
-      const spk1Id = generateId('spk');
-      const spk2Id = generateId('spk');
-      const spk3Id = generateId('spk');
-
-      const mockEvent = {
-        eventName: 'Hội thảo AI & Vibe Coding Vietnam 2026: Kiến tạo tương lai',
-        eventDate: eventDateStr,
-        eventTime: '08:30',
-        venue: 'Trung tâm Đổi mới Sáng tạo Quốc gia (NIC), Tòa nhà HITC, Cầu Giấy, Hà Nội',
-        description: 'Hội thảo chuyên sâu về công nghệ lập trình trực quan (Vibe Coding) và thiết kế giao diện hiện đại với Generative AI dành cho sinh viên và lập trình viên trẻ.',
-        speakers: [
-          { id: spk1Id, name: 'TS. Nguyễn Văn An', title: 'Viện trưởng Viện Nghiên cứu Trí tuệ Nhân tạo' },
-          { id: spk2Id, name: 'ThS. Trần Thị Mai Phương', title: 'Lead AI Architect @ TechCorp Global' },
-          { id: spk3Id, name: 'Ông Lê Hoàng Minh', title: 'Chuyên gia Thiết kế Hệ thống & Vibe Coder' },
-        ],
-        earlyBirdOffer: 'Tặng bộ Ebook Vibe Coding trị giá 500.000đ & Áo thun độc quyền cho 50 vé đầu tiên',
-        earlyBirdDeadline: earlyBirdStr,
-        agenda: [
-          { id: generateId('ag'), time: '08:30', title: 'Đón tiếp, Check-in & Trải nghiệm khu vực công nghệ Demo' },
-          { id: generateId('ag'), time: '09:00', title: 'Khai mạc & Keynote: Kỷ nguyên mới của Vibe Coding và Lập trình Tự động' },
-          { id: generateId('ag'), time: '10:30', title: 'Thực chiến: Xây dựng Landing Page đa nền tảng trong 15 phút' },
-          { id: generateId('ag'), time: '11:30', title: 'Tọa đàm Q&A với các diễn giả & Rút thăm trúng thưởng' },
-        ],
-      };
-
-      setEventData(mockEvent);
-      setErrors({});
-      setIsDirty(false);
-
-      // 2. Điền bộ 6 ảnh mẫu AI (Poster, 3 Diễn giả, Hội trường NIC, Giải thưởng quà tặng)
-      const sampleAssets = createDefaultSampleAssets(projId, [spk1Id, spk2Id, spk3Id]);
-      elsRepository.saveAssets(projId, sampleAssets);
-      setAssets(sampleAssets);
-
-      // 3. Khởi tạo nội dung AI nếu chưa có
-      const updatedAi = project?.ai?.headline ? project.ai : {
-        headline: 'Chinh phục kỷ nguyên Vibe Coding cùng các chuyên gia đầu ngành',
-        description: 'Khám phá phương pháp xây dựng landing page và ứng dụng hiện đại với tốc độ gấp 10 lần. Cơ hội kết nối và học hỏi thực chiến dành cho Marketer và Developer.',
-        benefits: [
-          'Học cách thiết kế và tối ưu module landing page thích ứng mọi thiết bị.',
-          'Làm chủ quy trình phát triển sản phẩm với sự hỗ trợ của Generative AI.',
-          'Nhận trọn bộ tài liệu thực hành và chứng nhận hoàn thành độc quyền.',
-        ],
-        source: 'mock',
-        edited: true,
-      };
-
-      const updatedProject = {
-        ...project,
-        id: projId,
-        name: mockEvent.eventName,
-        event: mockEvent,
-        ai: updatedAi,
-        updatedAt: new Date().toISOString(),
-      };
-
-      elsRepository.saveProject(updatedProject);
-      onUpdateProject?.(updatedProject);
-      const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-      onSaveStatusChange?.('saved', timeStr);
-      onShowToast?.('Đã tự động điền thông tin sự kiện & 6 ảnh mẫu AI kèm mô tả!', 'success');
-    } catch (err) {
-      console.error('Lỗi khi điền mẫu:', err);
-      onShowToast?.(`Lỗi: ${err.message}`, 'error');
-    }
-  };
-
   // Nạp riêng bộ 6 ảnh mẫu AI
   const handleLoadSampleImagesOnly = (e) => {
     e?.preventDefault?.();
@@ -390,23 +302,6 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
 
   return (
     <div className={styles.workspaceContainer}>
-      {/* Thanh công cụ đỉnh Workspace 1 kèm nút Dev Mode */}
-      <div className={styles.workspaceTopBar}>
-        <div className={styles.workspaceTopBarLeft}>
-          <h2 className={styles.workspaceMainTitle}>1. Thông tin dự án &amp; Sự kiện</h2>
-          <span className={styles.workspaceSubDesc}>Nhập đầy đủ thông tin để sẵn sàng tạo Landing Page và Form đăng ký</span>
-        </div>
-        <button
-          type="button"
-          className={styles.btnDevAutofill}
-          onClick={handleDevAutofill}
-          title="Tự động điền đầy đủ dữ liệu mẫu sự kiện chuyên nghiệp để kiểm thử nhanh"
-        >
-          <CodeIcon size={16} />
-          <span>Điền mẫu nhanh</span>
-        </button>
-      </div>
-
       {/* Tóm tắt lỗi nếu có */}
       {Object.keys(errors).length > 0 && (
         <div className={styles.errorSummary} role="alert">

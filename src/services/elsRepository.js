@@ -176,6 +176,23 @@ export function formatCsvCell(val) {
   return `"${safeStr.replace(/"/g, '""')}"`;
 }
 
+/**
+ * Chuẩn hóa ô XML Spreadsheet và chống Formula Injection (SEC-06, GAP-T9)
+ */
+export function formatXmlCell(val) {
+  if (val === undefined || val === null) return '';
+  let str = String(val);
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
 export const elsRepository = {
   // ======================
   // 1. PROJECTS
@@ -622,16 +639,177 @@ export const elsRepository = {
     });
 
     const csvContent = '\uFEFF' + headers.join(',') + '\n' + rows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `danh-sach-dang-ky-${projectId}-${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    return true;
+    if (typeof document !== 'undefined') {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `danh-sach-dang-ky-${projectId}-${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+    return csvContent;
+  },
+
+  /**
+   * Xuất danh sách đơn đăng ký ra file Excel (.xls) định dạng SpreadsheetML XML tiêu chuẩn
+   * Mở được trực tiếp trên Microsoft Excel, Google Sheets, LibreOffice, WPS Office
+   */
+  exportToExcel(projectId, formFields = []) {
+    const registrations = this.getRegistrations(projectId);
+    if (!registrations || registrations.length === 0) {
+      throw new Error('Chưa có đơn đăng ký nào để xuất.');
+    }
+
+    const fieldCols = formFields.filter((f) => !f.deleted);
+    const headers = ['Mã đăng ký', 'Thời gian đăng ký', 'Nguồn', 'Trạng thái Check-in', 'Thời gian Check-in'];
+    fieldCols.forEach((f) => headers.push(f.label));
+
+    const columnWidths = [110, 150, 130, 140, 150];
+    fieldCols.forEach(() => columnWidths.push(160));
+    const colsXml = columnWidths.map((w) => `<Column ss:Width="${w}"/>`).join('');
+
+    const headerCellsXml = headers
+      .map((h) => `<Cell ss:StyleID="HeaderStyle"><Data ss:Type="String">${formatXmlCell(h)}</Data></Cell>`)
+      .join('');
+
+    const rowsXml = registrations
+      .map((r, idx) => {
+        const dateStr = new Date(r.createdAt).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const sourceStr = r.source === 'preview' ? 'Bản thử nghiệm' : 'Landing công khai';
+        const checkInStatusStr = r.checkedIn ? 'Đã check-in' : 'Chưa check-in';
+        const checkInTimeStr = r.checkInTime
+          ? new Date(r.checkInTime).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })
+          : 'Chưa quét';
+
+        const rowStyle = idx % 2 === 0 ? 'RowEven' : 'RowOdd';
+        const checkInStyle = r.checkedIn ? 'CheckedInStyle' : 'NotCheckedInStyle';
+
+        let cells = `
+          <Cell ss:StyleID="CodeStyle"><Data ss:Type="String">${formatXmlCell(r.code)}</Data></Cell>
+          <Cell ss:StyleID="${rowStyle}"><Data ss:Type="String">${formatXmlCell(dateStr)}</Data></Cell>
+          <Cell ss:StyleID="${rowStyle}"><Data ss:Type="String">${formatXmlCell(sourceStr)}</Data></Cell>
+          <Cell ss:StyleID="${checkInStyle}"><Data ss:Type="String">${formatXmlCell(checkInStatusStr)}</Data></Cell>
+          <Cell ss:StyleID="${rowStyle}"><Data ss:Type="String">${formatXmlCell(checkInTimeStr)}</Data></Cell>
+        `;
+
+        fieldCols.forEach((f) => {
+          const rawVal = r.values && r.values[f.key] !== undefined ? String(r.values[f.key]) : '';
+          cells += `<Cell ss:StyleID="${rowStyle}"><Data ss:Type="String">${formatXmlCell(rawVal)}</Data></Cell>`;
+        });
+
+        return `<Row ss:Height="22">${cells}</Row>`;
+      })
+      .join('\n');
+
+    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Event Landing Studio</Author>
+  <Company>AI Vibe Coding</Company>
+  <Created>${new Date().toISOString()}</Created>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Borders/>
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#1e293b"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="HeaderStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#9f1239"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#e2e8f0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#e2e8f0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#e2e8f0"/>
+   </Borders>
+   <Font ss:FontName="Segoe UI" ss:Size="11" ss:Color="#ffffff" ss:Bold="1"/>
+   <Interior ss:Color="#be123c" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="RowEven">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+   </Borders>
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#1e293b"/>
+   <Interior ss:Color="#ffffff" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="RowOdd">
+   <Alignment ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+   </Borders>
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#1e293b"/>
+   <Interior ss:Color="#fff1f2" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="CodeStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+   </Borders>
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#be123c" ss:Bold="1"/>
+   <Interior ss:Color="#ffffff" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="CheckedInStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+   </Borders>
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#059669" ss:Bold="1"/>
+   <Interior ss:Color="#ecfdf5" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="NotCheckedInStyle">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#f1f5f9"/>
+   </Borders>
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#64748b"/>
+   <Interior ss:Color="#ffffff" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Danh sách đăng ký">
+  <Table ss:DefaultRowHeight="20">
+   ${colsXml}
+   <Row ss:Height="28">
+    ${headerCellsXml}
+   </Row>
+   ${rowsXml}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    if (typeof document !== 'undefined') {
+      const blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `danh-sach-dang-ky-${projectId}-${Date.now()}.xls`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+    return xmlContent;
   },
 };
 
