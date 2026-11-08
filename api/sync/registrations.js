@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { ensureMethod, sendSuccess } from '../_lib/http.js';
 
 const REGS_FILE = path.join(os.tmpdir(), 'els-regs-cache.json');
 globalThis._elsRegistrations = globalThis._elsRegistrations || new Map();
@@ -18,15 +19,20 @@ function loadRegs() {
         globalThis._elsRegistrations.set(k, v);
       }
     }
-  } catch {}
+  } catch (err) {
+    console.warn('[Sync] Không thể đọc cache đăng ký:', err.message);
+  }
 }
 
 export default async function handler(req, res) {
+  if (!ensureMethod(req, res, ['GET'])) {
+    return;
+  }
+
   const { projectId } = req.query || {};
   loadRegs();
   const list = projectId ? (globalThis._elsRegistrations.get(projectId) || []) : [];
 
-  res.setHeader('Content-Type', 'application/json');
-  return res.status(200).json({ ok: true, registrations: list });
+  return sendSuccess(res, { registrations: list });
 }
 

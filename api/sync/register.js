@@ -6,6 +6,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { ensureMethod, ensurePayloadSize, sendError, sendSuccess } from '../_lib/http.js';
 
 const REGS_FILE = path.join(os.tmpdir(), 'els-regs-cache.json');
 globalThis._elsRegistrations = globalThis._elsRegistrations || new Map();
@@ -17,19 +18,25 @@ function saveRegs() {
       obj[k] = v;
     }
     fs.writeFileSync(REGS_FILE, JSON.stringify(obj), 'utf8');
-  } catch {}
+  } catch (err) {
+    console.warn('[Sync] Không thể ghi cache đăng ký:', err.message);
+  }
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, error: 'Chỉ chấp nhận phương thức POST' });
+  if (!ensureMethod(req, res, ['POST'])) {
+    return;
+  }
+
+  if (!ensurePayloadSize(req, res, 16384)) {
+    return;
   }
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const { projectId, registration } = body;
     if (!projectId || !registration) {
-      return res.status(400).json({ ok: false, error: 'Thiếu projectId hoặc thông tin đăng ký.' });
+      return sendError(res, 'Thiếu projectId hoặc thông tin đăng ký.', 400);
     }
 
     const list = globalThis._elsRegistrations.get(projectId) || [];
@@ -40,11 +47,9 @@ export default async function handler(req, res) {
       saveRegs();
     }
 
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(200).json({ ok: true, registration, totalCount: list.length });
+    return sendSuccess(res, { registration, totalCount: list.length });
   } catch (err) {
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(400).json({ ok: false, error: err.message });
+    return sendError(res, err.message || 'Không thể lưu đơn đăng ký.', 400);
   }
 }
 

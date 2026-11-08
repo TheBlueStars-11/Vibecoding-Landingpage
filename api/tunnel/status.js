@@ -3,13 +3,18 @@
  * Serverless handler (Vercel) lấy trạng thái tunnel
  */
 
+import { ensureMethod, sendSuccess } from '../_lib/http.js';
+
 export default function handler(req, res) {
+  if (!ensureMethod(req, res, ['GET'])) {
+    return;
+  }
+
   const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
   const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
   const origin = `${proto}://${host}`;
 
-  res.setHeader('Content-Type', 'application/json');
-  return res.status(200).json({
+  return sendSuccess(res, {
     isRunning: proto === 'https',
     isVercel: true,
     tunnelUrl: proto === 'https' ? origin : null,
