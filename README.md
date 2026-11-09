@@ -9,9 +9,9 @@
 | Tên đội thi | `Đệ tử thầy Hoan` |
 | Bảng thi | `Bảng A - Công nghệ` |
 | Đề bài bốc thăm | Đề số `08` — `Tạo landing page sự kiện trong 5 phút` |
-| Demo online | `<URL nếu có; bảng B có thể chạy từ source>` |
-| Video demo (≤ 02 phút) | `<URL>` |
-| Source ZIP | `<URL tải gói mã nguồn ZIP>` |
+| Demo online | `https://landingpagesukien.vercel.app/` |
+| Video demo (≤ 02 phút) | `https://drive.google.com/file/d/1ZH5tFGmjIeEjMi3-4_I3o0mm4yIbgPLh/view` |
+| Source ZIP | `URL tải gói ở phần nộp bài` |
 | Minh chứng dùng AI | `<Kèm trong Mục 10 của tài liệu này>` |
 | Bảng kiểm thử | `<Kèm trong Mục 11 của tài liệu này>` |
 
