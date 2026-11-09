@@ -82,6 +82,22 @@ export function sendSuccess(res, data = {}, statusCode = 200) {
 }
 
 /**
+ * Chỉ cho phép endpoint hoạt động ở môi trường development.
+ * Trả về HTTP 404 khi triển khai production.
+ */
+export function ensureDevOnly(req, res) {
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Content-Type', 'application/json');
+    res.status(404).json({
+      ok: false,
+      error: 'Endpoint này chỉ khả dụng trong môi trường phát triển (development).',
+    });
+    return false;
+  }
+  return true;
+}
+
+/**
  * Trả về response lỗi chuẩn
  */
 export function sendError(res, message, statusCode = 500, extra = {}) {

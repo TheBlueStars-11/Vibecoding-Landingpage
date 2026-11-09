@@ -4,8 +4,10 @@
  */
 
 import { normalizeText, normalizeEmail, normalizePhone, isValidVietnamesePhone, normalizeSpeakers } from './normalize.js';
-import { isFutureDateTime, checkPastDateTime } from './time.js';
+import { isFutureDateTime, checkPastDateTime, parseTimelineTime, validateTimelineOrder, validateAgendaChronology } from './time.js';
 import { FIELD_ROLES, FIELD_TYPES } from './elsSchema.js';
+
+export { parseTimelineTime, validateTimelineOrder, validateAgendaChronology };
 
 /**
  * Kiểm tra tên dự án khi tạo mới hoặc đổi tên (Trang 1)
@@ -109,6 +111,11 @@ export function validateProjectInfo(eventData = {}, assets = []) {
       errors.agenda = 'Mỗi mục chương trình cần có đầy đủ thời gian (HH:mm) và nội dung.';
     } else if (hasDuplicateTime) {
       errors.agenda = 'Chương trình có các mốc thời gian trùng nhau. Vui lòng kiểm tra lại.';
+    } else {
+      const chronoCheck = validateTimelineOrder(agenda);
+      if (!chronoCheck.isValid) {
+        errors.agenda = chronoCheck.error;
+      }
     }
   }
 
@@ -188,6 +195,48 @@ export function validateFormFields(fields = []) {
 }
 
 /**
+ * Helper trích xuất email từ bản ghi đăng ký cũ bất kể cấu trúc
+ */
+function getRecordEmail(r) {
+  if (!r) return '';
+  if (typeof r.email === 'string' && r.email.trim()) return r.email.trim().toLowerCase();
+  if (r.values && typeof r.values === 'object') {
+    if (typeof r.values.email === 'string' && r.values.email.trim()) return r.values.email.trim().toLowerCase();
+    if (typeof r.values.fld_email === 'string' && r.values.fld_email.trim()) return r.values.fld_email.trim().toLowerCase();
+    for (const [k, v] of Object.entries(r.values)) {
+      if ((k.toLowerCase().includes('email') || (typeof v === 'string' && v.includes('@'))) && typeof v === 'string' && v.trim()) {
+        return v.trim().toLowerCase();
+      }
+    }
+  }
+  if (typeof r.identityKey === 'string' && r.identityKey.includes('@')) {
+    return r.identityKey.trim().toLowerCase();
+  }
+  return '';
+}
+
+/**
+ * Helper trích xuất số điện thoại từ bản ghi đăng ký cũ bất kể cấu trúc
+ */
+function getRecordPhone(r) {
+  if (!r) return '';
+  if (typeof r.phone === 'string' && r.phone.trim()) return r.phone.trim().toLowerCase();
+  if (r.values && typeof r.values === 'object') {
+    if (typeof r.values.phone === 'string' && r.values.phone.trim()) return r.values.phone.trim().toLowerCase();
+    if (typeof r.values.fld_phone === 'string' && r.values.fld_phone.trim()) return r.values.fld_phone.trim().toLowerCase();
+    for (const [k, v] of Object.entries(r.values)) {
+      if (k.toLowerCase().includes('phone') || k.toLowerCase().includes('tel')) {
+        if (typeof v === 'string' && v.trim()) return v.trim().toLowerCase();
+      }
+    }
+  }
+  if (typeof r.identityKey === 'string' && !r.identityKey.includes('@') && /^\+?\d/.test(r.identityKey.trim())) {
+    return r.identityKey.trim().toLowerCase();
+  }
+  return '';
+}
+
+/**
  * Kiểm tra dữ liệu người tham dự gửi đăng ký theo dynamic fields
  */
 export function validateRegistrationSubmission(
@@ -209,6 +258,11 @@ export function validateRegistrationSubmission(
   const activeFields = formFields.filter((f) => !f.deleted);
   let identityKey = '';
   let displayName = '';
+  let emailFieldKey = null;
+  let emailValue = '';
+  let phoneFieldKey = null;
+  let phoneValue = '';
+  let identityFieldKey = null;
 
   for (const field of activeFields) {
     const rawVal = values[field.key] || '';
@@ -220,18 +274,21 @@ export function validateRegistrationSubmission(
     }
 
     if (cleanVal) {
-      if (field.type === FIELD_TYPES.EMAIL) {
-        const email = normalizeEmail(cleanVal);
+      if (field.type === FIELD_TYPES.EMAIL || (field.key && field.key.toLowerCase().includes('email'))) {
+        emailFieldKey = field.key;
+        emailValue = cleanVal.trim().toLowerCase();
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(emailValue)) {
           errors[field.key] = 'Email chưa đúng định dạng. Vui lòng nhập dạng ten@vi-du.com.';
         }
       } else if (field.type === FIELD_TYPES.NUMBER) {
         if (!/^\d+$/.test(cleanVal)) {
           errors[field.key] = `${field.label} chỉ gồm các chữ số. Vui lòng bỏ ký tự khác.`;
         }
-      } else if (field.type === FIELD_TYPES.TEL) {
-        if (!isValidVietnamesePhone(cleanVal)) {
+      } else if (field.type === FIELD_TYPES.TEL || (field.key && field.key.toLowerCase().includes('phone'))) {
+        phoneFieldKey = field.key;
+        phoneValue = cleanVal.trim();
+        if (!isValidVietnamesePhone(phoneValue)) {
           errors[field.key] = 'Số điện thoại không hợp lệ (cần 10 chữ số, bắt đầu bằng đầu số Việt Nam).';
         }
       }
@@ -242,6 +299,7 @@ export function validateRegistrationSubmission(
     }
 
     if (field.role === FIELD_ROLES.IDENTITY) {
+      identityFieldKey = field.key;
       if (field.type === FIELD_TYPES.EMAIL) {
         identityKey = normalizeEmail(cleanVal);
       } else if (field.type === FIELD_TYPES.TEL) {
@@ -252,25 +310,65 @@ export function validateRegistrationSubmission(
     }
   }
 
-  // Chống đăng ký trùng lặp dựa trên identityKey
-  if (identityKey && Object.keys(errors).length === 0) {
-    const duplicate = existingRegistrations.some(
-      (r) => r.identityKey && r.identityKey.toLowerCase() === identityKey.toLowerCase()
-    );
-    if (duplicate) {
-      return {
-        isValid: false,
-        error: `Thông tin định danh "${identityKey}" đã đăng ký sự kiện này. Vui lòng kiểm tra lại.`,
-        errors: { identity: `Thông tin định danh "${identityKey}" đã đăng ký sự kiện này.` },
-      };
+  // Chống đăng ký trùng lặp (email hoặc phone hoặc identityKey)
+  const duplicateMsg = 'Email/Số điện thoại này đã được sử dụng để đăng ký sự kiện rồi.';
+  let hasDuplicate = false;
+
+  // 1. Kiểm tra trùng email
+  if (emailValue && emailFieldKey && !errors[emailFieldKey]) {
+    const isEmailDup = existingRegistrations.some((r) => {
+      const e = getRecordEmail(r);
+      return e && e === emailValue;
+    });
+    if (isEmailDup) {
+      errors[emailFieldKey] = duplicateMsg;
+      hasDuplicate = true;
     }
   }
 
-  const isValid = Object.keys(errors).length === 0;
+  // 2. Kiểm tra trùng số điện thoại
+  if (phoneValue && phoneFieldKey && !errors[phoneFieldKey]) {
+    const normInputPhone = phoneValue.replace(/\D/g, '');
+    const isPhoneDup = existingRegistrations.some((r) => {
+      const p = getRecordPhone(r);
+      if (!p) return false;
+      if (p === phoneValue.toLowerCase()) return true;
+      const normP = p.replace(/\D/g, '');
+      return Boolean(normP && normInputPhone && normP === normInputPhone);
+    });
+    if (isPhoneDup) {
+      errors[phoneFieldKey] = duplicateMsg;
+      hasDuplicate = true;
+    }
+  }
+
+  // 3. Kiểm tra trùng identityKey (nếu chưa phát hiện trùng qua email/phone)
+  if (!hasDuplicate && identityKey) {
+    const isIdDup = existingRegistrations.some(
+      (r) => r.identityKey && r.identityKey.trim().toLowerCase() === identityKey.trim().toLowerCase()
+    );
+    if (isIdDup) {
+      const targetKey = identityFieldKey || emailFieldKey || phoneFieldKey || 'identity';
+      errors[targetKey] = duplicateMsg;
+      hasDuplicate = true;
+    }
+  }
+
+  const errorKeys = Object.keys(errors);
+  const isValid = errorKeys.length === 0;
+
+  let overallError = null;
+  if (!isValid) {
+    const firstMsg = errors[errorKeys[0]];
+    overallError = hasDuplicate
+      ? `${duplicateMsg} (đã đăng ký trước đó)`
+      : firstMsg;
+  }
+
   return {
     isValid,
     errors,
-    error: isValid ? null : Object.values(errors)[0],
+    error: overallError,
     identityKey,
     displayName: displayName || 'Người tham dự',
   };
@@ -367,11 +465,22 @@ export function validateRegistration(regData, existingRegistrations = [], isEven
   }
 
   // Trùng lặp
-  if (email && existingRegistrations.some((r) => normalizeEmail(r.email) === email)) {
-    errors.email = 'Email này đã đăng ký tham gia sự kiện.';
+  const duplicateMsg = 'Email/Số điện thoại này đã được sử dụng để đăng ký sự kiện rồi.';
+  if (email && existingRegistrations.some((r) => {
+    const e = getRecordEmail(r) || normalizeEmail(r.email);
+    return e && e === email;
+  })) {
+    errors.email = duplicateMsg;
   }
-  if (phone && existingRegistrations.some((r) => normalizePhone(r.phone) === phone)) {
-    errors.phone = 'Số điện thoại này đã đăng ký tham gia sự kiện.';
+  if (phone && existingRegistrations.some((r) => {
+    const p = getRecordPhone(r) || normalizePhone(r.phone);
+    if (!p) return false;
+    if (p === phone) return true;
+    const normInput = phone.replace(/\D/g, '');
+    const normR = p.replace(/\D/g, '');
+    return Boolean(normR && normInput && normR === normInput);
+  })) {
+    errors.phone = duplicateMsg;
   }
 
   const errorKeys = Object.keys(errors);

@@ -121,6 +121,77 @@ export function auditModuleLayout(modules = [], eventData = {}, assets = [], wid
         });
       }
     }
+
+    // 3.4. Kiểm tra tương thích trường hợp sử dụng dữ liệu & ảnh (Zero Hallucination & Data Integrity)
+    // - Hero: Không dùng biến thể ép ảnh (image-right/cinema-letterbox) khi sự kiện hoàn toàn không có ảnh
+    if (mod.type === 'hero' && (mod.variant === 'image-right' || mod.variant === 'cinema-letterbox')) {
+      const hasHeroAsset = assets.some((a) => a.role === 'hero' || a.role === 'other');
+      if (!hasHeroAsset && assets.length === 0) {
+        issues.push({
+          id: `hero_no_image_${mod.id}`,
+          level: AUDIT_LEVELS.WARNING,
+          title: 'Hero: Biến thể ảnh hai cột khi không có ảnh',
+          message: 'Sự kiện không có ảnh nào nhưng Hero đang dùng biến thể ảnh hai cột. Hãy dùng biến thể không ảnh (split-card) để tránh hiển thị khung rỗng.',
+          moduleId: mod.id,
+          fixSuggestion: 'Chuyển biến thể Hero sang "split-card" (Thẻ ngày giờ kính mờ) hoặc tải ảnh lên thư viện.',
+        });
+      }
+    }
+
+    // - Speakers: Khi có 1 diễn giả, gợi ý solo-spotlight để không bị kéo giãn to bất thường
+    if (mod.type === 'speakers' && (eventData.speakers || []).length === 1 && mod.variant === 'portrait-cards') {
+      issues.push({
+        id: `speakers_single_spotlight_${mod.id}`,
+        level: AUDIT_LEVELS.SUGGESTION,
+        title: 'Diễn giả: Có 1 khách mời duy nhất',
+        message: 'Khi sự kiện chỉ có 1 diễn giả, biến thể "solo-spotlight" (Tâm điểm nổi bật) sẽ cân đối và thẩm mỹ hơn biến thể lưới nhiều thẻ.',
+        moduleId: mod.id,
+        fixSuggestion: 'Chuyển sang biến thể "solo-spotlight" cho 1 diễn giả duy nhất.',
+      });
+    }
+
+    // - Venue: Khi không có ảnh venue và dùng image-left
+    if (mod.type === 'venue' && mod.variant === 'image-left') {
+      const hasVenueAsset = assets.some((a) => a.role === 'venue');
+      if (!hasVenueAsset && assets.length === 0) {
+        issues.push({
+          id: `venue_no_image_${mod.id}`,
+          level: AUDIT_LEVELS.SUGGESTION,
+          title: 'Địa điểm: Chưa có ảnh hội trường',
+          message: 'Sự kiện chưa có ảnh hội trường nhưng đang chọn biến thể ảnh trái. Khuyến nghị dùng biến thể bản đồ (map-left).',
+          moduleId: mod.id,
+          fixSuggestion: 'Chuyển sang biến thể "map-left" để hiển thị bản đồ tương tác.',
+        });
+      }
+    }
+
+    // - Bento & Audience: Cần có mô tả thêm chi tiết
+    const hasExtraDesc = Boolean(String(eventData.description || '').trim().length > 0);
+    if ((mod.type === 'bento' || mod.type === 'audience') && !hasExtraDesc && mod.dataSource !== 'custom') {
+      issues.push({
+        id: `${mod.type}_missing_description_${mod.id}`,
+        level: AUDIT_LEVELS.WARNING,
+        title: `${mod.name}: Thiếu mô tả thêm sự kiện`,
+        message: `Module "${mod.name}" cần có thông tin mô tả thêm chi tiết để phân rã nội dung. Khi không có mô tả thêm, nên ẩn hoặc cắt giảm module này.`,
+        moduleId: mod.id,
+        fixSuggestion: 'Nhập nội dung vào ô "Mô tả thêm sự kiện" ở WS1 hoặc ẩn module này.',
+      });
+    }
+
+    // - Sponsors: Cần danh sách đối tác
+    const hasSponsors = Boolean(
+      (Array.isArray(eventData.sponsors) && eventData.sponsors.length > 0)
+    );
+    if (mod.type === 'sponsors' && !hasSponsors && mod.dataSource !== 'custom') {
+      issues.push({
+        id: `sponsors_empty_${mod.id}`,
+        level: AUDIT_LEVELS.WARNING,
+        title: 'Đối tác & Tài trợ: Danh sách trống',
+        message: 'Module nhà tài trợ đang bật nhưng sự kiện không có danh sách đơn vị đồng hành.',
+        moduleId: mod.id,
+        fixSuggestion: 'Thêm danh sách đối tác hoặc ẩn module này.',
+      });
+    }
   }
 
   // 4. Kiểm tra cấu trúc trang dài (v3 rules)

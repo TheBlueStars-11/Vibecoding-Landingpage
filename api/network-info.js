@@ -3,9 +3,12 @@
  * Serverless handler (Vercel) trả về thông tin tên miền máy chủ công khai
  */
 
-import { ensureMethod, sendSuccess } from './_lib/http.js';
+import { ensureDevOnly, ensureMethod, sendSuccess } from './_lib/http.js';
 
 export default function handler(req, res) {
+  if (!ensureDevOnly(req, res)) {
+    return;
+  }
   if (!ensureMethod(req, res, ['GET'])) {
     return;
   }

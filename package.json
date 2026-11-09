@@ -8,8 +8,9 @@
     "tunnel": "npx --yes cloudflared tunnel --url http://localhost:5173",
     "build": "vite build",
     "lint": "oxlint",
-    "test": "node --test tests/domain.test.js tests/els.test.js tests/module.test.js tests/acceptance.test.js",
+    "scan:hardcode": "node scripts/scan-hardcode.mjs",
     "scan:secrets": "node scripts/scan-secrets.mjs",
+    "test": "node scripts/scan-hardcode.mjs && node --test tests/domain.test.js tests/els.test.js tests/module.test.js tests/acceptance.test.js",
     "package:submission": "node scripts/package-submission.mjs",
     "preview": "vite preview"
   },

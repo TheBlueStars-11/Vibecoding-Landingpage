@@ -44,9 +44,11 @@ export function sanitizeForLog(data) {
  * Cấu hình mặc định lấy từ biến môi trường
  */
 export function getDefaultAiConfig() {
-  const envKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || '';
+  // Chỉ lấy khóa trên client trong môi trường DEV để test trực tiếp nếu cần.
+  // Trong bản build Production, tuyệt đối không nhúng khóa vào bundle client (FIX-03).
+  const envKey = (typeof import.meta !== 'undefined' && import.meta.env?.DEV && import.meta.env?.VITE_GEMINI_API_KEY) || '';
   const envBaseUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_BASE_URL) || 'https://generativelanguage.googleapis.com/v1beta';
-  const envModel = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_MODEL) || 'gemini-2.5-flash';
+  const envModel = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_MODEL) || 'gemini-1.5-flash';
 
   return {
     apiKey: envKey,

@@ -151,6 +151,28 @@ describe('4. Domain: AI Guard & Fact Guard', () => {
     const closingTagMatches = prompt.match(/<\/event_data>/g) || [];
     assert.equal(closingTagMatches.length, 1, 'Chỉ được phép tồn tại duy nhất 1 thẻ đóng </event_data> chuẩn của hệ thống');
   });
+
+  it('buildPrompt: gắn chi tiết từng diễn giả kèm ID và danh sách ảnh diễn giả với yêu cầu avatarAssetId', () => {
+    const prompt = buildPrompt({
+      name: 'Hội nghị Công nghệ AI 2026',
+      datetime: '2026-12-25 09:00',
+      location: 'Hà Nội',
+      speakersList: [
+        { id: 'spk_1', name: 'TS. Nguyễn Văn An', title: 'Viện trưởng AI' },
+        { id: 'spk_2', name: 'ThS. Trần Thị Mai Phương', title: 'Lead Architect' },
+      ],
+      earlyBird: 'Giảm 20%',
+    }, [
+      { id: 'ast_spk_2', role: 'speaker', caption: 'Ảnh ThS. Trần Thị Mai Phương' },
+      { id: 'ast_spk_1', role: 'speaker', caption: 'Ảnh TS. Nguyễn Văn An' },
+    ]);
+
+    assert.ok(prompt.includes('TS. Nguyễn Văn An'));
+    assert.ok(prompt.includes('ThS. Trần Thị Mai Phương'));
+    assert.ok(prompt.includes('ast_spk_1'));
+    assert.ok(prompt.includes('ast_spk_2'));
+    assert.ok(prompt.includes('avatarAssetId'));
+  });
 });
 
 describe('5. Services: Mock Engine', () => {
@@ -165,6 +187,32 @@ describe('5. Services: Mock Engine', () => {
     assert.equal(mock.notice, 'Bản demo vòng loại - Dữ liệu mô phỏng AI');
     assert.ok(mock.headline.includes('Workshop AI Master'));
     assert.equal(mock.bullets.length, 3);
+  });
+
+  it('generateMockContent: tự động ánh xạ chính xác avatarAssetId theo caption diễn giả chống gán chéo', () => {
+    const mock = generateMockContent({
+      name: 'Hội thảo Trí tuệ Nhân tạo',
+      speakersList: [
+        { id: 'spk_an', name: 'TS. Nguyễn Văn An', title: 'Viện trưởng AI' },
+        { id: 'spk_phuong', name: 'ThS. Trần Thị Mai Phương', title: 'Lead Architect' },
+      ],
+      venue: 'Hà Nội',
+    }, [
+      // Thứ tự ảnh bị đảo ngược so với danh sách diễn giả
+      { id: 'ast_phuong', role: 'speaker', caption: 'Chân dung ThS. Trần Thị Mai Phương' },
+      { id: 'ast_an', role: 'speaker', caption: 'Chân dung TS. Nguyễn Văn An' },
+    ]);
+
+    assert.ok(Array.isArray(mock.speakers));
+    assert.equal(mock.speakers.length, 2);
+
+    // Phải gán đúng ảnh cho Nguyễn Văn An (ast_an) dù ast_phuong nằm đầu mảng
+    const spkAn = mock.speakers.find((s) => s.name.includes('Nguyễn Văn An'));
+    assert.equal(spkAn.avatarAssetId, 'ast_an', 'Nguyễn Văn An phải nhận ast_an');
+
+    // Phải gán đúng ảnh cho Trần Thị Mai Phương (ast_phuong)
+    const spkPhuong = mock.speakers.find((s) => s.name.includes('Mai Phương'));
+    assert.equal(spkPhuong.avatarAssetId, 'ast_phuong', 'Mai Phương phải nhận ast_phuong');
   });
 });
 

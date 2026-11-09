@@ -125,3 +125,104 @@ export function calculateCountdown(targetDatetime) {
   return { d, h, m, s, isPast: false, totalMs: diff };
 }
 
+/**
+ * Phân tích chuỗi mốc thời gian của timeline / agenda (dạng '09:00', '08:30 - 09:30', '9h30', '9:30')
+ * @param {string} timeStr
+ * @returns {{ startMinutes: number, endMinutes: number, raw: string } | null}
+ */
+export function parseTimelineTime(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return null;
+  const clean = timeStr.trim();
+  if (!clean) return null;
+
+  const parts = clean.split(/\s*[-–—>]\s*|\s+to\s+/i).filter(Boolean);
+
+  const toMinutes = (s) => {
+    if (!s) return null;
+    const trimmed = s.trim();
+    const match = trimmed.match(/^(\d{1,2})(?:[:hH](\d{2}))?(?::\d{2})?$/);
+    if (match) {
+      const h = parseInt(match[1], 10);
+      const m = match[2] ? parseInt(match[2], 10) : 0;
+      if (h >= 0 && h <= 24 && m >= 0 && m <= 59) {
+        return h * 60 + m;
+      }
+    }
+    return null;
+  };
+
+  const startMin = toMinutes(parts[0]);
+  if (startMin === null) return null;
+  const endMin = parts.length > 1 ? toMinutes(parts[1]) : startMin;
+
+  return {
+    startMinutes: startMin,
+    endMinutes: endMin !== null ? endMin : startMin,
+    raw: clean,
+  };
+}
+
+/**
+ * Kiểm tra tính tuần tự tăng dần của các mốc thời gian trong Timeline / Agenda.
+ * Mốc thời gian bắt đầu của mục sau bắt buộc phải lớn hơn hoặc bằng thời gian bắt đầu/kết thúc của mục liền trước.
+ * 
+ * @param {Array<{ time?: string }>} agenda
+ * @returns {{ isValid: boolean, invalidIndices: number[], error: string | null }}
+ */
+export function validateTimelineOrder(agenda = []) {
+  if (!Array.isArray(agenda) || agenda.length <= 1) {
+    return {
+      isValid: true,
+      invalidIndices: [],
+      error: null,
+    };
+  }
+
+  const invalidIndicesSet = new Set();
+  let maxSeenThreshold = -1;
+
+  for (let i = 0; i < agenda.length; i++) {
+    const curr = agenda[i];
+    const currParsed = parseTimelineTime(curr?.time);
+    if (!currParsed) continue;
+
+    // Kiểm tra đảo ngược nội bộ (ví dụ 10:00 - 09:00)
+    if (currParsed.endMinutes < currParsed.startMinutes) {
+      invalidIndicesSet.add(i);
+    }
+
+    if (i > 0) {
+      const prev = agenda[i - 1];
+      const prevParsed = parseTimelineTime(prev?.time);
+      if (prevParsed) {
+        const prevThreshold = Math.max(prevParsed.startMinutes, prevParsed.endMinutes);
+        // Mốc thời gian bắt đầu của mục sau bắt buộc phải lớn hơn hoặc bằng thời gian bắt đầu/kết thúc của mục liền trước
+        if (currParsed.startMinutes < prevThreshold) {
+          invalidIndicesSet.add(i);
+        }
+      }
+      if (maxSeenThreshold >= 0 && currParsed.startMinutes < maxSeenThreshold) {
+        invalidIndicesSet.add(i);
+      }
+    }
+
+    const currThreshold = Math.max(currParsed.startMinutes, currParsed.endMinutes);
+    if (currThreshold > maxSeenThreshold) {
+      maxSeenThreshold = currThreshold;
+    }
+  }
+
+  const invalidIndices = Array.from(invalidIndicesSet).sort((a, b) => a - b);
+  const isValid = invalidIndices.length === 0;
+
+  return {
+    isValid,
+    invalidIndices,
+    error: isValid ? null : 'Thời gian diễn ra các mục phải theo thứ tự tăng dần. Vui lòng điều chỉnh lại.',
+  };
+}
+
+// Bí danh tương thích
+export const validateAgendaChronology = validateTimelineOrder;
+
+

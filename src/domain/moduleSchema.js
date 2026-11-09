@@ -55,6 +55,23 @@ export const MODULE_CATALOG = {
       { id: 'cinema-letterbox', label: 'Điện ảnh Letterbox 21:9' },
     ],
     defaultVariant: 'image-right',
+    useCases: {
+      rich: {
+        condition: 'Có ảnh hero/sự kiện + mô tả thêm chi tiết',
+        behavior: 'Sử dụng biến thể split hai cột (image-right/cinema-letterbox), hiển thị trọn vẹn visual và thông điệp',
+        recommendedVariants: ['image-right', 'cinema-letterbox', 'benefits-band'],
+      },
+      sparse: {
+        condition: 'Có ảnh hoặc mô tả cơ bản tiêu chuẩn',
+        behavior: 'Căn giữa hoặc bố cục hai cột gọn gàng, tôn vinh thông tin ngày giờ địa điểm',
+        recommendedVariants: ['image-right', 'center'],
+      },
+      empty: {
+        condition: '0 ảnh sự kiện (không có ảnh hero) và/hoặc không có mô tả thêm',
+        behavior: 'Bắt buộc chuyển sang biến thể không ảnh (split-card thẻ ngày giờ kính mờ hoặc center thuần chữ). Tuyệt đối không render khung ảnh xám rỗng hay chèn ảnh minh họa giả mạo.',
+        recommendedVariants: ['split-card', 'center'],
+      },
+    },
   },
   countdown: {
     type: 'countdown',
@@ -67,6 +84,23 @@ export const MODULE_CATALOG = {
       { id: 'circles', label: 'Dạng 4 vòng tròn' },
     ],
     defaultVariant: 'boxes',
+    useCases: {
+      rich: {
+        condition: 'Sự kiện trong tương lai với ngày giờ đầy đủ',
+        behavior: 'Đồng hồ 4 ô số lớn hoặc vòng tròn nổi bật kèm số người đăng ký thời gian thực',
+        recommendedVariants: ['boxes', 'circles'],
+      },
+      sparse: {
+        condition: 'Sự kiện có ngày giờ cơ bản',
+        behavior: 'Đếm ngược chuẩn xác theo múi giờ GMT+7, cập nhật mỗi giây',
+        recommendedVariants: ['boxes'],
+      },
+      empty: {
+        condition: 'Sự kiện đã qua giờ hoặc thời gian quá khứ',
+        behavior: 'Chuyển sang trạng thái "Sự kiện đã kết thúc", số đếm 00:00:00, không bao giờ âm số',
+        recommendedVariants: ['boxes'],
+      },
+    },
   },
   agenda: {
     type: 'agenda',
@@ -82,6 +116,23 @@ export const MODULE_CATALOG = {
       { id: 'steps-horizontal', label: 'Các chặng ngang có mũi tên' },
     ],
     defaultVariant: 'timeline',
+    useCases: {
+      rich: {
+        condition: 'Nhiều phiên lịch trình (>=4 mốc) và có diễn giả phụ trách',
+        behavior: 'Dòng thời gian chi tiết (timeline) kèm nút thu gọn/mở rộng và avatar khách mời',
+        recommendedVariants: ['timeline', 'timeline-sectioned', 'timeline-speaker'],
+      },
+      sparse: {
+        condition: '2-3 mốc thời gian cơ bản',
+        behavior: 'Lịch trình nhìn lướt tinh gọn (agenda-glance hoặc timeline đứng)',
+        recommendedVariants: ['timeline', 'agenda-glance'],
+      },
+      empty: {
+        condition: 'Lịch trình tối giản 1-2 mốc, 0 cần ảnh',
+        behavior: 'Hiển thị các mốc đón tiếp và nội dung chính thuần typographic với icon vector',
+        recommendedVariants: ['timeline'],
+      },
+    },
   },
   form: {
     type: 'form',
@@ -95,6 +146,23 @@ export const MODULE_CATALOG = {
       { id: 'split-offer', label: 'Trái ưu đãi & người tham gia + Phải form' },
     ],
     defaultVariant: 'card',
+    useCases: {
+      rich: {
+        condition: 'Có ưu đãi đăng ký sớm phong phú và quyền lợi nổi bật',
+        behavior: 'Bố cục hai cột kết hợp tóm tắt ưu đãi/quyền lợi bên trái và biểu mẫu bên phải',
+        recommendedVariants: ['split-benefit', 'split-offer'],
+      },
+      sparse: {
+        condition: 'Cấu hình trường đăng ký tiêu chuẩn',
+        behavior: 'Thẻ biểu mẫu nổi bật giữa trang (card) với xác thực thời gian thực',
+        recommendedVariants: ['card'],
+      },
+      empty: {
+        condition: 'Dữ liệu tối thiểu, 0 ảnh',
+        behavior: 'Biểu mẫu thuần chữ tinh gọn, tiếp nhận đăng ký vô hạn không chặn sức chứa',
+        recommendedVariants: ['card'],
+      },
+    },
   },
   speakers: {
     type: 'speakers',
@@ -108,6 +176,23 @@ export const MODULE_CATALOG = {
       { id: 'solo-spotlight', label: '1 Diễn giả tâm điểm nổi bật' },
     ],
     defaultVariant: 'portrait-cards',
+    useCases: {
+      rich: {
+        condition: 'Nhiều diễn giả (>=3 người) có ảnh chân dung và chức danh đầy đủ',
+        behavior: 'Lưới thẻ chân dung tỷ lệ chuẩn 4:5 (portrait-cards) cân đối',
+        recommendedVariants: ['portrait-cards'],
+      },
+      sparse: {
+        condition: 'Có 1 khách mời duy nhất hoặc 2 diễn giả',
+        behavior: 'Khi có 1 diễn giả, bắt buộc dùng solo-spotlight (tâm điểm nổi bật) để không bị kéo giãn to bất thường',
+        recommendedVariants: ['solo-spotlight'],
+      },
+      empty: {
+        condition: '0 ảnh đại diện diễn giả tải lên',
+        behavior: 'Hiển thị avatar ký tự viết tắt (monogram) trên nền gradient, tuyệt đối không ghép ảnh khuôn mặt giả mạo',
+        recommendedVariants: ['portrait-cards', 'solo-spotlight'],
+      },
+    },
   },
   venue: {
     type: 'venue',
@@ -122,6 +207,23 @@ export const MODULE_CATALOG = {
       { id: 'online-card', label: 'Sự kiện trực tuyến Online (Zoom/Meet)' },
     ],
     defaultVariant: 'image-left',
+    useCases: {
+      rich: {
+        condition: 'Có ảnh hội trường/địa điểm tổ chức thực tế',
+        behavior: 'Bố cục ảnh trái (image-left), địa chỉ và chỉ dẫn đón tiếp bên phải',
+        recommendedVariants: ['image-left'],
+      },
+      sparse: {
+        condition: 'Có địa điểm cụ thể nhưng chưa tải ảnh hội trường',
+        behavior: 'Tự động chuyển sang biến thể bản đồ (map-left) với nút mở Google Maps thực tế',
+        recommendedVariants: ['map-left', 'text-only'],
+      },
+      empty: {
+        condition: 'Sự kiện tổ chức trực tuyến (Zoom / Google Meet)',
+        behavior: 'Biến thể sự kiện online (online-card) hiển thị hình thức phát sóng và bảo mật link',
+        recommendedVariants: ['online-card', 'text-only'],
+      },
+    },
   },
   benefits: {
     type: 'benefits',
@@ -136,6 +238,23 @@ export const MODULE_CATALOG = {
       { id: 'numbered-rows', label: '3 Hàng lớn đánh số 01/02/03' },
     ],
     defaultVariant: 'cards',
+    useCases: {
+      rich: {
+        condition: 'Có mô tả thêm và 3 lợi ích chi tiết',
+        behavior: '3 thẻ độc lập (cards) hoặc 3 hàng lớn đánh số 01/02/03 (numbered-rows)',
+        recommendedVariants: ['cards', 'numbered-rows'],
+      },
+      sparse: {
+        condition: '3 lợi ích ngắn gọn tiêu chuẩn',
+        behavior: 'Dải tóm tắt 1 hàng (recap-strip) hoặc viên thuốc (recap-chips)',
+        recommendedVariants: ['recap-strip', 'recap-chips'],
+      },
+      empty: {
+        condition: 'Không có mô tả thêm',
+        behavior: 'Kế thừa 3 giá trị thực tế từ thông tin sự kiện (thời gian, diễn giả, ưu đãi), không bịa đặt',
+        recommendedVariants: ['cards'],
+      },
+    },
   },
   offer_banner: {
     type: 'offer_banner',
@@ -151,6 +270,23 @@ export const MODULE_CATALOG = {
       { id: 'inline-chip', label: 'Huy hiệu ưu đãi nhỏ gọn' },
     ],
     defaultVariant: 'ribbon',
+    useCases: {
+      rich: {
+        condition: 'Có ảnh quà tặng (gift asset) và nội dung ưu đãi sớm cụ thể',
+        behavior: 'Thẻ ảnh quà tặng bên trái (card-image-left) hoặc phiếu voucher 2 phần (split-coupon)',
+        recommendedVariants: ['card-image-left', 'split-coupon'],
+      },
+      sparse: {
+        condition: 'Có thông tin ưu đãi đăng ký sớm bằng chữ, không có ảnh quà',
+        behavior: 'Dải ruy băng gradient (ribbon) hoặc huy hiệu nổi bật (inline-chip)',
+        recommendedVariants: ['ribbon', 'inline-chip'],
+      },
+      empty: {
+        condition: 'Không có ưu đãi đăng ký sớm',
+        behavior: 'Tự động cắt giảm khỏi trang (pruned), không hiển thị để tránh bịa voucher ảo',
+        recommendedVariants: [],
+      },
+    },
   },
   faq: {
     type: 'faq',
@@ -162,6 +298,23 @@ export const MODULE_CATALOG = {
       { id: 'accordion', label: 'Thu gọn / Mở rộng (Accordion)' },
     ],
     defaultVariant: 'accordion',
+    useCases: {
+      rich: {
+        condition: 'Chủ đề sự kiện rõ ràng, có nhiều thông tin chi tiết',
+        behavior: 'Danh sách 3-5 câu hỏi thường gặp dạng accordion đóng/mở mượt mà',
+        recommendedVariants: ['accordion'],
+      },
+      sparse: {
+        condition: 'Thông tin sự kiện cơ bản',
+        behavior: '3 câu hỏi then chốt về thời gian, địa điểm và diễn giả dựa trên dữ liệu thật',
+        recommendedVariants: ['accordion'],
+      },
+      empty: {
+        condition: 'Dữ liệu tối giản, 0 ảnh',
+        behavior: 'Hiển thị các câu hỏi thiết yếu hướng dẫn đăng ký và nhận mã QR check-in',
+        recommendedVariants: ['accordion'],
+      },
+    },
   },
   footer: {
     type: 'footer',
@@ -176,6 +329,23 @@ export const MODULE_CATALOG = {
       { id: 'credits-roll', label: 'Cuộn Credit kết thúc (Credits Roll)' },
     ],
     defaultVariant: 'simple',
+    useCases: {
+      rich: {
+        condition: 'Có đầy đủ thông tin ban tổ chức, email, hotline và chương trình',
+        behavior: 'Chân trang 3 cột (rich-3col) hoặc cuộn danh đề kết thúc (credits-roll)',
+        recommendedVariants: ['rich-3col', 'credits-roll'],
+      },
+      sparse: {
+        condition: 'Thông tin tổ chức tiêu chuẩn',
+        behavior: 'Dải kêu gọi hành động kết hợp bản quyền (cta-strip)',
+        recommendedVariants: ['cta-strip', 'simple'],
+      },
+      empty: {
+        condition: 'Dữ liệu tối giản, 0 ảnh',
+        behavior: 'Chân trang 1 dòng tối giản (simple) kèm nhãn minh bạch quy chế bản demo',
+        recommendedVariants: ['simple'],
+      },
+    },
   },
   divider: {
     type: 'divider',
@@ -188,6 +358,23 @@ export const MODULE_CATALOG = {
       { id: 'fade-to-stage', label: 'Chuyển cảnh mờ dần sang Stage' },
     ],
     defaultVariant: 'solid',
+    useCases: {
+      rich: {
+        condition: 'Bố cục trang nhiều phân đoạn điện ảnh',
+        behavior: 'Đường chuyển cảnh mờ dần sang stage tạo nhịp nghỉ thị giác (fade-to-stage)',
+        recommendedVariants: ['fade-to-stage'],
+      },
+      sparse: {
+        condition: 'Trang chuẩn',
+        behavior: 'Đường kẻ mảnh tinh tế (solid)',
+        recommendedVariants: ['solid'],
+      },
+      empty: {
+        condition: 'Trang ngắn',
+        behavior: 'Đường kẻ mảnh (solid) hoặc ẩn đi nếu không cần phân cách',
+        recommendedVariants: ['solid'],
+      },
+    },
   },
   nav: {
     type: 'nav',
@@ -199,6 +386,23 @@ export const MODULE_CATALOG = {
       { id: 'bar', label: 'Thanh ngang tiêu chuẩn' },
     ],
     defaultVariant: 'bar',
+    useCases: {
+      rich: {
+        condition: 'Trang dài từ 6 module trở lên',
+        behavior: 'Thanh neo cố định cho phép cuộn mượt đến Hero, Lịch trình, Diễn giả, Form',
+        recommendedVariants: ['bar'],
+      },
+      sparse: {
+        condition: 'Trang trung bình 4-5 module',
+        behavior: 'Thanh điều hướng tinh gọn ở đầu trang',
+        recommendedVariants: ['bar'],
+      },
+      empty: {
+        condition: 'Trang ngắn tối giản',
+        behavior: 'Có thể cắt giảm hoặc giữ thanh bar gọn gàng',
+        recommendedVariants: ['bar'],
+      },
+    },
   },
   stats: {
     type: 'stats',
@@ -211,6 +415,23 @@ export const MODULE_CATALOG = {
       { id: 'cards', label: 'Thẻ số liệu bo góc' },
     ],
     defaultVariant: 'row',
+    useCases: {
+      rich: {
+        condition: 'Sự kiện có số lượng diễn giả lớn, nhiều phiên lịch trình',
+        behavior: 'Hiển thị 3-4 chỉ số quy mô thực tế dạng thẻ bo góc hoặc hàng ngang',
+        recommendedVariants: ['cards', 'row'],
+      },
+      sparse: {
+        condition: 'Quy mô sự kiện tiêu chuẩn',
+        behavior: 'Hàng ngang 3 chỉ số thực tế (giờ diễn ra, số diễn giả, số lượt đăng ký)',
+        recommendedVariants: ['row'],
+      },
+      empty: {
+        condition: 'Dữ liệu tối giản',
+        behavior: 'Chỉ hiển thị số liệu thực tế đo đếm được, tuyệt đối không bịa đặt số liệu ảo',
+        recommendedVariants: ['row'],
+      },
+    },
   },
   audience: {
     type: 'audience',
@@ -225,6 +446,23 @@ export const MODULE_CATALOG = {
       { id: 'yes-no-split', label: 'Dành cho ai & Không dành cho ai' },
     ],
     defaultVariant: 'chips',
+    useCases: {
+      rich: {
+        condition: 'Có mô tả thêm chi tiết về mục tiêu và đối tượng tham gia',
+        behavior: 'Kích hoạt thẻ hồ sơ đối tượng (persona-cards) hoặc danh sách tiêu chí (checklist)',
+        recommendedVariants: ['persona-cards', 'checklist', 'chips'],
+      },
+      sparse: {
+        condition: 'Có mô tả thêm ngắn gọn',
+        behavior: 'Hàng thẻ chip danh mục ngắn gọn (chips)',
+        recommendedVariants: ['chips'],
+      },
+      empty: {
+        condition: 'Không có mô tả thêm sự kiện',
+        behavior: 'Bắt buộc cắt giảm module (pruned) để không bịa đặt đối tượng người xem',
+        recommendedVariants: [],
+      },
+    },
   },
   bento: {
     type: 'bento',
@@ -238,6 +476,23 @@ export const MODULE_CATALOG = {
       { id: 'bento-dark-glass', label: 'Bento nền tối kính mờ viền phát sáng' },
     ],
     defaultVariant: 'grid-asymmetric',
+    useCases: {
+      rich: {
+        condition: 'Có mô tả thêm chi tiết và nhiều thông điệp giá trị',
+        behavior: 'Kích hoạt lưới Bento 4 ô (grid-asymmetric) hoặc 3 ô (bento-3) hiện đại',
+        recommendedVariants: ['grid-asymmetric', 'bento-3'],
+      },
+      sparse: {
+        condition: 'Chủ đề công nghệ Tech Talk có mô tả thêm',
+        behavior: 'Lưới Bento kính mờ nền tối viền phát sáng (bento-dark-glass)',
+        recommendedVariants: ['bento-dark-glass', 'bento-3'],
+      },
+      empty: {
+        condition: 'Không có mô tả thêm sự kiện',
+        behavior: 'Bắt buộc cắt giảm module (pruned) khỏi trang để không suy diễn thông tin',
+        recommendedVariants: [],
+      },
+    },
   },
   sponsors: {
     type: 'sponsors',
@@ -249,6 +504,23 @@ export const MODULE_CATALOG = {
       { id: 'grid-tiered', label: 'Lưới phân hạng (Kim cương / Vàng / Bạc)' },
     ],
     defaultVariant: 'grid-tiered',
+    useCases: {
+      rich: {
+        condition: 'Có danh sách nhà tài trợ, đơn vị đồng hành',
+        behavior: 'Lưới phân hạng (grid-tiered) các cấp đối tác',
+        recommendedVariants: ['grid-tiered'],
+      },
+      sparse: {
+        condition: '1-2 đơn vị đồng hành',
+        behavior: 'Lưới hàng ngang trang nhã',
+        recommendedVariants: ['grid-tiered'],
+      },
+      empty: {
+        condition: 'Không có nhà tài trợ',
+        behavior: 'Bắt buộc cắt giảm module (pruned) khỏi trang để không bịa đặt đối tác',
+        recommendedVariants: [],
+      },
+    },
   },
   final_cta: {
     type: 'final_cta',
@@ -264,6 +536,23 @@ export const MODULE_CATALOG = {
       { id: 'cinema-finale', label: 'Đại cảnh kết màn (Cinema Finale)' },
     ],
     defaultVariant: 'banner',
+    useCases: {
+      rich: {
+        condition: 'Có ưu đãi đăng ký sớm và hạn chót',
+        behavior: 'Banner lớn chuyển sắc kèm đồng hồ gấp rút (countdown-cta) hoặc đại cảnh kết màn (cinema-finale)',
+        recommendedVariants: ['countdown-cta', 'cinema-finale', 'banner'],
+      },
+      sparse: {
+        condition: 'Thông tin chốt hạ tiêu chuẩn',
+        behavior: 'Banner màu gradient thương hiệu (banner) kèm nút đăng ký giữ chỗ ngay',
+        recommendedVariants: ['banner', 'minimal'],
+      },
+      empty: {
+        condition: 'Dữ liệu tối giản, 0 ảnh',
+        behavior: 'Một câu kêu gọi ngắn gọn (minimal) dẫn về Form đăng ký',
+        recommendedVariants: ['minimal'],
+      },
+    },
   },
   organizer: {
     type: 'organizer',
@@ -275,6 +564,23 @@ export const MODULE_CATALOG = {
       { id: 'card', label: 'Thẻ thông tin liên hệ đầy đủ' },
     ],
     defaultVariant: 'card',
+    useCases: {
+      rich: {
+        condition: 'Có thông tin ban tổ chức, email, hotline, giờ đón tiếp',
+        behavior: 'Thẻ thông tin liên hệ đầy đủ (card) minh bạch',
+        recommendedVariants: ['card'],
+      },
+      sparse: {
+        condition: 'Có tên ban tổ chức và địa điểm',
+        behavior: 'Thẻ liên hệ gọn gàng',
+        recommendedVariants: ['card'],
+      },
+      empty: {
+        condition: 'Không có thông tin mô tả thêm hay liên hệ cụ thể',
+        behavior: 'Tự động cắt giảm khỏi trang (pruned) để nhường không gian cho nội dung chính',
+        recommendedVariants: [],
+      },
+    },
   },
   sticky_cta: {
     type: 'sticky_cta',
@@ -287,6 +593,11 @@ export const MODULE_CATALOG = {
       { id: 'rail-card', label: 'Thẻ cạnh dính (Rail Card)' },
     ],
     defaultVariant: 'bar',
+    useCases: {
+      rich: { condition: 'Đã xóa vĩnh viễn khỏi app', behavior: 'Chặn không cho kích hoạt', recommendedVariants: [] },
+      sparse: { condition: 'Đã xóa vĩnh viễn khỏi app', behavior: 'Chặn không cho kích hoạt', recommendedVariants: [] },
+      empty: { condition: 'Đã xóa vĩnh viễn khỏi app', behavior: 'Chặn không cho kích hoạt', recommendedVariants: [] },
+    },
   },
   announcement_bar: {
     type: 'announcement_bar',
@@ -300,6 +611,11 @@ export const MODULE_CATALOG = {
       { id: 'countdown', label: 'Thông báo kèm đồng hồ mini đếm giờ ưu đãi' },
     ],
     defaultVariant: 'info',
+    useCases: {
+      rich: { condition: 'Đã xóa vĩnh viễn khỏi app', behavior: 'Chặn không cho kích hoạt', recommendedVariants: [] },
+      sparse: { condition: 'Đã xóa vĩnh viễn khỏi app', behavior: 'Chặn không cho kích hoạt', recommendedVariants: [] },
+      empty: { condition: 'Đã xóa vĩnh viễn khỏi app', behavior: 'Chặn không cho kích hoạt', recommendedVariants: [] },
+    },
   },
 };
 
@@ -612,7 +928,8 @@ export function adaptModuleTreeToEventData(
   aiData = {},
   options = {}
 ) {
-  const { expandWhenRich = false, chosenSpeakerVariant = null } = options;
+  const { expandWhenRich = false, chosenSpeakerVariant = null, dismissed = [] } = options;
+  const dismissedList = Array.isArray(dismissed) ? dismissed : [];
   const hasExtraDesc = Boolean(String(eventData?.description || '').trim().length > 0);
   const earlyBirdText = String(eventData?.earlyBirdOffer || eventData?.earlyBird || aiData?.earlyBirdOffer || '').trim();
   const eventHeroAssets = (assets || []).filter((a) => a.role === 'hero' || a.role === 'other');
@@ -629,11 +946,11 @@ export function adaptModuleTreeToEventData(
   const giftAsset =
     (aiData?.imageAssignments?.giftImageId && (assets || []).find((a) => a.id === aiData.imageAssignments.giftImageId)) ||
     (aiData?.imageAssignments?.gift && (assets || []).find((a) => a.id === aiData.imageAssignments.gift)) ||
-    (assets || []).find((a) => a.role === 'gift') ||
+    (assets || []).filter((a) => a.id !== validHeroAsset?.id).find((a) => a.role === 'gift') ||
     null;
   const contentAsset =
     (aiData?.imageAssignments?.contentImageId && (assets || []).find((a) => a.id === aiData.imageAssignments.contentImageId)) ||
-    (assets || []).find((a) => a.role === 'image_content') ||
+    (assets || []).filter((a) => a.id !== validHeroAsset?.id).find((a) => a.role === 'image_content') ||
     null;
 
   const hasEarlyBird = Boolean(earlyBirdText.length > 0 || giftAsset);
@@ -645,21 +962,21 @@ export function adaptModuleTreeToEventData(
   let workingList = Array.isArray(modules) ? [...modules] : [];
 
   // Khi sự kiện CÓ mô tả thêm và bật cờ expandWhenRich (lúc tạo AI / phân tích lại bố cục),
-  // tự động bổ sung các module giàu thông tin (bento, audience, offer_banner, organizer) nếu preset gốc chưa có.
+  // tự động bổ sung các module giàu thông tin (bento, audience, offer_banner, organizer) nếu preset gốc chưa có và chưa bị dismissed.
   if (expandWhenRich && hasExtraDesc) {
-    if (!workingList.some((m) => m.type === 'bento')) {
+    if (!workingList.some((m) => m.type === 'bento') && !dismissedList.includes('bento')) {
       const targetIdx = workingList.findIndex((m) => m.type === 'stats' || m.type === 'benefits' || m.type === 'speakers');
       const bentoMod = createModuleInstance('bento', { variant: 'grid-asymmetric' });
       if (targetIdx >= 0) workingList.splice(targetIdx, 0, bentoMod);
       else workingList.push(bentoMod);
     }
-    if (!workingList.some((m) => m.type === 'audience')) {
+    if (!workingList.some((m) => m.type === 'audience') && !dismissedList.includes('audience')) {
       const targetIdx = workingList.findIndex((m) => m.type === 'benefits');
       const audMod = createModuleInstance('audience', { variant: 'persona-cards' });
       if (targetIdx >= 0) workingList.splice(targetIdx + 1, 0, audMod);
       else workingList.push(audMod);
     }
-    if (hasEarlyBird && !workingList.some((m) => m.type === 'offer_banner')) {
+    if (hasEarlyBird && !workingList.some((m) => m.type === 'offer_banner') && !dismissedList.includes('offer_banner')) {
       const targetIdx = workingList.findIndex((m) => m.type === 'faq' || m.type === 'form');
       const offerMod = createModuleInstance('offer_banner', {
         variant: giftAsset ? 'card-image-left' : 'ribbon',
@@ -667,7 +984,7 @@ export function adaptModuleTreeToEventData(
       if (targetIdx >= 0) workingList.splice(targetIdx, 0, offerMod);
       else workingList.push(offerMod);
     }
-    if (!workingList.some((m) => m.type === 'organizer')) {
+    if (!workingList.some((m) => m.type === 'organizer') && !dismissedList.includes('organizer')) {
       const targetIdx = workingList.findIndex((m) => m.type === 'final_cta' || m.type === 'footer');
       const orgMod = createModuleInstance('organizer', { variant: 'card' });
       if (targetIdx >= 0) workingList.splice(targetIdx, 0, orgMod);
@@ -682,6 +999,7 @@ export function adaptModuleTreeToEventData(
   return workingList
     .filter((m) => {
       if (!m || deletedTypes.includes(m.type) || m.hidden) return false;
+      if (dismissedList.includes(m.type)) return false;
       const isCustom = m.dataSource === 'custom';
       if (!hasExtraDesc && prunedWithoutDesc.includes(m.type) && !isCustom) {
         return false;
@@ -702,13 +1020,23 @@ export function adaptModuleTreeToEventData(
       let nextVariant = delList.includes(m.variant) ? getSafeVariant(m.type, m.variant) : getSafeVariant(m.type, m.variant);
       let nextCustom = { ...(m.customContent || {}) };
 
-      if (m.type === 'speakers' && chosenSpeakerVariant) {
-        nextVariant = getSafeVariant('speakers', chosenSpeakerVariant);
+      if (m.type === 'speakers' && !m.variantLocked) {
+        const speakerCount = (eventData?.speakers || []).length;
+        if (speakerCount === 1) {
+          nextVariant = 'solo-spotlight';
+        } else if (speakerCount > 1 && nextVariant === 'solo-spotlight') {
+          nextVariant = 'portrait-cards';
+        } else if (chosenSpeakerVariant) {
+          nextVariant = getSafeVariant('speakers', chosenSpeakerVariant);
+        }
       }
 
-      if (m.type === 'hero') {
+      if (m.type === 'hero' && !m.variantLocked) {
         if (validHeroAsset) {
           nextCustom = { ...nextCustom, heroImageId: validHeroAsset.id };
+          if (nextVariant === 'split-card') {
+            nextVariant = 'image-right';
+          }
         } else if (
           nextVariant === 'image-right' ||
           nextVariant === 'image-left' ||
@@ -717,15 +1045,28 @@ export function adaptModuleTreeToEventData(
         ) {
           nextVariant = 'split-card';
         }
-      } else if (m.type === 'venue') {
+      } else if (m.type === 'venue' && !m.variantLocked) {
         if (venueAsset) {
           nextCustom = { ...nextCustom, venueImageId: venueAsset.id };
+          if (nextVariant === 'map-left') {
+            nextVariant = 'image-left';
+          }
+        } else if (nextVariant === 'image-left') {
+          nextVariant = 'map-left';
         }
-      } else if (m.type === 'offer_banner') {
+      } else if (m.type === 'offer_banner' && !m.variantLocked) {
         if (giftAsset) {
           nextCustom = { ...nextCustom, giftImageId: giftAsset.id };
           if (nextVariant === 'ribbon') {
             nextVariant = 'card-image-left';
+          }
+        } else {
+          if (nextVariant === 'card-image-left') {
+            nextVariant = 'ribbon';
+          }
+          if (nextCustom.giftImageId) {
+            const { giftImageId: _unused, ...rest } = nextCustom;
+            nextCustom = rest;
           }
         }
         if (earlyBirdText) {

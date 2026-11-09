@@ -28,6 +28,8 @@ import {
   validateProjectInfo,
   validateFormFields,
   validateRegistrationSubmission,
+  validateTimelineOrder,
+  validateAgendaChronology,
 } from '../src/domain/validators.js';
 
 describe('6. ELS Domain: Schema & Generators', () => {
@@ -148,6 +150,57 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
     assert.ok(res.errors.assets);
   });
 
+  it('validateTimelineOrder: kiểm tra thứ tự thời gian tăng dần và phát hiện mốc vi phạm', () => {
+    // 1. Thứ tự tăng dần hợp lệ
+    const validAgenda = [
+      { id: '1', time: '09:00', title: 'Đón tiếp' },
+      { id: '2', time: '09:30', title: 'Khai mạc' },
+      { id: '3', time: '10:00 - 11:30', title: 'Phiên chính' },
+      { id: '4', time: '11:30', title: 'Bế mạc' },
+    ];
+    const validRes = validateTimelineOrder(validAgenda);
+    assert.equal(validRes.isValid, true);
+    assert.deepEqual(validRes.invalidIndices, []);
+    assert.equal(validRes.error, null);
+
+    // 2. Kéo 09:30 lên trước 09:00 -> mục sau (09:00 tại index 1) vi phạm thứ tự logic
+    const invertedAgenda = [
+      { id: '2', time: '09:30', title: 'Khai mạc' },
+      { id: '1', time: '09:00', title: 'Đón tiếp' },
+    ];
+    const invRes = validateTimelineOrder(invertedAgenda);
+    assert.equal(invRes.isValid, false);
+    assert.deepEqual(invRes.invalidIndices, [1]);
+    assert.equal(invRes.error, 'Thời gian diễn ra các mục phải theo thứ tự tăng dần. Vui lòng điều chỉnh lại.');
+
+    // 3. Mục sau bắt đầu trước khi mục liền trước kết thúc (09:00 - 10:00 rồi đến 09:30)
+    const overlapAgenda = [
+      { id: '1', time: '09:00 - 10:00', title: 'Khóa 1' },
+      { id: '2', time: '09:30', title: 'Khóa 2' },
+    ];
+    const overlapRes = validateAgendaChronology(overlapAgenda);
+    assert.equal(overlapRes.isValid, false);
+    assert.deepEqual(overlapRes.invalidIndices, [1]);
+
+    // 4. Mảng rỗng hoặc 1 phần tử
+    assert.equal(validateTimelineOrder([]).isValid, true);
+    assert.equal(validateTimelineOrder([{ time: '09:00' }]).isValid, true);
+
+    // 5. Tích hợp trong validateProjectInfo: Chặn dữ liệu không hợp lệ
+    const projectWithBadAgenda = {
+      eventName: 'Workshop AI',
+      eventDate: '2026-11-20',
+      eventTime: '09:00',
+      venue: 'Hội trường Grand Hall',
+      speakers: [{ id: '1', name: 'TS. Nguyễn Văn A', title: 'Chuyên gia AI' }],
+      earlyBirdOffer: 'Tặng Ebook 500k',
+      agenda: invertedAgenda,
+    };
+    const projectInfoRes = validateProjectInfo(projectWithBadAgenda, []);
+    assert.equal(projectInfoRes.isValid, false);
+    assert.equal(projectInfoRes.errors.agenda, 'Thời gian diễn ra các mục phải theo thứ tự tăng dần. Vui lòng điều chỉnh lại.');
+  });
+
   it('validateFormFields: kiểm tra đúng 1 displayName và ít nhất 1 identity', () => {
     const fields = createDefaultFormFields();
     const res = validateFormFields(fields);
@@ -170,26 +223,104 @@ describe('7. ELS Domain: Validators (FDD Quy tắc nghiệp vụ)', () => {
   it('validateRegistrationSubmission: kiểm tra định dạng và chống trùng lặp', () => {
     const fields = createDefaultFormFields();
     const existing = [
-      { id: '1', identityKey: 'test@example.com', displayName: 'Người cũ' },
+      { id: '1', identityKey: 'test@example.com', email: 'test@example.com', phone: '0912345678', displayName: 'Người cũ' },
     ];
 
-    // Trùng email định danh
+    // Trùng email định danh (trim + hoa/thường)
     const duplicate = validateRegistrationSubmission(
-      { fld_name: 'Người mới', fld_msv: '20201234', fld_email: 'TEST@example.com' },
+      { fld_name: 'Người mới', fld_email: '   TEST@EXAMPLE.COM   ', fld_phone: '0988776655' },
       fields,
       existing
     );
     assert.equal(duplicate.isValid, false);
-    assert.ok(duplicate.error.includes('đã đăng ký'));
+    assert.equal(duplicate.errors.fld_email, 'Email/Số điện thoại này đã được sử dụng để đăng ký sự kiện rồi.');
+
+    // Trùng số điện thoại (trim + định dạng)
+    const dupPhone = validateRegistrationSubmission(
+      { fld_name: 'Người mới', fld_email: 'unique@example.com', fld_phone: '  0912.345.678  ' },
+      fields,
+      existing
+    );
+    assert.equal(dupPhone.isValid, false);
+    assert.equal(dupPhone.errors.fld_phone, 'Email/Số điện thoại này đã được sử dụng để đăng ký sự kiện rồi.');
 
     // Hợp lệ
     const validSub = validateRegistrationSubmission(
-      { fld_name: 'Người mới', fld_msv: '20201234', fld_email: 'unique@example.com' },
+      { fld_name: 'Người mới', fld_email: 'unique@example.com', fld_phone: '0999888777' },
       fields,
       existing
     );
     assert.equal(validSub.isValid, true);
     assert.equal(validSub.identityKey, 'unique@example.com');
+  });
+
+  it('elsRepository.addRegistration: Chống đăng ký trùng lặp email và số điện thoại, chặn tăng số lượng', () => {
+    const store = new Map();
+    globalThis.window = {
+      localStorage: {
+        getItem: (k) => store.get(k) || null,
+        setItem: (k, v) => store.set(k, String(v)),
+        removeItem: (k) => store.delete(k),
+      },
+    };
+
+    const testProjectId = 'proj_dup_test_' + Date.now();
+    const proj = elsRepository.createProject({ id: testProjectId, name: 'Sự kiện Kiểm tra Trùng lặp' });
+    assert.ok(proj);
+
+    const initialCount = elsRepository.getRegistrationCount(testProjectId);
+    assert.equal(initialCount, 0);
+
+    // Đăng ký người thứ 1
+    const reg1 = elsRepository.addRegistration(testProjectId, {
+      values: {
+        fld_name: 'Đặng Quốc Hưng',
+        fld_email: 'hung@vibecode.vn',
+        fld_phone: '0912345678',
+      },
+      displayName: 'Đặng Quốc Hưng',
+      identityKey: 'hung@vibecode.vn',
+    });
+    assert.ok(reg1.code);
+    assert.equal(elsRepository.getRegistrationCount(testProjectId), 1);
+
+    // Thử đăng ký người thứ 2 trùng Email (có khoảng trắng và chữ hoa)
+    assert.throws(() => {
+      elsRepository.addRegistration(testProjectId, {
+        values: {
+          fld_name: 'Người Trùng Email',
+          fld_email: '   HUNG@VIBECODE.VN   ',
+          fld_phone: '0988000111',
+        },
+        displayName: 'Người Trùng Email',
+        identityKey: 'hung@vibecode.vn',
+      });
+    }, (err) => {
+      assert.ok(err.message.includes('Email/Số điện thoại này đã được sử dụng'));
+      return true;
+    });
+
+    // Số lượng người tham gia KHÔNG được tăng, vẫn là 1
+    assert.equal(elsRepository.getRegistrationCount(testProjectId), 1);
+
+    // Thử đăng ký người thứ 3 trùng Số điện thoại
+    assert.throws(() => {
+      elsRepository.addRegistration(testProjectId, {
+        values: {
+          fld_name: 'Người Trùng Phone',
+          fld_email: 'another@vibecode.vn',
+          fld_phone: '  0912.345.678  ',
+        },
+        displayName: 'Người Trùng Phone',
+        identityKey: 'another@vibecode.vn',
+      });
+    }, (err) => {
+      assert.ok(err.message.includes('Email/Số điện thoại này đã được sử dụng'));
+      return true;
+    });
+
+    // Số lượng người tham gia KHÔNG được tăng, vẫn là 1
+    assert.equal(elsRepository.getRegistrationCount(testProjectId), 1);
   });
 
   it('createDefaultSampleAssets: sinh đầy đủ 6 ảnh mẫu AI kèm mô tả chi tiết và vai trò', () => {

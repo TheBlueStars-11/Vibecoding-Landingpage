@@ -88,8 +88,12 @@ export function checkFactGuard(aiContent, inputData = {}) {
   const safeAi = aiContent || {};
   const safeInput = inputData || {};
   const faqText = Array.isArray(safeAi.faq) ? safeAi.faq.map((f) => `${f?.q || ''} ${f?.a || ''}`).join(' ') : '';
-  const audienceText = Array.isArray(safeAi.audience) ? safeAi.audience.map((a) => `${a?.badge || ''} ${a?.title || ''} ${a?.desc || ''}`).join(' ') : '';
-  const bentoText = Array.isArray(safeAi.bentoHighlights) ? safeAi.bentoHighlights.map((b) => `${b?.tag || ''} ${b?.title || ''} ${b?.desc || ''}`).join(' ') : '';
+  const audienceText = Array.isArray(safeAi.audience)
+    ? safeAi.audience.map((a) => (typeof a === 'string' ? a : `${a?.badge || ''} ${a?.title || ''} ${a?.desc || ''}`)).join(' ')
+    : '';
+  const bentoText = Array.isArray(safeAi.bentoHighlights)
+    ? safeAi.bentoHighlights.map((b) => (typeof b === 'string' ? b : `${b?.tag || ''} ${b?.title || ''} ${b?.desc || ''}`)).join(' ')
+    : '';
   const fullAiText = `${safeAi.headline || ''} ${safeAi.description || ''} ${(safeAi.bullets || []).join(' ')} ${faqText} ${audienceText} ${bentoText}`;
 
   // 1. [L3 Safety] Chống chèn thẻ HTML / XSS Script / Dangerous URI / Inline Event Handlers

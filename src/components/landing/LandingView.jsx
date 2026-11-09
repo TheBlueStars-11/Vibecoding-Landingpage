@@ -66,10 +66,11 @@ export function LandingView({
 
   const handleInputChange = (key, value) => {
     setFormValues((prev) => ({ ...prev, [key]: value }));
-    if (formErrors[key]) {
+    if (formErrors[key] || formErrors.general) {
       setFormErrors((prev) => {
         const next = { ...prev };
         delete next[key];
+        delete next.general;
         return next;
       });
     }
@@ -131,7 +132,14 @@ export function LandingView({
       setRegCount(elsRepository.getRegistrationCount(project.id));
       onRegistrationSuccess?.(newRecord);
     } catch (err) {
-      setFormErrors({ general: err.message || 'Lỗi khi gửi đơn đăng ký.' });
+      const emailField = formFields.find((f) => f.type === 'email' || (f.key && f.key.toLowerCase().includes('email')));
+      const phoneField = formFields.find((f) => f.type === 'tel' || (f.key && f.key.toLowerCase().includes('phone')));
+      const duplicateMsg = 'Email/Số điện thoại này đã được sử dụng để đăng ký sự kiện rồi.';
+      const newErrors = {};
+      if (emailField) newErrors[emailField.key] = duplicateMsg;
+      if (phoneField && !emailField) newErrors[phoneField.key] = duplicateMsg;
+      newErrors.general = err.message || duplicateMsg;
+      setFormErrors(newErrors);
     } finally {
       setIsSubmitting(false);
     }

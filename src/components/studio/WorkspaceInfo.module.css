@@ -292,6 +292,21 @@
   gap: 10px;
 }
 
+.agendaAlertError {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
 .agendaRow {
   display: flex;
   align-items: center;
@@ -300,6 +315,13 @@
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.agendaRowInvalid {
+  border-color: #ef4444 !important;
+  background-color: #fff5f5 !important;
+  box-shadow: 0 0 0 1px #ef4444;
 }
 
 .reorderButtons {
@@ -339,6 +361,14 @@
   background-color: #ffffff;
   outline: none;
   flex-shrink: 0;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.agendaInputInvalid {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+  font-weight: 700;
 }
 
 .agendaTitleInput {
@@ -349,6 +379,21 @@
   font-size: 0.85rem;
   background-color: #ffffff;
   outline: none;
+}
+
+.agendaBadgeInvalid {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ========================================================= */
@@ -402,6 +447,7 @@
 }
 
 .emptyAssets {
+  grid-column: 1 / -1;
   text-align: center;
   padding: 24px 12px;
   color: #64748b;
@@ -429,6 +475,7 @@
   position: relative;
   width: 80px;
   height: 80px;
+  aspect-ratio: 1 / 1;
   flex-shrink: 0;
   border-radius: 8px;
   overflow: hidden;
@@ -621,12 +668,16 @@
 }
 
 /* ========================================================= */
-/* RESPONSIVE: MOBILE (< 768px)                              */
+/* RESPONSIVE: TABLET & MOBILE (< 768px)                     */
 /* ========================================================= */
 @media (max-width: 767px) {
   .layoutTwoColumns {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .sectionCard {
+    padding: 16px;
   }
 
   .rowTwoCols {
@@ -636,15 +687,6 @@
   .speakerInputs {
     flex-direction: column;
     gap: 6px;
-  }
-
-  .assetItem {
-    flex-direction: column;
-  }
-
-  .assetThumbWrapper {
-    width: 100%;
-    height: 140px;
   }
 
   .actionBar {
@@ -657,5 +699,121 @@
   .btnSavePrimary {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ========================================================= */
+/* RESPONSIVE: DI ĐỘNG (<= 640px) - TỐI ƯU THƯ VIỆN ẢNH      */
+/* ========================================================= */
+@media (max-width: 640px) {
+  .assetList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .assetItem {
+    position: relative;
+    flex-direction: column;
+    padding: 8px;
+    gap: 8px;
+    min-width: 0;
+    border-radius: 10px;
+  }
+
+  .assetThumbWrapper {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    background-color: #e2e8f0;
+  }
+
+  .assetThumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .assetSizeTag {
+    bottom: 4px;
+    right: 4px;
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  .btnDeleteAsset {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #ffffff;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+    z-index: 2;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+
+  .btnDeleteAsset:hover,
+  .btnDeleteAsset:active {
+    background: #dc2626;
+    color: #ffffff;
+    transform: scale(1.05);
+  }
+
+  .assetDetails {
+    width: 100%;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .formGroup {
+    margin-bottom: 0;
+  }
+
+  .labelSmall {
+    font-size: 0.7rem;
+    margin-bottom: 2px;
+  }
+
+  .inputSmall {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 6px;
+  }
+
+  .roleRadios {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 6px;
+  }
+
+  .radioLabel {
+    font-size: 0.7rem;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .radioLabel span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .radioLabel input[type="radio"] {
+    margin: 0;
+    width: 13px;
+    height: 13px;
+    accent-color: #e11d48;
+    flex-shrink: 0;
   }
 }

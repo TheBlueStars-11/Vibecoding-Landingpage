@@ -440,11 +440,74 @@ export const elsRepository = {
     const registrations = this.getRegistrations(projectId);
     const project = this.getProjectById(projectId);
 
-    // 3. Chống trùng identityKey (Không giới hạn số lượng đơn đăng ký - đăng ký vô hạn)
-    const isDuplicate = registrations.some((r) => r.identityKey === identityKey);
+    // 3. Chống trùng lặp email hoặc số điện thoại (Duplicate Registration Check)
+    let inputEmail = (regData.email || '').trim().toLowerCase();
+    let inputPhone = (regData.phone || '').trim().toLowerCase();
+
+    if (cleanedValues && typeof cleanedValues === 'object') {
+      for (const [k, v] of Object.entries(cleanedValues)) {
+        const valStr = typeof v === 'string' ? v.trim() : '';
+        if (!valStr) continue;
+        const kLower = k.toLowerCase();
+        if (!inputEmail && (kLower.includes('email') || valStr.includes('@'))) {
+          inputEmail = valStr.toLowerCase();
+        }
+        if (!inputPhone && (kLower.includes('phone') || kLower.includes('tel') || /^\+?\d[\d\s.-]{8,}$/.test(valStr))) {
+          inputPhone = valStr.toLowerCase();
+        }
+      }
+    }
+    if (!inputEmail && identityKey.includes('@')) {
+      inputEmail = identityKey;
+    }
+    if (!inputPhone && !identityKey.includes('@') && /^\+?\d/.test(identityKey)) {
+      inputPhone = identityKey;
+    }
+
+    const isDuplicate = registrations.some((r) => {
+      if (!r) return false;
+      // 1. So sánh identityKey
+      if (identityKey && r.identityKey && r.identityKey.trim().toLowerCase() === identityKey) {
+        return true;
+      }
+      // 2. So sánh email
+      let rEmail = (r.email || '').trim().toLowerCase();
+      let rPhone = (r.phone || '').trim().toLowerCase();
+      if (r.values && typeof r.values === 'object') {
+        for (const [k, v] of Object.entries(r.values)) {
+          const valStr = typeof v === 'string' ? v.trim() : '';
+          if (!valStr) continue;
+          const kLower = k.toLowerCase();
+          if (!rEmail && (kLower.includes('email') || valStr.includes('@'))) {
+            rEmail = valStr.toLowerCase();
+          }
+          if (!rPhone && (kLower.includes('phone') || kLower.includes('tel') || /^\+?\d[\d\s.-]{8,}$/.test(valStr))) {
+            rPhone = valStr.toLowerCase();
+          }
+        }
+      }
+      if (!rEmail && r.identityKey && r.identityKey.includes('@')) {
+        rEmail = r.identityKey.trim().toLowerCase();
+      }
+      if (!rPhone && r.identityKey && !r.identityKey.includes('@') && /^\+?\d/.test(r.identityKey)) {
+        rPhone = r.identityKey.trim().toLowerCase();
+      }
+
+      if (inputEmail && rEmail && inputEmail === rEmail) {
+        return true;
+      }
+      if (inputPhone && rPhone) {
+        if (inputPhone === rPhone) return true;
+        const d1 = inputPhone.replace(/\D/g, '');
+        const d2 = rPhone.replace(/\D/g, '');
+        if (d1 && d2 && d1 === d2) return true;
+      }
+      return false;
+    });
+
     if (isDuplicate) {
       throw new ElsError(
-        `Thông tin định danh "${identityKey}" đã được sử dụng để đăng ký sự kiện này.`,
+        'Email/Số điện thoại này đã được sử dụng để đăng ký sự kiện rồi.',
         ERROR_CODES.DUPLICATE_REGISTRATION,
         ERROR_CATEGORIES.VALIDATION,
         'Mỗi người tham dự chỉ đăng ký 1 lần với 1 email hoặc số điện thoại.'

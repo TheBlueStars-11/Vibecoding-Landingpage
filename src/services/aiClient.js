@@ -9,7 +9,7 @@ import { getAiConfig, recordAiLog } from './aiLogger.js';
 export function escapePromptField(val) {
   if (val === null || val === undefined) return '';
   return String(val)
-    .replace(/<\/?(?:event_data|available_images|system|instruction|prompt)[^>]*>/gi, '')
+    .replace(/<\/?(?:event_data|available_images|available_speaker_images|other_event_images|system|instruction|prompt)[^>]*>/gi, '')
     .trim();
 }
 
@@ -33,14 +33,34 @@ export function buildPrompt(eventInfo, assets = []) {
     ? agenda.map((a) => (typeof a === 'string' ? a : `${a.time || ''} ${a.title || ''}`.trim())).filter(Boolean).join('; ')
     : escapePromptField(agenda);
 
+  // Danh sách chi tiết từng diễn giả kèm ID và chức danh
+  const rawSpeakersList = Array.isArray(eventInfo.speakersList)
+    ? eventInfo.speakersList
+    : (Array.isArray(eventInfo.speakers)
+      ? eventInfo.speakers
+      : (typeof speakers === 'string' && speakers
+        ? speakers.split(',').map((s, i) => ({ id: `spk_${i + 1}`, name: s.trim(), title: '' })).filter((s) => s.name)
+        : []));
+
+  const speakerLines = rawSpeakersList.length > 0
+    ? rawSpeakersList.map((s, i) => `  ${i + 1}. [Speaker ID: "${escapePromptField(s.id || `spk_${i + 1}`)}"] Tên: "${escapePromptField(s.name)}"${s.title ? `, Chức danh: "${escapePromptField(s.title)}"` : ''}`).join('\n')
+    : (typeof speakers === 'string' ? escapePromptField(speakers) : 'Không có thông tin diễn giả');
+
   // Danh sách hình ảnh khả dụng kèm vai trò và chú thích
   const assetList = (assets && assets.length > 0)
     ? assets
     : (imageCaptions && Array.isArray(imageCaptions) ? imageCaptions.map((c, i) => ({ id: `img_${i + 1}`, role: 'other', caption: c })) : []);
 
-  const imageDescriptions = assetList.length > 0
-    ? assetList.map((a, i) => `- ID: "${escapePromptField(a.id || `ast_${i + 1}`)}"` + `, Vai trò: "${escapePromptField(a.role || 'other')}", Chú thích ảnh: "${escapePromptField(a.caption || 'Ảnh sự kiện')}"`).join('\n')
-    : 'Chưa có ảnh tải lên (sử dụng bố cục không ảnh)';
+  const speakerAssets = assetList.filter((a) => a.role === 'speaker');
+  const otherAssets = assetList.filter((a) => a.role !== 'speaker');
+
+  const speakerAssetDescriptions = speakerAssets.length > 0
+    ? speakerAssets.map((a, i) => `  - [Asset ID: "${escapePromptField(a.id || `ast_spk_${i + 1}`)}"] Chú thích/Mô tả ảnh: "${escapePromptField(a.caption || 'Chân dung diễn giả')}" (Vai trò: speaker)`).join('\n')
+    : '  (Chưa có ảnh diễn giả tải lên - sử dụng avatar chữ cái monogram)';
+
+  const otherAssetDescriptions = otherAssets.length > 0
+    ? otherAssets.map((a, i) => `  - [Asset ID: "${escapePromptField(a.id || `ast_${i + 1}`)}"] Chú thích: "${escapePromptField(a.caption || 'Ảnh sự kiện')}", Vai trò: "${escapePromptField(a.role || 'other')}"`).join('\n')
+    : '  (Không có ảnh khác)';
 
   const extraDescInstruction = hasExtraDesc
     ? `Người dùng CÓ cung cấp "Mô tả thêm / Ghi chú đặc thù". Hãy TẬN DỤNG TỐI ĐA thông tin trong mục này để điền đầy đủ description, bullets, faq (4 câu hỏi sát thực tế), audience (3 nhóm đối tượng tham dự trích từ mô tả thêm), bentoHighlights (4 điểm nhấn cốt lõi trích từ mô tả thêm) và organizer (thông tin đơn vị tổ chức/liên hệ nếu có trong mô tả thêm).`
@@ -53,7 +73,8 @@ Nhiệm vụ: Phân tích thông tin sự kiện để biên soạn nội dung l
 - Tên sự kiện: ${escapePromptField(name)}
 - Thời gian: ${escapePromptField(datetime)}
 - Địa điểm: ${escapePromptField(location)}
-- Diễn giả: ${escapePromptField(speakers)}
+- Diễn giả khách mời:
+${speakerLines}
 - Ưu đãi đăng ký sớm: ${escapePromptField(earlyBird) || 'Không có'}
 - Lịch trình: ${escapePromptField(agendaText) || 'Theo chương trình'}
 - Mô tả thêm / Ghi chú đặc thù: ${cleanExtraDesc || 'Không có'}
@@ -61,7 +82,11 @@ Nhiệm vụ: Phân tích thông tin sự kiện để biên soạn nội dung l
 </event_data>
 
 <available_images>
-${imageDescriptions}
+* DANH SÁCH ẢNH DIỄN GIẢ (Dùng để gán chính xác avatarAssetId cho từng diễn giả):
+${speakerAssetDescriptions}
+
+* DANH SÁCH ẢNH KHÁC (Poster / Địa điểm / Quà tặng):
+${otherAssetDescriptions}
 </available_images>
 
 YÊU CẦU NỘI DUNG:
@@ -74,7 +99,14 @@ YÊU CẦU NỘI DUNG:
    - recommendedSpeakerVariant: chọn 1 trong ['portrait-cards', 'trio-typographic', 'solo-spotlight']
    - colorTheme: chọn 1 trong ['purple', 'blue', 'emerald', 'amber', 'rose', 'dark']
    - designReasoning: 1 câu ngắn gọn giải thích lý do lựa chọn bố cục và module.
-6. Phân bổ ảnh: Gán ID ảnh tương ứng vào heroImageId (chỉ gán nếu có ảnh vai trò hero hoặc other), venueImageId, giftImageId, speakerImageIds.
+6. RÀNG BUỘC BẮT BUỘC VỀ ẢNH VÀ DIỄN GIẢ (CHỐNG LỆCH ẢNH & GÁN CHÉO):
+   - Trong mảng "speakers": Với mỗi diễn giả trong <event_data>, hãy đối chiếu họ tên diễn giả với phần chú thích của ảnh trong mục DANH SÁCH ẢNH DIỄN GIẢ.
+   - Bắt buộc trả về đúng trường "avatarAssetId" là Asset ID tương ứng của diễn giả đó nếu chú thích ảnh khớp tên hoặc thông tin của diễn giả. Nếu không có ảnh nào khớp, BẮT BUỘC để "avatarAssetId": null (tuyệt đối không gán ảnh của diễn giả này cho diễn giả khác).
+   - Trong "imageAssignments":
+     + heroImageId: ID ảnh sự kiện/poster (chỉ gán nếu có ảnh vai trò hero hoặc other; tuyệt đối không lấy ảnh diễn giả làm hero).
+     + venueImageId: ID ảnh địa điểm (vai trò venue).
+     + giftImageId: ID ảnh quà tặng/voucher (vai trò gift).
+     + speakerImageIds: Mảng các Asset ID của diễn giả theo đúng thứ tự mảng speakers (hoặc null nếu không có).
 7. Ràng buộc nghiêm ngặt: Tuyệt đối không tự ý bịa đặt mã voucher, cam kết miễn phí/thu phí, quà tặng hay cấp chứng nhận nếu trong <event_data> không có thông tin này.
 
 Trả về DUY NHẤT một khối JSON hợp lệ theo cấu trúc sau (không bọc trong markdown, không giải thích gì thêm):
@@ -86,13 +118,32 @@ Trả về DUY NHẤT một khối JSON hợp lệ theo cấu trúc sau (không 
     "Lợi ích 2 trích xuất từ dữ liệu sự kiện",
     "Lợi ích 3 trích xuất từ dữ liệu sự kiện"
   ],
+  "speakers": [
+    {
+      "name": "Họ và tên diễn giả",
+      "title": "Chức danh",
+      "avatarAssetId": "Asset ID chính xác từ DANH SÁCH ẢNH DIỄN GIẢ hoặc null"
+    }
+  ],
   "faq": [
     { "q": "Câu hỏi thường gặp 1?", "a": "Câu trả lời xác thực từ dữ liệu sự kiện" },
     { "q": "Câu hỏi thường gặp 2?", "a": "Câu trả lời xác thực từ dữ liệu sự kiện" },
     { "q": "Câu hỏi thường gặp 3?", "a": "Câu trả lời xác thực từ dữ liệu sự kiện" }
   ],
-  "audience": [],
-  "bentoHighlights": [],
+  "audience": [
+    {
+      "badge": "Nhóm 01",
+      "title": "Tên nhóm đối tượng (ví dụ: Kỹ sư phần mềm & Sinh viên CNTT)",
+      "desc": "Mô tả chi tiết lý do và mục tiêu tham dự phù hợp với chương trình"
+    }
+  ],
+  "bentoHighlights": [
+    {
+      "tag": "01 / GIÁ TRỊ TRỌNG TÂM",
+      "title": "Tên tiêu điểm chính",
+      "desc": "Mô tả ngắn gọn về điểm nhấn nổi bật"
+    }
+  ],
   "organizer": null,
   "recommendedPreset": "techtalk",
   "recommendedSpeakerVariant": "portrait-cards",

@@ -1,7 +1,7 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import styles from './WorkspaceInfo.module.css';
 import { elsRepository } from '../../services/elsRepository.js';
-import { validateProjectInfo } from '../../domain/validators.js';
+import { validateProjectInfo, validateTimelineOrder, parseTimelineTime } from '../../domain/validators.js';
 import { compressImage } from '../../domain/imageCompressor.js';
 import { createAssetImage, generateId, ASSET_ROLES } from '../../domain/elsSchema.js';
 import {
@@ -47,9 +47,22 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
   });
   const fileInputRef = useRef(null);
 
+  // Kiểm tra tính hợp lệ và tuần tự thời gian của Agenda trong thời gian thực
+  const agendaOrderValidation = useMemo(() => {
+    return validateTimelineOrder(eventData.agenda);
+  }, [eventData.agenda]);
+
   // Hàm thực thi lưu dự án tức thì vào LocalStorage và đồng bộ ngay state ứng dụng
   const performSave = useCallback((dataToSave) => {
     try {
+      // 1. Kiểm tra tính hợp lệ của thứ tự thời gian Agenda
+      const orderCheck = validateTimelineOrder(dataToSave.agenda);
+      if (!orderCheck.isValid) {
+        // Chặn cơ chế auto-save và KHÔNG cập nhật vào repository cho đến khi người dùng sửa đúng
+        onSaveStatusChange?.('error');
+        return false;
+      }
+
       const exactName = dataToSave.eventName || project.name;
       const updatedProject = {
         ...project,
@@ -62,9 +75,11 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       const timeStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       onSaveStatusChange?.('saved', timeStr);
       setLastSavedTime(timeStr);
+      return true;
     } catch (err) {
       console.error('Lỗi autosave:', err);
       onSaveStatusChange?.('error');
+      return false;
     }
   }, [project, onUpdateProject, onSaveStatusChange]);
 
@@ -136,22 +151,46 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       agenda: eventData.agenda.map((item) => (item.id === id ? { ...item, [key]: val } : item)),
     };
     setEventData(nextData);
-    performSave(nextData);
-    if (errors.agenda) {
-      setErrors((prevErr) => {
-        const next = { ...prevErr };
+    const orderCheck = validateTimelineOrder(nextData.agenda);
+    if (!orderCheck.isValid) {
+      setErrors((prev) => ({ ...prev, agenda: orderCheck.error }));
+    } else if (errors.agenda) {
+      setErrors((prev) => {
+        const next = { ...prev };
         delete next.agenda;
         return next;
       });
     }
+    performSave(nextData);
   };
 
   const handleAddAgendaItem = () => {
+    let nextTime = '10:00';
+    if (eventData.agenda.length > 0) {
+      const lastItem = eventData.agenda[eventData.agenda.length - 1];
+      const parsedLast = parseTimelineTime(lastItem?.time);
+      if (parsedLast) {
+        const nextMin = Math.min(1410, Math.max(parsedLast.startMinutes, parsedLast.endMinutes) + 30);
+        const hh = String(Math.floor(nextMin / 60)).padStart(2, '0');
+        const mm = String(nextMin % 60).padStart(2, '0');
+        nextTime = `${hh}:${mm}`;
+      }
+    }
     const nextData = {
       ...eventData,
-      agenda: [...eventData.agenda, { id: generateId('ag'), time: '10:00', title: '' }],
+      agenda: [...eventData.agenda, { id: generateId('ag'), time: nextTime, title: '' }],
     };
     setEventData(nextData);
+    const orderCheck = validateTimelineOrder(nextData.agenda);
+    if (!orderCheck.isValid) {
+      setErrors((prev) => ({ ...prev, agenda: orderCheck.error }));
+    } else if (errors.agenda) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.agenda;
+        return next;
+      });
+    }
     performSave(nextData);
   };
 
@@ -165,6 +204,16 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
       agenda: eventData.agenda.filter((item) => item.id !== id),
     };
     setEventData(nextData);
+    const orderCheck = validateTimelineOrder(nextData.agenda);
+    if (!orderCheck.isValid) {
+      setErrors((prev) => ({ ...prev, agenda: orderCheck.error }));
+    } else if (errors.agenda) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.agenda;
+        return next;
+      });
+    }
     performSave(nextData);
   };
 
@@ -177,6 +226,16 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
     items[targetIdx] = temp;
     const nextData = { ...eventData, agenda: items };
     setEventData(nextData);
+    const orderCheck = validateTimelineOrder(nextData.agenda);
+    if (!orderCheck.isValid) {
+      setErrors((prev) => ({ ...prev, agenda: orderCheck.error }));
+    } else if (errors.agenda) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.agenda;
+        return next;
+      });
+    }
     performSave(nextData);
   };
 
@@ -478,60 +537,83 @@ export function WorkspaceInfo({ project, onUpdateProject, onSaveStatusChange, on
               </button>
             </div>
 
-            {errors.agenda && <p className={styles.errorText}>{errors.agenda}</p>}
+            {/* Cảnh báo lỗi thứ tự thời gian nổi bật tại khối Agenda */}
+            {agendaOrderValidation.error && (
+              <div className={styles.agendaAlertError} role="alert">
+                <AlertCircleIcon size={16} />
+                <span>{agendaOrderValidation.error}</span>
+              </div>
+            )}
+
+            {errors.agenda && errors.agenda !== agendaOrderValidation.error && (
+              <p className={styles.errorText}>{errors.agenda}</p>
+            )}
 
             <div className={styles.agendaList}>
-              {eventData.agenda.map((item, index) => (
-                <div key={item.id} className={styles.agendaRow}>
-                  <div className={styles.reorderButtons}>
+              {eventData.agenda.map((item, index) => {
+                const isInvalid = agendaOrderValidation.invalidIndices.includes(index);
+                return (
+                  <div
+                    key={item.id}
+                    className={`${styles.agendaRow} ${isInvalid ? styles.agendaRowInvalid : ''}`}
+                  >
+                    <div className={styles.reorderButtons}>
+                      <button
+                        type="button"
+                        disabled={index === 0}
+                        onClick={() => handleMoveAgendaItem(index, -1)}
+                        className={styles.btnReorder}
+                        title="Di chuyển lên"
+                        aria-label="Di chuyển lên"
+                      >
+                        <MoveUpIcon size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === eventData.agenda.length - 1}
+                        onClick={() => handleMoveAgendaItem(index, 1)}
+                        className={styles.btnReorder}
+                        title="Di chuyển xuống"
+                        aria-label="Di chuyển xuống"
+                      >
+                        <MoveDownIcon size={14} />
+                      </button>
+                    </div>
+
+                    <input
+                      type="time"
+                      className={`${styles.agendaTimeInput} ${isInvalid ? styles.agendaInputInvalid : ''}`}
+                      value={item.time}
+                      onChange={(e) => handleAgendaChange(item.id, 'time', e.target.value)}
+                    />
+
+                    <input
+                      type="text"
+                      className={styles.agendaTitleInput}
+                      placeholder="Nội dung chương trình *"
+                      value={item.title}
+                      onChange={(e) => handleAgendaChange(item.id, 'title', e.target.value)}
+                    />
+
+                    {isInvalid && (
+                      <span className={styles.agendaBadgeInvalid} title="Mốc giờ không theo thứ tự tăng dần">
+                        <AlertCircleIcon size={13} />
+                        <span>Sai thứ tự</span>
+                      </span>
+                    )}
+
                     <button
                       type="button"
-                      disabled={index === 0}
-                      onClick={() => handleMoveAgendaItem(index, -1)}
-                      className={styles.btnReorder}
-                      title="Di chuyển lên"
-                      aria-label="Di chuyển lên"
+                      className={styles.btnTrash}
+                      onClick={() => handleRemoveAgendaItem(item.id)}
+                      title="Xóa mục này"
+                      aria-label="Xóa mục chương trình"
                     >
-                      <MoveUpIcon size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      disabled={index === eventData.agenda.length - 1}
-                      onClick={() => handleMoveAgendaItem(index, 1)}
-                      className={styles.btnReorder}
-                      title="Di chuyển xuống"
-                      aria-label="Di chuyển xuống"
-                    >
-                      <MoveDownIcon size={14} />
+                      <TrashIcon size={16} />
                     </button>
                   </div>
-
-                  <input
-                    type="time"
-                    className={styles.agendaTimeInput}
-                    value={item.time}
-                    onChange={(e) => handleAgendaChange(item.id, 'time', e.target.value)}
-                  />
-
-                  <input
-                    type="text"
-                    className={styles.agendaTitleInput}
-                    placeholder="Nội dung chương trình *"
-                    value={item.title}
-                    onChange={(e) => handleAgendaChange(item.id, 'title', e.target.value)}
-                  />
-
-                  <button
-                    type="button"
-                    className={styles.btnTrash}
-                    onClick={() => handleRemoveAgendaItem(item.id)}
-                    title="Xóa mục này"
-                    aria-label="Xóa mục chương trình"
-                  >
-                    <TrashIcon size={16} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

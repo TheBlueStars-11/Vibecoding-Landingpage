@@ -3,9 +3,12 @@
  * Serverless handler (Vercel) xử lý yêu cầu bật tunnel
  */
 
-import { ensureMethod, sendSuccess } from '../_lib/http.js';
+import { ensureDevOnly, ensureMethod, sendSuccess } from '../_lib/http.js';
 
 export default function handler(req, res) {
+  if (!ensureDevOnly(req, res)) {
+    return;
+  }
   if (!ensureMethod(req, res, ['POST'])) {
     return;
   }

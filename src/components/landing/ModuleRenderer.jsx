@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ModuleRenderer.module.css';
 import { calculateCountdown } from '../../domain/time.js';
-import { STANDALONE_DEV_MOCK_DATA, getSafeVariant } from '../../domain/moduleSchema.js';
+import { getSafeVariant } from '../../domain/moduleSchema.js';
 import {
   CalendarIcon,
   ClockIcon,
@@ -156,7 +156,6 @@ export function ModuleRenderer({
   // Xử lý dữ liệu nguồn (Auto vs Custom)
   const isCustom = module.dataSource === 'custom';
   const custom = module.customContent || {};
-  const mock = STANDALONE_DEV_MOCK_DATA;
 
   // 1. Phân loại ảnh & Gán ảnh AI (AI Image Assignment)
   // Chỉ lấy ảnh có vai trò liên quan trực tiếp đến sự kiện ('hero' hoặc 'other') cho Hero, tuyệt đối không lấy ảnh diễn giả/địa điểm/quà tặng làm Hero
@@ -171,19 +170,129 @@ export function ModuleRenderer({
 
   const speakerAssets = assets.filter((a) => a.role === 'speaker');
 
-  const getSpeakerAsset = (idx) => {
-    const spk = eventData.speakers?.[idx];
-    if (spk?.assetId) {
-      const bySpkId = speakerAssets.find((a) => a.id === spk.assetId) || assets.find((a) => a.id === spk.assetId);
-      if (bySpkId) return bySpkId;
+  // Chuẩn hóa và làm sạch tên để so khớp từ khóa chính xác
+  const cleanNameForMatch = (name = '') => {
+    return String(name)
+      .toLowerCase()
+      .replace(/\b(ts\.|ths\.|th\.s|th\.s\.|gs\.|pgs\.|ông|bà|anh|chị|dr\.|mr\.|ms\.|mrs\.|prof\.|ảnh|chân dung|avatar|hình|profile|diễn giả|speaker)\b/gi, '')
+      .replace(/[^\p{L}\p{N}\s]/gu, '')
+      .trim();
+  };
+
+  const removeDiacritics = (str = '') => {
+    return String(str || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
+  };
+
+  /**
+   * So khớp chính xác 2 chiều giữa tên diễn giả và mô tả (caption/tên ảnh)
+   */
+  const isSpeakerNameMatch = (speakerName, caption) => {
+    if (!speakerName || !caption) return false;
+    const cleanSpk = cleanNameForMatch(speakerName);
+    const cleanCap = cleanNameForMatch(caption);
+    if (!cleanSpk || !cleanCap) return false;
+
+    // 1. So khớp trực tiếp có dấu tiếng Việt (2 chiều)
+    if (cleanCap.includes(cleanSpk) || cleanSpk.includes(cleanCap)) return true;
+
+    // 2. So khớp không dấu tiếng Việt
+    const unaccentSpk = removeDiacritics(cleanSpk);
+    const unaccentCap = removeDiacritics(cleanCap);
+    if (unaccentCap.includes(unaccentSpk) || unaccentSpk.includes(unaccentCap)) return true;
+
+    // 3. So khớp các từ thành phần (ít nhất 2 từ hoặc 1 từ nếu tên chỉ có 1 từ)
+    const spkWords = unaccentSpk.split(/\s+/).filter((w) => w.length > 1);
+    const capWords = unaccentCap.split(/\s+/).filter((w) => w.length > 1);
+    const sharedWords = spkWords.filter((w) => capWords.includes(w));
+    if (sharedWords.length >= 2) return true;
+    if (spkWords.length === 1 && sharedWords.length === 1 && spkWords[0].length >= 3) return true;
+
+    return false;
+  };
+
+  /**
+   * Ánh xạ chính xác ảnh diễn giả (Speaker Avatar Matcher):
+   * Ngăn chặn triệt để 100% lỗi lệch ảnh hoặc gán chéo ảnh giữa các diễn giả.
+   */
+  const getSpeakerAsset = (idx, targetSpeaker = null, renderedSpeakers = null) => {
+    const rawSpeakers = (renderedSpeakers && renderedSpeakers.length)
+      ? renderedSpeakers
+      : (Array.isArray(eventData.speakers) ? eventData.speakers : []);
+    const spk = targetSpeaker || rawSpeakers[idx];
+    if (!spk && !assets.length) return null;
+
+    const spkName = (spk?.name || '').trim();
+    const spkId = spk?.id;
+    const otherSpeakers = rawSpeakers.filter((_, oIdx) => oIdx !== idx);
+
+    // 1. Nếu trên đối tượng diễn giả đã có ảnh trực tiếp (avatarUrl / dataUrl)
+    if (spk?.avatarUrl) {
+      return { id: spk.avatarAssetId || spk.id || `spk_url_${idx}`, dataUrl: spk.avatarUrl, caption: spkName };
     }
+
+    // 2. Nếu diễn giả có gắn trực tiếp assetId / avatarAssetId
+    const directAssetId = spk?.avatarAssetId || spk?.assetId;
+    if (directAssetId) {
+      const found = assets.find((a) => a.id === directAssetId);
+      if (found) return found;
+    }
+
+    // 3. So khớp thông minh theo từ khóa giữa Tên diễn giả và Caption / speakerRef của Asset
+    // Tìm trong cả assets vai trò 'speaker' và toàn bộ assets có caption khớp tên
+    if (spkName.length >= 2) {
+      // 3.1. Khớp chính xác speakerRef
+      const byRef = assets.find((a) => a.speakerRef && a.speakerRef === spkId);
+      if (byRef) return byRef;
+
+      // 3.2. Khớp theo Caption giữa tất cả ảnh (ưu tiên role speaker, sau đó đến các ảnh khác)
+      const allCandidateAssets = [...assets.filter((a) => a.role === 'speaker'), ...assets.filter((a) => a.role !== 'speaker')];
+      const byCaption = allCandidateAssets.find((a) => isSpeakerNameMatch(spkName, a.caption));
+      if (byCaption) return byCaption;
+    }
+
+    // 4. Kiểm tra xem AI có trả về avatarAssetId cụ thể cho diễn giả này không
+    const aiSpeaker = aiData?.speakers?.[idx];
+    if (aiSpeaker?.avatarAssetId) {
+      const foundAiAsset = assets.find((a) => a.id === aiSpeaker.avatarAssetId);
+      if (foundAiAsset) {
+        // Khóa an toàn chống gán chéo: đảm bảo caption không thuộc về diễn giả KHÁC
+        const claimedByOther = otherSpeakers.some((otherSpk) => isSpeakerNameMatch(otherSpk?.name, foundAiAsset.caption));
+        if (!claimedByOther) {
+          return foundAiAsset;
+        }
+      }
+    }
+
+    // 5. Kiểm tra gán ảnh từ aiData.imageAssignments.speakerImageIds[idx] (có kiểm tra chống gán chéo)
     const assignedId = aiData?.imageAssignments?.speakerImageIds?.[idx]
       || aiData?.imageAssignments?.speakers?.find?.((s) => s.speakerIndex === idx)?.assetId;
     if (assignedId) {
       const found = assets.find((a) => a.id === assignedId);
-      if (found) return found;
+      if (found) {
+        // Chống gán chéo: nếu caption ảnh mang tên của diễn giả khác thì từ chối
+        const claimedByOther = otherSpeakers.some((otherSpk) => isSpeakerNameMatch(otherSpk?.name, found.caption));
+        if (!claimedByOther) {
+          return found;
+        }
+      }
     }
-    return speakerAssets[idx] || null;
+
+    // 6. Fallback theo index (chỉ lấy ảnh role speaker tại index đó NẾU ảnh đó không chứa tên diễn giả khác)
+    const candidateByIndex = speakerAssets[idx];
+    if (candidateByIndex) {
+      const isClaimedByOther = otherSpeakers.some((otherSpk) => isSpeakerNameMatch(otherSpk?.name, candidateByIndex.caption));
+      // Chỉ dùng nếu không bị diễn giả khác chiếm tên trong caption
+      if (!isClaimedByOther) {
+        return candidateByIndex;
+      }
+    }
+
+    // 7. Nếu không có ảnh nào khớp hoặc ảnh thuộc về diễn giả khác -> trả về null để render monogram
+    return null;
   };
 
   const venueAsset = (custom.venueImageId && assets.find((a) => a.id === custom.venueImageId))
@@ -192,21 +301,26 @@ export function ModuleRenderer({
     || assets.find((a) => a.role === 'venue')
     || null;
 
-  const giftAsset = (custom.giftImageId && assets.find((a) => a.id === custom.giftImageId))
-    || (aiData?.imageAssignments?.giftImageId && assets.find((a) => a.id === aiData.imageAssignments.giftImageId))
-    || (aiData?.imageAssignments?.gift && assets.find((a) => a.id === aiData.imageAssignments.gift))
-    || assets.find((a) => a.role === 'gift')
-    || assets.find((a) => a.role === 'other')
+  // Loại trừ ảnh đã dùng cho Hero để tránh dùng đôi một ảnh cho nhiều vai trò (Invariant #5)
+  const availableGiftAssets = assets.filter((a) => a.id !== heroAsset?.id);
+  const giftAsset = (custom.giftImageId && availableGiftAssets.find((a) => a.id === custom.giftImageId))
+    || (aiData?.imageAssignments?.giftImageId && availableGiftAssets.find((a) => a.id === aiData.imageAssignments.giftImageId))
+    || (aiData?.imageAssignments?.gift && availableGiftAssets.find((a) => a.id === aiData.imageAssignments.gift))
+    || availableGiftAssets.find((a) => a.role === 'gift')
     || null;
 
   // 2. Nội dung tổng hợp: Tên sự kiện trong mục Thông tin chung luôn được giữ nguyên 100% ở Preview
-  const headline = isCustom && custom.headline ? custom.headline : (eventData.eventName || aiData.headline || 'Sự kiện 2026');
-  const description = isCustom && custom.description !== undefined ? custom.description : (aiData.description || 'Tham gia cùng chúng tôi để kết nối và tiếp cận những nội dung giá trị nhất.');
+  const headline = isCustom && custom.headline ? custom.headline : (eventData.eventName || aiData?.headline || 'Sự kiện 2026');
+  // Headline do AI sinh làm tagline / lời dẫn nếu khác với Tên sự kiện (FIX-04)
+  const aiTagline = (aiData?.headline && aiData.headline !== headline && aiData.headline !== eventData.eventName)
+    ? aiData.headline
+    : null;
+  const description = isCustom && custom.description !== undefined ? custom.description : (aiData?.description || 'Tham gia cùng chúng tôi để kết nối và tiếp cận những nội dung giá trị nhất.');
 
   // Lấy danh sách benefits thực tế (ưu tiên custom -> aiData -> thông tin sự kiện -> mặc định)
   const candidateBenefits = (isCustom && Array.isArray(custom.benefits))
     ? custom.benefits
-    : (Array.isArray(aiData.benefits) ? aiData.benefits : []);
+    : (Array.isArray(aiData?.benefits) ? aiData.benefits : []);
 
   // Kiểm tra xem candidateBenefits có thực sự chứa nội dung (không phải toàn chuỗi rỗng ['','',''])
   const hasValidCandidates = candidateBenefits.some((b) => typeof b === 'string' && b.trim().length > 0);
@@ -217,7 +331,7 @@ export function ModuleRenderer({
       ? `Ưu đãi đăng ký sớm: ${eventData.earlyBirdOffer}`
       : 'Tiếp cận tri thức và kinh nghiệm thực chiến từ chuyên gia.',
     Array.isArray(eventData.speakers) && eventData.speakers.length > 0
-      ? `Giao lưu và kết nối trực tiếp cùng ${eventData.speakers.map((s) => s.name).filter(Boolean).slice(0, 2).join(', ')}.`
+      ? `Giao lưu và kết nối trực tiếp cùng ${eventData.speakers.map((s) => (typeof s === 'string' ? s : s.name)).filter(Boolean).slice(0, 2).join(', ')}.`
       : 'Mở rộng mạng lưới quan hệ chất lượng cao trong ngành.',
     'Tham gia thảo luận trực tiếp và nhận bộ tài liệu tổng hợp từ chương trình.',
   ];
@@ -248,12 +362,44 @@ export function ModuleRenderer({
 
   const themeClass = styles[`theme_${themeColor}`] || styles.theme_purple;
 
+  /**
+   * Cuộn mượt cô lập: nếu đang nằm trong khung preview hoặc scroll container cục bộ,
+   * CHỈ cuộn container đó và TUYỆT ĐỐI không kéo giật màn hình Studio ngoài.
+   */
+  const smoothScrollToElement = (targetEl) => {
+    if (!targetEl) return;
+
+    let parent = targetEl.parentElement;
+    let scrollContainer = null;
+    while (parent && parent !== document.body && parent !== document.documentElement) {
+      const style = window.getComputedStyle(parent);
+      const overflowY = style.overflowY;
+      if ((overflowY === 'auto' || overflowY === 'scroll') && parent.clientHeight < parent.scrollHeight) {
+        scrollContainer = parent;
+        break;
+      }
+      parent = parent.parentElement;
+    }
+
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      const relativeTop = targetRect.top - containerRect.top + scrollContainer.scrollTop;
+      scrollContainer.scrollTo({
+        top: Math.max(0, relativeTop),
+        behavior: 'smooth',
+      });
+    } else {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const scrollToForm = () => {
     const el = document.getElementById('registration-section')
       || document.getElementById('mod-form')
       || document.querySelector('[id*="mod_form"]')
       || document.querySelector('[data-module-form="true"]');
-    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    smoothScrollToElement(el);
   };
 
   const scrollToTarget = (targetType) => {
@@ -263,7 +409,7 @@ export function ModuleRenderer({
     }
     const el = document.querySelector(`[data-module-type="${targetType}"]`)
       || document.querySelector(`[id*="${targetType}"]`);
-    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    smoothScrollToElement(el);
   };
 
   // MapSlot renderer for venue modules
@@ -470,6 +616,42 @@ export function ModuleRenderer({
     );
 
     // Biến thể: cinema-letterbox (21:9 letterbox frame + credits điện ảnh)
+    // Render Chip Ưu đãi bắt buộc cho Hero (FIX-04)
+    const renderHeroEarlyBirdChip = () => {
+      if (!eventData.earlyBirdOffer) return null;
+      return (
+        <div className={styles.heroEarlyBird} style={{ marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <SparklesIcon size={14} />
+          <span>Ưu đãi: {eventData.earlyBirdOffer}</span>
+        </div>
+      );
+    };
+
+    // Render Dòng tóm tắt Diễn giả bắt buộc cho Hero (FIX-04)
+    const renderHeroSpeakersSummary = () => {
+      const spkList = Array.isArray(eventData.speakers) ? eventData.speakers : [];
+      if (spkList.length === 0) return null;
+      const topSpeakers = spkList.slice(0, 3).map((s) => (typeof s === 'string' ? s : s.name)).filter(Boolean);
+      const remainingCount = spkList.length - topSpeakers.length;
+      const suffix = remainingCount > 0 ? ` +${remainingCount}` : '';
+      return (
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', color: '#64748b', marginTop: 10, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(4px)', padding: '4px 12px', borderRadius: 999, border: '1px solid #e2e8f0' }}>
+          <UsersIcon size={14} style={{ color: 'var(--theme-primary, #e11d48)' }} />
+          <span>Diễn giả: <strong style={{ color: '#0f172a' }}>{topSpeakers.join(', ')}{suffix}</strong></span>
+        </div>
+      );
+    };
+
+    // Render Tagline do AI sinh làm lời dẫn nếu có (FIX-04)
+    const renderAiTagline = () => {
+      if (!aiTagline) return null;
+      return (
+        <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--theme-primary, #e11d48)', marginBottom: 6, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+          {aiTagline}
+        </div>
+      );
+    };
+
     if (isCinemaLetterbox) {
       return renderContainer(
         <div className={styles.heroCinemaLetterboxWrap}>
@@ -481,33 +663,46 @@ export function ModuleRenderer({
           </div>
           <div className={styles.heroCinemaMainContent}>
             <div>
+              {renderHeroEarlyBirdChip()}
+              {renderAiTagline()}
               <h1 className={styles.heroCinemaHeadline}>{headline}</h1>
               <p className={styles.heroCinemaDesc}>{description}</p>
+              {renderHeroSpeakersSummary()}
               <div className={styles.heroCinemaActions}>
                 <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
                   Đăng ký tham gia ngay ↗
                 </button>
               </div>
             </div>
-            <div className={styles.heroCinemaPosterBadge}>
-              <div className={styles.heroCinemaPosterDate}>
-                {eventData.eventDate ? eventData.eventDate.split('-').reverse().join('/') : '20/11/2026'}
+            {(eventData.eventDate || eventData.venue) && (
+              <div className={styles.heroCinemaPosterBadge}>
+                {eventData.eventDate && (
+                  <div className={styles.heroCinemaPosterDate}>
+                    {eventData.eventDate.split('-').reverse().join('/')}
+                  </div>
+                )}
+                {eventData.venue && (
+                  <div className={styles.heroCinemaPosterLocation}>
+                    <MapPinIcon size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} />
+                    {eventData.venue}
+                  </div>
+                )}
               </div>
-              <div className={styles.heroCinemaPosterLocation}>
-                <MapPinIcon size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} />
-                {eventData.venue || 'Innovation Hub NIC'}
-              </div>
-            </div>
+            )}
           </div>
           <div className={styles.heroCinemaCreditsRow}>
-            <div className={styles.heroCinemaCreditItem}>
-              <CalendarIcon size={14} />
-              <span>{eventData.eventDate || '20/11/2026'} · {eventData.eventTime || '08:30'}</span>
-            </div>
-            <div className={styles.heroCinemaCreditItem}>
-              <MapPinIcon size={14} />
-              <span>{eventData.venue || 'Hà Nội, Việt Nam'}</span>
-            </div>
+            {eventData.eventDate && (
+              <div className={styles.heroCinemaCreditItem}>
+                <CalendarIcon size={14} />
+                <span>{eventData.eventDate}{eventData.eventTime ? ` · ${eventData.eventTime}` : ''}</span>
+              </div>
+            )}
+            {eventData.venue && (
+              <div className={styles.heroCinemaCreditItem}>
+                <MapPinIcon size={14} />
+                <span>{eventData.venue}</span>
+              </div>
+            )}
             <div className={styles.heroCinemaCreditItem}>
               <UsersIcon size={14} />
               <span>Khán phòng trực tiếp + Livestream</span>
@@ -526,6 +721,8 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.heroCenterTextWrap}>
           {renderHeroAbstractDecor()}
+          {renderHeroEarlyBirdChip()}
+          {renderAiTagline()}
           <h1 className={styles.heroTitleCentered}>{renderEditorialHeadline(headline, { addNewline: true })}</h1>
           <p className={styles.heroDescCentered}>{description}</p>
           <div className={styles.benefitsRecapChipsWrap} style={{ margin: '20px auto' }}>
@@ -535,10 +732,11 @@ export function ModuleRenderer({
               </span>
             ))}
           </div>
+          {renderHeroSpeakersSummary()}
           <div className={styles.heroMetaBarCenter}>
-            <span className={styles.metaPill}><CalendarIcon size={14} /> {eventData.eventDate || '20/11/2026'}</span>
-            <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime || '08:30'}</span>
-            <span className={styles.metaPill}><MapPinIcon size={14} /> {eventData.venue || 'Innovation Hub NIC'}</span>
+            {eventData.eventDate && <span className={styles.metaPill}><CalendarIcon size={14} /> {eventData.eventDate}</span>}
+            {eventData.eventTime && <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime} (GMT+7)</span>}
+            {eventData.venue && <span className={styles.metaPill}><MapPinIcon size={14} /> {eventData.venue}</span>}
           </div>
           <div className={styles.heroCtaRowCenter}>
             <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
@@ -555,8 +753,11 @@ export function ModuleRenderer({
         <div className={styles.heroBenefitsBandWrap}>
           {renderHeroAbstractDecor()}
           <div className={styles.heroHeaderCenter}>
+            {renderHeroEarlyBirdChip()}
+            {renderAiTagline()}
             <h1 className={styles.heroTitleCentered}>{renderEditorialHeadline(headline, { addNewline: true })}</h1>
             <p className={styles.heroDescCentered}>{description}</p>
+            {renderHeroSpeakersSummary()}
             <div className={styles.heroCtaRowCenter} style={{ marginTop: 20 }}>
               <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
                 Đăng ký nhận vé mời
@@ -580,8 +781,11 @@ export function ModuleRenderer({
       return renderContainer(
         <div className={styles.heroStackCardsWrap}>
           {renderHeroAbstractDecor()}
+          {renderHeroEarlyBirdChip()}
+          {renderAiTagline()}
           <h1 className={styles.heroTitleCentered}>{renderEditorialHeadline(headline, { addNewline: true })}</h1>
           <p className={styles.heroDescCentered}>{description}</p>
+          {renderHeroSpeakersSummary()}
           <div className={styles.heroCtaRowCenter} style={{ margin: '16px auto 0 auto' }}>
             <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
               Tham gia ngay hôm nay
@@ -610,8 +814,11 @@ export function ModuleRenderer({
         <div className={styles.heroSplitCardWrap}>
           {renderHeroAbstractDecor()}
           <div className={styles.heroSplitLeft}>
+            {renderHeroEarlyBirdChip()}
+            {renderAiTagline()}
             <h1 className={styles.heroTitle} style={{ textAlign: 'left' }}>{renderEditorialHeadline(headline, { addNewline: true })}</h1>
             <p className={styles.heroDesc} style={{ textAlign: 'left' }}>{description}</p>
+            {renderHeroSpeakersSummary()}
             <ul className={styles.heroBullets} style={{ paddingLeft: 0, listStyle: 'none' }}>
               {benefits.slice(0, 3).map((b, idx) => (
                 <li key={idx} className={styles.bulletItem}>
@@ -627,27 +834,35 @@ export function ModuleRenderer({
             </div>
           </div>
           <div className={styles.heroSplitCardGlass}>
-            <div className={styles.heroSplitMetaRow}>
-              <div className={styles.heroSplitMetaIcon}><CalendarIcon size={18} /></div>
-              <div>
-                <span className={styles.heroSplitMetaLabel}>Ngày tổ chức</span>
-                <span className={styles.heroSplitMetaVal}>{eventData.eventDate || '20/11/2026'}</span>
+            {eventData.eventDate && (
+              <div className={styles.heroSplitMetaRow}>
+                <div className={styles.heroSplitMetaIcon}><CalendarIcon size={18} /></div>
+                <div>
+                  <span className={styles.heroSplitMetaLabel}>Ngày tổ chức</span>
+                  <span className={styles.heroSplitMetaVal}>{eventData.eventDate}</span>
+                </div>
               </div>
-            </div>
-            <div className={styles.heroSplitMetaRow}>
-              <div className={styles.heroSplitMetaIcon}><ClockIcon size={18} /></div>
-              <div>
-                <span className={styles.heroSplitMetaLabel}>Thời gian</span>
-                <span className={styles.heroSplitMetaVal}>{eventData.eventTime || '08:30'} - 11:30</span>
+            )}
+            {eventData.eventTime && (
+              <div className={styles.heroSplitMetaRow}>
+                <div className={styles.heroSplitMetaIcon}><ClockIcon size={18} /></div>
+                <div>
+                  <span className={styles.heroSplitMetaLabel}>Thời gian</span>
+                  <span className={styles.heroSplitMetaVal}>
+                    {eventData.eventTime}{eventData.eventEndTime ? ` - ${eventData.eventEndTime}` : ' (GMT+7)'}
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className={styles.heroSplitMetaRow}>
-              <div className={styles.heroSplitMetaIcon}><MapPinIcon size={18} /></div>
-              <div>
-                <span className={styles.heroSplitMetaLabel}>Địa điểm</span>
-                <span className={styles.heroSplitMetaVal}>{eventData.venue || 'Innovation Hub NIC'}</span>
+            )}
+            {eventData.venue && (
+              <div className={styles.heroSplitMetaRow}>
+                <div className={styles.heroSplitMetaIcon}><MapPinIcon size={18} /></div>
+                <div>
+                  <span className={styles.heroSplitMetaLabel}>Địa điểm</span>
+                  <span className={styles.heroSplitMetaVal}>{eventData.venue}</span>
+                </div>
               </div>
-            </div>
+            )}
             <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 14 }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
                 Đếm ngược khai mạc
@@ -666,7 +881,10 @@ export function ModuleRenderer({
       <div className={`${styles.heroSplitWrap} ${isCenter ? styles.heroCenterWrap : ''}`}>
         {renderHeroAbstractDecor()}
         <div className={styles.heroHeaderCenter}>
+          {renderHeroEarlyBirdChip()}
+          {renderAiTagline()}
           <h1 className={styles.heroTitleCentered}>{renderEditorialHeadline(headline, { addNewline: true })}</h1>
+          {renderHeroSpeakersSummary()}
         </div>
 
         {isCenter ? (
@@ -687,9 +905,9 @@ export function ModuleRenderer({
               ))}
             </ul>
             <div className={styles.heroMetaBarCenter}>
-              <span className={styles.metaPill}><CalendarIcon size={14} /> {eventData.eventDate || 'Ngày công bố sớm'}</span>
-              <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime || '09:00'} (UTC+7)</span>
-              <span className={styles.metaPill}><MapPinIcon size={14} /> {eventData.venue || 'Địa điểm công bố sớm'}</span>
+              {eventData.eventDate && <span className={styles.metaPill}><CalendarIcon size={14} /> {eventData.eventDate}</span>}
+              {eventData.eventTime && <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime} (GMT+7)</span>}
+              {eventData.venue && <span className={styles.metaPill}><MapPinIcon size={14} /> {eventData.venue}</span>}
             </div>
             <div className={styles.heroCtaRowCenter}>
               <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
@@ -710,9 +928,9 @@ export function ModuleRenderer({
                 ))}
               </ul>
               <div className={styles.heroMetaBar}>
-                <span className={styles.metaPill}><CalendarIcon size={14} /> {eventData.eventDate || 'Ngày công bố sớm'}</span>
-                <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime || '09:00'} (UTC+7)</span>
-                <span className={styles.metaPill}><MapPinIcon size={14} /> {eventData.venue || 'Địa điểm công bố sớm'}</span>
+                {eventData.eventDate && <span className={styles.metaPill}><CalendarIcon size={14} /> {eventData.eventDate}</span>}
+                {eventData.eventTime && <span className={styles.metaPill}><ClockIcon size={14} /> {eventData.eventTime} (GMT+7)</span>}
+                {eventData.venue && <span className={styles.metaPill}><MapPinIcon size={14} /> {eventData.venue}</span>}
               </div>
               <div className={styles.heroCtaRow}>
                 <button type="button" className={styles.btnHeroCta} onClick={scrollToForm}>
@@ -796,9 +1014,11 @@ export function ModuleRenderer({
                   <p className={styles.cdPastMessage}>Chương trình đã kết thúc hoặc đang diễn ra trực tiếp.</p>
                 </div>
               )}
-              <div className={styles.cdCinematicMetaRow} style={{ justifyContent: 'flex-start', marginTop: 10 }}>
-                <span>{eventData.eventTime || '08:30'} · {eventData.eventDate || '20/11/2026'}</span>
-              </div>
+              {(eventData.eventTime || eventData.eventDate) && (
+                <div className={styles.cdCinematicMetaRow} style={{ justifyContent: 'flex-start', marginTop: 10 }}>
+                  <span>{eventData.eventTime ? `${eventData.eventTime} (GMT+7)` : ''}{eventData.eventTime && eventData.eventDate ? ' · ' : ''}{eventData.eventDate ? `Ngày ${eventData.eventDate}` : ''}</span>
+                </div>
+              )}
             </div>
 
             <div className={styles.cdCinematicRegCol} style={{ padding: '8px' }}>
@@ -826,7 +1046,7 @@ export function ModuleRenderer({
                 Giữ chỗ tham gia ngay ↗
               </button>
               <div style={{ fontSize: '0.78rem', color: '#94a3b8', textAlign: 'center', lineHeight: 1.4 }}>
-                ✓ Miễn phí tham dự · Xác nhận vé tức thì
+                {eventData.isFree === true ? '✓ Miễn phí tham dự · Xác nhận vé tức thì' : '✓ Xác nhận đăng ký ngay · Giữ chỗ nhanh chóng'}
               </div>
             </div>
           </div>
@@ -835,10 +1055,22 @@ export function ModuleRenderer({
     }
 
     if (isDateLeaf) {
-      const eventDateStr = eventData.eventDate || '2026-11-20';
+      if (!eventData.eventDate) return null;
+      const eventDateStr = eventData.eventDate;
       const dateParts = eventDateStr.split('-');
-      const monthLabel = dateParts[1] ? `T${parseInt(dateParts[1], 10)}` : 'T11';
-      const dayLabel = dateParts[2] ? dateParts[2] : '20';
+      const monthLabel = dateParts[1] ? `T${parseInt(dateParts[1], 10)}` : '';
+      const dayLabel = dateParts[2] ? dateParts[2] : '';
+
+      let weekdayLabel = '';
+      try {
+        const d = new Date(`${eventDateStr}T12:00:00+07:00`);
+        if (!isNaN(d.getTime())) {
+          const rawDay = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', timeZone: 'Asia/Ho_Chi_Minh' }).format(d);
+          weekdayLabel = rawDay.charAt(0).toUpperCase() + rawDay.slice(1);
+        }
+      } catch {
+        weekdayLabel = '';
+      }
 
       return renderContainer(
         <div className={styles.cdCinematicCard}>
@@ -851,9 +1083,9 @@ export function ModuleRenderer({
             <div className={styles.cdCinematicTimerCol}>
               <div className={styles.cdDateLeafWrap}>
                 <div className={styles.cdDateLeafBox}>
-                  <div className={styles.cdDateLeafMonth}>{monthLabel}</div>
-                  <div className={styles.cdDateLeafDay}>{dayLabel}</div>
-                  <div className={styles.cdDateLeafWeekday}>Thứ Sáu</div>
+                  {monthLabel && <div className={styles.cdDateLeafMonth}>{monthLabel}</div>}
+                  {dayLabel && <div className={styles.cdDateLeafDay}>{dayLabel}</div>}
+                  {weekdayLabel && <div className={styles.cdDateLeafWeekday}>{weekdayLabel}</div>}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div className={styles.cdCinematicTimerHeader} style={{ alignItems: 'flex-start', textAlign: 'left', marginBottom: 8 }}>
@@ -881,11 +1113,13 @@ export function ModuleRenderer({
                       <p className={styles.cdPastMessage}>Chương trình đã kết thúc hoặc đang diễn ra trực tiếp.</p>
                     </div>
                   )}
-                  <div className={styles.cdCinematicMetaRow} style={{ justifyContent: 'flex-start', marginTop: 10 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><ClockIcon size={13} /> Giờ Việt Nam</span>
-                    <span className={styles.cdCinematicMetaDot}>•</span>
-                    <span>{eventData.eventTime || '08:30'} Ngày {eventData.eventDate || '2026-11-20'}</span>
-                  </div>
+                  {(eventData.eventTime || eventData.eventDate) && (
+                    <div className={styles.cdCinematicMetaRow} style={{ justifyContent: 'flex-start', marginTop: 10 }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><ClockIcon size={13} /> Giờ Việt Nam</span>
+                      <span className={styles.cdCinematicMetaDot}>•</span>
+                      <span>{eventData.eventTime ? `${eventData.eventTime} (GMT+7)` : ''}{eventData.eventTime && eventData.eventDate ? ' · ' : ''}{eventData.eventDate ? `Ngày ${eventData.eventDate}` : ''}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -918,6 +1152,11 @@ export function ModuleRenderer({
     }
 
     if (isProgressBar) {
+      const speakersCount = Array.isArray(eventData.speakers) ? eventData.speakers.length : 0;
+      const progressPct = typeof custom.progressPercent === 'number'
+        ? Math.min(100, Math.max(0, custom.progressPercent))
+        : null;
+
       return renderContainer(
         <div className={styles.cdCinematicCard}>
           <div className={styles.cdCinematicGlowBg} aria-hidden="true" />
@@ -933,14 +1172,20 @@ export function ModuleRenderer({
                     <ClockIcon size={16} className={styles.cdCinematicClockIcon} />
                     <span className={styles.cdCinematicTimerEyebrow}>TIẾN ĐỘ CHUẨN BỊ</span>
                   </div>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f59e0b' }}>Còn {countdown.d} ngày {countdown.h} giờ</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f59e0b' }}>
+                    {!countdown.isPast ? `Còn ${countdown.d} ngày ${countdown.h} giờ` : 'Đang diễn ra'}
+                  </span>
                 </div>
-                <div className={styles.cdProgressBarTrack}>
-                  <div className={styles.cdProgressBarFill} style={{ width: '82%' }} />
-                </div>
+                {progressPct !== null && (
+                  <div className={styles.cdProgressBarTrack}>
+                    <div className={styles.cdProgressBarFill} style={{ width: `${progressPct}%` }} />
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, fontSize: '0.75rem', color: '#94a3b8' }}>
-                  <span>Đã hoàn tất 82% khâu chuẩn bị hội trường và giáo trình</span>
-                  <span style={{ color: '#cbd5e1', fontWeight: 600 }}>18/20 Diễn giả sẵn sàng</span>
+                  <span>{progressPct !== null ? `Đã hoàn tất ${progressPct}% khâu chuẩn bị` : 'Khâu chuẩn bị sự kiện đang được tích cực hoàn thiện'}</span>
+                  {speakersCount > 0 && (
+                    <span style={{ color: '#cbd5e1', fontWeight: 600 }}>{speakersCount} Diễn giả sẵn sàng</span>
+                  )}
                 </div>
 
                 <div className={styles.cdDigitsRow} style={{ marginTop: 20 }}>
@@ -953,9 +1198,13 @@ export function ModuleRenderer({
                   <div className={styles.cdDigitBlock}><span className={styles.digitVal}>{String(countdown.s).padStart(2, '0')}</span><span className={styles.digitLabel}>Giây</span></div>
                 </div>
 
-                <div className={styles.cdCinematicMetaRow} style={{ marginTop: 12 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><CalendarIcon size={13} /> Khai mạc: {eventData.eventTime || '08:30'} Ngày {eventData.eventDate || '2026-11-20'}</span>
-                </div>
+                {(eventData.eventTime || eventData.eventDate) && (
+                  <div className={styles.cdCinematicMetaRow} style={{ marginTop: 12 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                      <CalendarIcon size={13} /> Khai mạc: {eventData.eventTime ? `${eventData.eventTime} (GMT+7) ` : ''}{eventData.eventDate ? `Ngày ${eventData.eventDate}` : ''}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1013,11 +1262,13 @@ export function ModuleRenderer({
                   <div className={styles.cdDigitBlock}><span className={styles.digitVal}>{String(countdown.s).padStart(2, '0')}</span><span className={styles.digitLabel}>Giây</span></div>
                 </div>
 
-                <div className={styles.cdCinematicMetaRow}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><ClockIcon size={13} /> Giờ Việt Nam</span>
-                  <span className={styles.cdCinematicMetaDot}>•</span>
-                  <span>{eventData.eventTime || '08:30'} Ngày {eventData.eventDate || '2026-11-20'}</span>
-                </div>
+                {(eventData.eventTime || eventData.eventDate) && (
+                  <div className={styles.cdCinematicMetaRow}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><ClockIcon size={13} /> Giờ Việt Nam</span>
+                    <span className={styles.cdCinematicMetaDot}>•</span>
+                    <span>{eventData.eventTime ? `${eventData.eventTime} (GMT+7)` : ''}{eventData.eventTime && eventData.eventDate ? ' · ' : ''}{eventData.eventDate ? `Ngày ${eventData.eventDate}` : ''}</span>
+                  </div>
+                )}
               </>
             ) : (
               <div className={styles.cdPastBox}>
@@ -1035,11 +1286,18 @@ export function ModuleRenderer({
   // 3. SPEAKERS MODULE (3 Biến thể tinh gọn: portrait-cards, trio-typographic, solo-spotlight)
   // ================================================================
   if (module.type === 'speakers') {
-    const rawSpeakers = eventData.speakers?.length ? eventData.speakers : [
-      { id: '1', name: 'TS. Nguyễn Văn An', title: 'Viện trưởng Viện Nghiên cứu Trí tuệ Nhân tạo' },
-      { id: '2', name: 'ThS. Trần Thị Mai Phương', title: 'Lead AI Architect @ TechCorp Global' },
-      { id: '3', name: 'Ông Lê Hoàng Minh', title: 'Chuyên gia Thiết kế Hệ thống & Vibe Coder' },
-    ];
+    const rawSpeakers = Array.isArray(eventData.speakers) ? eventData.speakers : [];
+
+    if (rawSpeakers.length === 0) {
+      return renderContainer(
+        <div className={styles.speakersContainer}>
+          <div className={`${styles.blockTitleCenter} ${styles.speakersTitleSpaced}`}>
+            <h2 className={styles.secTitle}>Diễn giả khách mời</h2>
+            <p className={styles.secDesc}>Danh sách diễn giả đang được cập nhật</p>
+          </div>
+        </div>
+      );
+    }
 
     const isTrioTypo = variant === 'trio-typographic';
     const isSoloSpotlight = variant === 'solo-spotlight';
@@ -1067,8 +1325,8 @@ export function ModuleRenderer({
 
     // Biến thể 2: solo-spotlight (Khi có đúng 1 diễn giả tâm điểm; nếu có từ 2 diễn giả trở lên sẽ tự động hiển thị dạng thẻ cân đối để không bị ẩn khách mời)
     if (isSoloSpotlight && rawSpeakers.length === 1) {
-      const spk = rawSpeakers[0] || { name: 'TS. Nguyễn Văn An', title: 'Viện trưởng Viện Nghiên cứu Trí tuệ Nhân tạo' };
-      const asset = getSpeakerAsset(0);
+      const spk = rawSpeakers[0];
+      const asset = getSpeakerAsset(0, spk, rawSpeakers);
       const speakerBio = spk.bio || (eventData.eventName
         ? `Diễn giả khách mời đồng hành và trực tiếp chia sẻ chuyên sâu tại ${eventData.eventName}.`
         : 'Diễn giả khách mời chia sẻ kinh nghiệm thực tiễn và giao lưu trực tiếp cùng người tham dự.');
@@ -1113,7 +1371,7 @@ export function ModuleRenderer({
         </div>
         <div className={styles.spkPortraitCards} data-speaker-count={rawSpeakers.length}>
           {rawSpeakers.map((spk, idx) => {
-            const asset = getSpeakerAsset(idx);
+            const asset = getSpeakerAsset(idx, spk, rawSpeakers);
             return (
               <div key={spk.id || idx} className={styles.spkPortraitCard}>
                 <div className={styles.spkPortraitMedia}>
@@ -1669,19 +1927,26 @@ export function ModuleRenderer({
     }
 
     if (isSplitOffer) {
+      if (!eventData.earlyBirdOffer) {
+        return renderContainer(
+          <div className={styles.formCompactWrap}>
+            <div className={styles.formCard}>{renderFormCardContent()}</div>
+          </div>
+        );
+      }
       return renderContainer(
         <div className={styles.formSplitOfferWrap}>
           <div>
-            <span className={styles.heroEarlyBird}><SparklesIcon size={14} /> Ưu đãi giới hạn</span>
+            <span className={styles.heroEarlyBird}><SparklesIcon size={14} /> Ưu đãi đăng ký sớm</span>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '12px 0 8px 0', color: '#0f172a' }}>
-              {eventData.earlyBirdOffer || 'Nhận trọn bộ Ebook & Mã giảm giá 30%'}
+              {eventData.earlyBirdOffer}
             </h2>
             <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6 }}>
-              Chỉ áp dụng cho những người đăng ký trước hạn chót. Đừng bỏ lỡ quyền lợi độc quyền này!
+              Áp dụng cho những người đăng ký trước hạn chót. Đừng bỏ lỡ quyền lợi đặc biệt này!
             </p>
             <div style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 6, color: 'var(--theme-primary, #e11d48)', fontWeight: 700 }}>
               <ClockIcon size={16} />
-              <span>Chỉ còn {countdown.d} ngày {countdown.h} giờ cuối cùng</span>
+              <span>{!countdown.isPast ? `Chỉ còn ${countdown.d} ngày ${countdown.h} giờ cuối cùng` : 'Thời hạn ưu đãi đã kết thúc'}</span>
             </div>
           </div>
           <div className={styles.formCard}>{renderFormCardContent()}</div>
@@ -1838,7 +2103,9 @@ export function ModuleRenderer({
             <div>
               <h4 className={styles.venueName}>{venueName}</h4>
               <p className={styles.venueAddressText}>{venueAddress}</p>
-              <p className={styles.venueGuide}>{eventData.venueNotes || 'Không gian sự kiện được trang bị hệ thống âm thanh, màn hình trình chiếu và khu vực check-in QR thuận tiện.'}</p>
+              {(eventData.venueNotes || eventData.venueNote || venueAsset?.caption) && (
+                <p className={styles.venueGuide}>{eventData.venueNotes || eventData.venueNote || venueAsset.caption}</p>
+              )}
             </div>
           </div>
         </div>
@@ -2074,25 +2341,27 @@ export function ModuleRenderer({
   // 10. FAQ MODULE
   // ================================================================
   if (module.type === 'faq') {
-    const speakerNames = Array.isArray(eventData.speakers) && eventData.speakers.length > 0
+    const hasSpeakers = Array.isArray(eventData.speakers) && eventData.speakers.length > 0;
+    const hasDateTimeOrVenue = Boolean(eventData.eventDate || eventData.venue || eventData.eventTime);
+    const speakerNames = hasSpeakers
       ? eventData.speakers.map((s) => (typeof s === 'string' ? s : s.name)).filter(Boolean).join(', ')
-      : 'các chuyên gia và diễn giả của chương trình';
+      : '';
     const defaultFaqs = [
-      {
+      hasDateTimeOrVenue ? {
         q: 'Sự kiện diễn ra vào thời gian và địa điểm nào?',
-        a: `Chương trình diễn ra vào ngày ${eventData.eventDate || 'theo thông báo'} lúc ${eventData.eventTime || '09:00'} (GMT+7) tại ${eventData.venue || 'địa điểm tổ chức sự kiện'}.`,
-      },
-      {
+        a: `Chương trình diễn ra${eventData.eventDate ? ` vào ngày ${eventData.eventDate}` : ''}${eventData.eventTime ? ` lúc ${eventData.eventTime} (GMT+7)` : ''}${eventData.venue ? ` tại ${eventData.venue}` : ''}.`,
+      } : null,
+      hasSpeakers ? {
         q: 'Ai là diễn giả chia sẻ tại chương trình?',
         a: `Sự kiện có sự tham gia chia sẻ của ${speakerNames}.`,
-      },
+      } : null,
       {
-        q: 'Làm thế nào để đăng ký giữ chỗ và nhận ưu đãi?',
+        q: 'Làm thế nào để đăng ký giữ chỗ và nhận vé?',
         a: eventData.earlyBirdOffer
-          ? `Bạn hãy điền thông tin tại biểu mẫu đăng ký trên trang này để nhận ngay ưu đãi: ${eventData.earlyBirdOffer}.`
-          : 'Bạn chỉ cần hoàn tất biểu mẫu đăng ký trực tuyến ngay trên trang để nhận mã QR xác nhận tham dự.',
+          ? `Bạn hãy điền thông tin tại biểu mẫu đăng ký trên trang này để giữ chỗ và nhận ưu đãi: ${eventData.earlyBirdOffer}.`
+          : 'Bạn chỉ cần hoàn tất biểu mẫu đăng ký trực tuyến ngay trên trang để nhận vé xác nhận tham dự.',
       },
-    ];
+    ].filter(Boolean);
     const customFaqs = Array.isArray(custom.items) && custom.items.length > 0 ? custom.items : null;
     const faqs = customFaqs || ((aiData?.faq && Array.isArray(aiData.faq) && aiData.faq.length > 0) ? aiData.faq : defaultFaqs);
 
@@ -2153,11 +2422,12 @@ export function ModuleRenderer({
                 Event Landing Studio · Vibecoding 2026
               </p>
             </div>
-            <div>
-              <div className={styles.footerCreditsColTitle}>KEY LOCATIONS</div>
-              <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#ffffff' }}>{eventData.venue || 'Innovation Hub NIC'}</p>
-              <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>Hà Nội, Việt Nam</p>
-            </div>
+            {eventData.venue && (
+              <div>
+                <div className={styles.footerCreditsColTitle}>KEY LOCATIONS</div>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#ffffff' }}>{eventData.venue}</p>
+              </div>
+            )}
             <div>
               <div className={styles.footerCreditsColTitle}>PROGRAMME</div>
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -2166,21 +2436,29 @@ export function ModuleRenderer({
                 <li><span style={{ cursor: 'pointer', color: '#cbd5e1' }} onClick={() => scrollToTarget('form')}>Đăng ký vé</span></li>
               </ul>
             </div>
-            <div>
-              <div className={styles.footerCreditsColTitle}>COMMUNICATIONS</div>
-              <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#ffffff' }}>contact@vibecoding.vn</p>
-              <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>Hotline: 024 3999 8888</p>
-            </div>
+            {(aiData?.organizer?.email || aiData?.organizer?.hotline || eventData.organizerEmail || eventData.organizerPhone) && (
+              <div>
+                <div className={styles.footerCreditsColTitle}>COMMUNICATIONS</div>
+                {(aiData?.organizer?.email || eventData.organizerEmail) && (
+                  <p style={{ margin: '0 0 4px 0', fontSize: '0.85rem', color: '#ffffff' }}>{aiData?.organizer?.email || eventData.organizerEmail}</p>
+                )}
+                {(aiData?.organizer?.hotline || eventData.organizerPhone) && (
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>Hotline: {aiData?.organizer?.hotline || eventData.organizerPhone}</p>
+                )}
+              </div>
+            )}
           </div>
-          <div className={styles.footerMockNotice}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <InfoIcon size={14} />
-              <span>Đây là giao diện workshop mẫu phục vụ thử nghiệm giao diện. Thông tin sự kiện mang tính minh họa.</span>
+          {aiData?.source !== 'ai' && (
+            <div className={styles.footerMockNotice}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <InfoIcon size={14} />
+                <span>Đây là giao diện workshop mẫu phục vụ thử nghiệm giao diện. Thông tin sự kiện mang tính minh họa.</span>
+              </div>
+              <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#64748b' }}>
+                © 2026 {eventData.eventName || 'Sự kiện'}. ALL RIGHTS RESERVED.
+              </div>
             </div>
-            <div style={{ marginTop: 8, fontSize: '0.75rem', color: '#64748b' }}>
-              © 2026 {eventData.eventName || 'Sự kiện'}. ALL RIGHTS RESERVED.
-            </div>
-          </div>
+          )}
           <div className={styles.footerBrandWatermark}>
             Event Landing Studio®
           </div>
@@ -2225,8 +2503,8 @@ export function ModuleRenderer({
               <ul className={styles.footerColLinks}>
                 {aiData?.organizer?.email && <li><span>Email: {aiData.organizer.email}</span></li>}
                 {aiData?.organizer?.hotline && <li><span>Hotline: {aiData.organizer.hotline}</span></li>}
-                <li><span>Thời gian: {eventData.eventTime || '08:30'} · {eventData.eventDate || '2026'}</span></li>
-                <li><span>Địa điểm: {eventData.venue || 'Theo thông báo'}</span></li>
+                {eventData.eventTime && <li><span>Thời gian: {eventData.eventTime} (GMT+7){eventData.eventDate ? ` · Ngày ${eventData.eventDate}` : ''}</span></li>}
+                {eventData.venue && <li><span>Địa điểm: {eventData.venue}</span></li>}
               </ul>
             </div>
           </div>
@@ -2237,7 +2515,7 @@ export function ModuleRenderer({
             <div>
               <strong style={{ fontSize: '1rem', color: '#0f172a' }}>{eventData.eventName || 'Sự kiện 2026'}</strong>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-                {eventData.eventTime || '08:30'} · {eventData.eventDate || '2026'} · {eventData.venue || 'Địa điểm sự kiện'}
+                {[eventData.eventTime ? `${eventData.eventTime} (GMT+7)` : null, eventData.eventDate ? `Ngày ${eventData.eventDate}` : null, eventData.venue].filter(Boolean).join(' · ')}
               </p>
             </div>
             <button type="button" className={styles.scBtn} onClick={scrollToForm}>
@@ -2250,10 +2528,12 @@ export function ModuleRenderer({
           <p className={styles.footerCopyright}>
             © 2026 {eventData.eventName || 'Sự kiện'}. Tạo bởi Event Landing Studio.
           </p>
-          <div className={styles.systemMockNotice}>
-            <InfoIcon size={14} />
-            <span>Bản demo vòng loại - Dữ liệu mô phỏng AI.</span>
-          </div>
+          {aiData?.source !== 'ai' && (
+            <div className={styles.systemMockNotice}>
+              <InfoIcon size={14} />
+              <span>Bản demo vòng loại - Dữ liệu mô phỏng AI.</span>
+            </div>
+          )}
           <div className={styles.footerBrandWatermark}>
             Event Landing Studio®
           </div>
@@ -2266,7 +2546,7 @@ export function ModuleRenderer({
   // 13. NAV MODULE (Expanded: cinema-glass, pill-float, chips-scroll, minimal-cta, bar)
   // ================================================================
   if (module.type === 'nav') {
-    const brand = eventData.eventName || 'VIBE CODING 2026';
+    const brand = (eventData.eventName || '').trim() || 'Sự kiện';
     const isCinemaGlass = variant === 'cinema-glass';
     const isPillFloat = variant === 'pill-float';
     const isChipsScroll = variant === 'chips-scroll';
@@ -2407,17 +2687,16 @@ export function ModuleRenderer({
   // 15. STATS MODULE (Expanded: cards, big-number, inline-text, row)
   // ================================================================
   if (module.type === 'stats') {
-    const speakerCount = Array.isArray(eventData.speakers) && eventData.speakers.length > 0 ? eventData.speakers.length : 1;
-    const agendaCount = Array.isArray(eventData.agenda) && eventData.agenda.length > 0 ? eventData.agenda.length : 3;
-    const capacityVal = Number(eventData.capacity) > 0 ? String(eventData.capacity) : 'Trực tiếp';
+    const speakerCount = Array.isArray(eventData.speakers) && eventData.speakers.length > 0 ? eventData.speakers.length : 0;
+    const agendaCount = Array.isArray(eventData.agenda) && eventData.agenda.length > 0 ? eventData.agenda.length : 0;
     const defaultStats = [
-      { num: String(agendaCount), label: 'Phiên nội dung chuyên đề', sub: 'Lịch trình bài bản' },
-      { num: String(speakerCount), label: 'Diễn giả chia sẻ', sub: 'Kinh nghiệm thực tiễn' },
-      { num: capacityVal, label: Number(eventData.capacity) > 0 ? 'Chỉ tiêu tham dự' : 'Hình thức tổ chức', sub: eventData.venue || 'Không gian sự kiện' },
-      { num: '100%', label: 'Tâm huyết tổ chức', sub: 'Trải nghiệm chuyên nghiệp' },
-    ];
+      agendaCount > 0 ? { num: String(agendaCount), label: 'Phiên nội dung chuyên đề', sub: 'Lịch trình bài bản' } : null,
+      speakerCount > 0 ? { num: String(speakerCount), label: 'Diễn giả chia sẻ', sub: 'Kinh nghiệm thực tiễn' } : null,
+      Number(eventData.capacity) > 0 ? { num: String(eventData.capacity), label: 'Chỉ tiêu tham dự', sub: eventData.venue || 'Không gian sự kiện' } : null,
+    ].filter(Boolean);
     const customStats = Array.isArray(custom.stats) && custom.stats.length > 0 ? custom.stats : null;
     const statsList = customStats || ((aiData?.stats && Array.isArray(aiData.stats) && aiData.stats.length > 0) ? aiData.stats : defaultStats);
+    if (statsList.length === 0) return null;
 
     const isCards = variant === 'cards';
     const isBigNumber = variant === 'big-number';
@@ -2505,9 +2784,48 @@ export function ModuleRenderer({
       },
     ];
 
+    // Chuẩn hóa phần tử audience để chống rỗng khi AI trả về mảng chuỗi string hoặc schema key khác nhau
+    const normalizeAudienceItem = (item, idx) => {
+      if (!item) return null;
+      if (typeof item === 'string') {
+        const text = item.trim();
+        if (!text) return null;
+        const parts = text.split(/[:–—]/);
+        if (parts.length >= 2 && parts[0].trim().length > 0) {
+          return {
+            badge: `Nhóm 0${idx + 1}`,
+            title: parts[0].trim(),
+            desc: parts.slice(1).join(':').trim(),
+          };
+        }
+        return {
+          badge: `Nhóm 0${idx + 1}`,
+          title: text,
+          desc: `Phù hợp tham dự để cập nhật kiến thức chuyên sâu và mở rộng cơ hội thực tiễn.`,
+        };
+      }
+      if (typeof item === 'object') {
+        const title = (item.title || item.name || item.group || item.target || item.role || item.persona || '').trim();
+        const desc = (item.desc || item.description || item.detail || item.content || item.summary || '').trim();
+        if (!title && !desc) return null;
+        return {
+          badge: item.badge || `Nhóm 0${idx + 1}`,
+          title: title || `Nhóm đối tượng 0${idx + 1}`,
+          desc: desc || `Phù hợp tham dự sự kiện ${eventData.eventName || 'chương trình'}.`,
+        };
+      }
+      return null;
+    };
+
     const customAudience = Array.isArray(custom.items) && custom.items.length > 0 ? custom.items : null;
     const aiAudience = Array.isArray(aiData?.audience) && aiData.audience.length > 0 ? aiData.audience : null;
-    const audienceList = customAudience || aiAudience || defaultAudienceList;
+    const rawAudienceList = customAudience || aiAudience || defaultAudienceList;
+    const audienceList = rawAudienceList.map(normalizeAudienceItem).filter(Boolean);
+
+    // Nếu không có phần tử hợp lệ nào có nội dung -> ẩn module để tránh hiển thị thẻ rỗng
+    if (audienceList.length === 0) {
+      return null;
+    }
 
     const isPersona = variant === 'persona-cards';
     const isChecklist = variant === 'checklist';
@@ -2569,7 +2887,7 @@ export function ModuleRenderer({
             <div className={styles.audNoCol}>
               <h4 style={{ margin: '0 0 12px 0', color: '#991b1b', fontSize: '1.05rem' }}>ℹ LƯU Ý THAM DỰ:</h4>
               <ul style={{ paddingLeft: 18, margin: 0, fontSize: '0.85rem', color: '#b91c1c', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <li>Chương trình tổ chức đúng giờ vào lúc {eventData.eventTime || '08:30'} ngày {eventData.eventDate || 'theo thông báo'}.</li>
+                <li>Chương trình tổ chức đúng giờ{eventData.eventTime ? ` vào lúc ${eventData.eventTime} (GMT+7)` : ''}{eventData.eventDate ? ` ngày ${eventData.eventDate}` : ''}.</li>
                 <li>Vui lòng hoàn tất đăng ký trước để nhận mã QR check-in tại {eventData.venue || 'địa điểm sự kiện'}.</li>
               </ul>
             </div>
@@ -2606,9 +2924,34 @@ export function ModuleRenderer({
     const firstSpeakerName = Array.isArray(eventData.speakers) && eventData.speakers[0]?.name
       ? eventData.speakers[0].name
       : 'diễn giả chương trình';
+
+    const normalizeBentoItem = (item, idx) => {
+      if (!item) return null;
+      if (typeof item === 'string') {
+        const text = item.trim();
+        if (!text) return null;
+        const parts = text.split(/[:–—]/);
+        return {
+          tag: `0${idx + 1} / TIÊU ĐIỂM`,
+          title: parts[0]?.trim() || text,
+          desc: parts.slice(1).join(':').trim() || description,
+        };
+      }
+      if (typeof item === 'object') {
+        const title = (item.title || item.name || item.heading || item.topic || item.highlight || '').trim();
+        const desc = (item.desc || item.description || item.detail || item.content || item.summary || '').trim();
+        return {
+          tag: item.tag || `0${idx + 1} / TIÊU ĐIỂM`,
+          title: title || headline,
+          desc: desc || description,
+        };
+      }
+      return null;
+    };
+
     const customBento = Array.isArray(custom.items) && custom.items.length > 0 ? custom.items : null;
     const aiBento = Array.isArray(aiData?.bentoHighlights) && aiData.bentoHighlights.length > 0 ? aiData.bentoHighlights : null;
-    const bentoItems = customBento || aiBento || [
+    const rawBentoList = customBento || aiBento || [
       {
         tag: '01 / GIÁ TRỊ TRỌNG TÂM',
         title: benefits[0] || headline,
@@ -2630,6 +2973,7 @@ export function ModuleRenderer({
         desc: eventData.venueNotes || `Tổ chức tại ${eventData.venue || 'địa điểm sự kiện'} với quy trình check-in mã QR nhanh chóng.`,
       },
     ];
+    const bentoItems = rawBentoList.map(normalizeBentoItem).filter(Boolean);
 
     if (isBento3) {
       return renderContainer(
@@ -2872,11 +3216,16 @@ export function ModuleRenderer({
     const emailMatch = extraDesc.match(/[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}/);
     const phoneMatch = extraDesc.match(/(?:0|\+84)[\d\s.-]{8,13}\d/);
 
+    const orgEmail = orgData.email || eventData.organizerEmail || (emailMatch ? emailMatch[0] : null);
+    const orgHotline = orgData.hotline || eventData.organizerPhone || (phoneMatch ? phoneMatch[0].trim() : null);
+
+    if (!orgData.name && !eventData.organizerName && !orgEmail && !orgHotline && !extraDesc) {
+      return null;
+    }
+
     const orgName = orgData.name || eventData.organizerName || `Ban Tổ Chức — ${eventData.eventName || 'Sự kiện'}`;
     const orgTagline = orgData.tagline || extraDesc || description;
-    const orgEmail = orgData.email || (emailMatch ? emailMatch[0] : null);
-    const orgHotline = orgData.hotline || (phoneMatch ? phoneMatch[0].trim() : null);
-    const orgHours = orgData.hours || `${eventData.eventTime || '08:30'} · Ngày ${eventData.eventDate || 'theo lịch trình'}`;
+    const orgHours = orgData.hours || (eventData.eventTime ? `${eventData.eventTime} (GMT+7)${eventData.eventDate ? ` · Ngày ${eventData.eventDate}` : ''}` : (eventData.eventDate ? `Ngày ${eventData.eventDate}` : 'Theo thông báo'));
 
     return renderContainer(
       <div className={styles.orgCard}>
@@ -2895,14 +3244,18 @@ export function ModuleRenderer({
               <span className={styles.orgItemVal}>{orgHotline}</span>
             </div>
           )}
-          <div className={styles.orgItem}>
-            <span className={styles.orgItemLabel}>Địa điểm đón tiếp</span>
-            <span className={styles.orgItemVal}>{orgData.venue || eventData.venue || 'Tại hội trường sự kiện'}</span>
-          </div>
-          <div className={styles.orgItem}>
-            <span className={styles.orgItemLabel}>Thời gian tổ chức</span>
-            <span className={styles.orgItemVal}>{orgHours}</span>
-          </div>
+          {eventData.venue && (
+            <div className={styles.orgItem}>
+              <span className={styles.orgItemLabel}>Địa điểm đón tiếp</span>
+              <span className={styles.orgItemVal}>{orgData.venue || eventData.venue}</span>
+            </div>
+          )}
+          {orgHours && (
+            <div className={styles.orgItem}>
+              <span className={styles.orgItemLabel}>Thời gian tổ chức</span>
+              <span className={styles.orgItemVal}>{orgHours}</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -2913,17 +3266,21 @@ export function ModuleRenderer({
   // ================================================================
   if (module.type === 'announcement_bar') {
     if (announcementClosed) return null;
-    const ann = custom.announcement || mock.announcementBar;
+    const annText = custom.announcement?.text
+      || eventData.earlyBirdOffer
+      || (eventData.eventDate && eventData.venue ? `Sự kiện diễn ra ngày ${eventData.eventDate} tại ${eventData.venue}` : null);
+    if (!annText) return null;
+    const ctaText = custom.announcement?.ctaText || 'Đăng ký ngay';
 
     return renderContainer(
       <div className={styles.annTopStrip}>
-        <span>{ann.text}</span>
+        <span>{annText}</span>
         <button
           type="button"
           onClick={scrollToForm}
           style={{ background: '#ffffff', color: '#b91c1c', border: 'none', padding: '4px 10px', borderRadius: 6, fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer', marginLeft: 8 }}
         >
-          {ann.ctaText || 'Đăng ký ngay'}
+          {ctaText}
         </button>
         <button
           type="button"

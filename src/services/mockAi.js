@@ -239,6 +239,34 @@ export function generateMockContent(eventData = {}, assets = []) {
     recommendedSpeakerVariant = 'portrait-cards';
   }
 
+  // Ánh xạ ảnh diễn giả chính xác chống gán chéo
+  const rawSpeakersList = Array.isArray(eventData.speakersList)
+    ? eventData.speakersList
+    : (Array.isArray(eventData.speakers)
+      ? eventData.speakers
+      : (speakers.length > 0 ? speakers.map((name, i) => ({ id: `spk_${i + 1}`, name })) : []));
+
+  const cleanSpkName = (n = '') => String(n).toLowerCase().replace(/^(ts\.|ths\.|ông|bà|dr\.)\s+/i, '').trim();
+
+  const mappedAiSpeakers = rawSpeakersList.map((spk, idx) => {
+    const spkName = typeof spk === 'string' ? spk : spk?.name || '';
+    const cleanName = cleanSpkName(spkName);
+    const spkId = typeof spk === 'object' ? spk?.id : null;
+
+    // Ưu tiên 1: khớp speakerRef hoặc caption
+    const matchedAsset = speakerAssets.find((a) => {
+      if (spkId && a.speakerRef && a.speakerRef === spkId) return true;
+      if (cleanName.length >= 2 && a.caption && cleanSpkName(a.caption).includes(cleanName)) return true;
+      return false;
+    }) || (!speakerAssets.some((a) => a.caption && cleanSpkName(a.caption).length >= 3 && cleanSpkName(a.caption) !== cleanName) ? speakerAssets[idx] : null);
+
+    return {
+      name: spkName,
+      title: typeof spk === 'object' ? spk?.title || '' : '',
+      avatarAssetId: matchedAsset?.id || null,
+    };
+  });
+
   const capacityNum = Number(eventData.capacity || 0);
   const stats = [
     {
@@ -261,6 +289,7 @@ export function generateMockContent(eventData = {}, assets = []) {
     description,
     benefits,
     bullets: benefits, // Tương thích cả 2 chuẩn
+    speakers: mappedAiSpeakers,
     recommendedPreset: inferredDesign.presetId,
     recommendedSpeakerVariant,
     colorTheme: inferredDesign.colorTheme,
@@ -276,7 +305,7 @@ export function generateMockContent(eventData = {}, assets = []) {
       venueImageId: venueAsset?.id || null,
       giftImageId: giftAsset?.id || null,
       contentImageId: contentAsset?.id || null,
-      speakerImageIds: speakerAssets.map((s) => s.id),
+      speakerImageIds: mappedAiSpeakers.map((s) => s.avatarAssetId),
     },
     source: 'mock',
     model: 'mock-engine',
