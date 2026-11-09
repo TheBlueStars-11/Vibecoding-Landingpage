@@ -1,161 +1,210 @@
-# Event Landing Studio (ELS) — Vibecoding 2026
+# Event Landing Studio — Cuộc thi Vibe Coding 2026
 
-> 🌐 **BẢN TRIỂN KHAI TRỰC TUYẾN CHÍNH THỨC (LIVE DEMO HTTPS):**  
-> 👉 [https://vibecoding-landingpage.vercel.app](https://vibecoding-landingpage.vercel.app)  
-> *(Trải nghiệm tức thì không cần cài đặt — Tương thích trên Desktop, Laptop, iPhone, iPad, Android)*
+> Các mục dạng `<...>` là thông tin cần đội điền trước khi nộp bài.
 
----
+## 1. Thông tin chung
 
-## 1. ĐỀ TÀI SỐ 08: TẠO LANDING PAGE SỰ KIỆN TRONG 5 PHÚT
+| Hạng mục | Nội dung |
+|---|---|
+| Tên đội thi | `Đệ tử thầy Hoan` |
+| Bảng thi | `Bảng A - Công nghệ` |
+| Đề bài bốc thăm | Đề số `08` — `Tạo landing page sự kiện trong 5 phút` |
+| Demo online | `<URL nếu có; bảng B có thể chạy từ source>` |
+| Video demo (≤ 02 phút) | `<URL>` |
+| Source ZIP | `<URL tải gói mã nguồn ZIP>` |
+| Minh chứng dùng AI | `<Kèm trong Mục 10 của tài liệu này>` |
+| Bảng kiểm thử | `<Kèm trong Mục 11 của tài liệu này>` |
 
-- **Tên đề bài:** Đề số 08 — Hệ thống tạo Landing Page Sự kiện trong 5 phút ứng dụng AI Agentic Coding.
-- **Tên sản phẩm:** **Event Landing Studio (ELS)**.
-- **Cuộc thi:** Cuộc thi Vibe Coding 2026 — Bảng A (Công nghệ) & Bảng B (Kinh tế).
-- **Mục tiêu sản phẩm:** Giải quyết bài toán tạo trang đích (landing page) sự kiện chuyên nghiệp với chi phí 0đ và thời gian dưới 5 phút cho nhà tổ chức sự kiện, câu lạc bộ, doanh nghiệp vừa và nhỏ (SME). Ứng dụng AI biên soạn nội dung chuẩn marketing, tự động phân bổ bố cục, cung cấp form đăng ký động chống trùng lặp, sinh mã vé kèm QR code check-in tức thì, hỗ trợ xuất danh sách CSV / Excel và thống kê thời gian thực.
-- **Phạm vi hoàn thiện:** Web Application Responsive hoạt động độc lập 100% trên `localStorage` của trình duyệt (Offline-first) kết hợp Serverless Proxy bảo vệ khóa API và tiện ích đồng bộ QR đa thiết bị.
+> Tiêu chí vòng loại: https://vibecoding.info.vn/tieu-chi-cham-thi
+> Bảng A: ít nhất 6 ca kiểm thử; chỉ dùng Mock thì nhóm A3 tối đa 4/15 điểm.
+> Bảng B: ít nhất 3 ca kiểm thử; AI thật hoặc Mock minh bạch đều có thể đạt 100/100 theo chuẩn bảng B.
+> Không đưa khóa API hoặc mật khẩu vào bài nộp.
 
----
+## 2. Tính năng chính
 
-## 2. CÔNG NGHỆ SỬ DỤNG
+- Nhập thông tin sự kiện (tên, thời gian, địa điểm, diễn giả, ưu đãi đăng ký sớm, lịch trình, ảnh minh hoạ).
+- `AI phân tích dữ liệu và tự động sinh nội dung landing page (tiêu đề, mô tả, lợi ích, FAQ, bố cục, màu sắc)`
+- `Xem trước landing page, tuỳ chỉnh module, xuất bản và chia sẻ qua QR code / link`
+- `Khách truy cập landing page và đăng ký tham dự; nhận mã vé DK-XXXXXX tức thì`
+- `Quản trị viên xem danh sách đăng ký, check-in bằng QR, xuất CSV và xoá bản ghi`
 
-| Lớp kiến trúc | Công nghệ / Thư viện | Vai trò & Mục đích kỹ thuật |
-|---|---|---|
-| **Frontend Framework** | **React 19.3 + Vite 8.3** | Xây dựng Single Page Application hiện đại với Code Splitting (`React.lazy` tách riêng Studio & QR Scanner khỏi trang công khai). |
-| **Giao diện & Thẩm mỹ** | **Vanilla CSS Modules + Luxury Rose-Red Palette** | Bảng màu Đỏ Hồng Cao Cấp (`#e11d48`, `#be123c`, `#9f1239`) kết hợp Dark Titanium Slate (`#09090b`), 0 xung đột CSS toàn cục. |
-| **Định tuyến & Trạng thái** | **Hash-based Routing (`useHashRoute`)** | Điều hướng không tải lại trang (`#/`, `#/p/:id/*`, `#/e/:slug`), hoạt động ổn định trên mọi static hosting (Vercel, GitHub Pages, Localhost) mà không bị lỗi 404 Rewrite. |
-| **AI Engine & Fact Guard** | **Google Gemini 1.5 Flash + Local Fact Guard L1 - L5** | Tích hợp AI tạo nội dung tiếng Việt có rào chắn chống Prompt Injection (`escapePromptField`) và kiểm duyệt 10 quy tắc (chống XSS, chống bịa đặt voucher/giảm giá/diễn giả lạ/cam kết miễn phí/chứng chỉ). |
-| **Mock Engine dự phòng** | **Deterministic Mock Content Generator** | Kích hoạt khi offline hoặc chưa cấu hình API key, luôn gắn nhãn minh bạch theo quy chế: *"Bản demo vòng loại - Dữ liệu mô phỏng AI"*. |
-| **Serverless Backend** | **Vercel Serverless Functions (`api/*.js`)** | Giấu hoàn toàn khóa API phía máy chủ, kiểm tra HTTP Method (405), giới hạn payload 16KB (413), che mờ URL tránh rò rỉ token. |
-| **Mã QR, CSV & Excel** | **qrcode + jsqr + SpreadsheetML Engine** | Sinh ảnh mã QR vé tham dự (`DK-XXXXXX`), quét vé camera trực tiếp trên điện thoại, xuất danh sách ra file `.csv` (UTF-8 BOM) và `.xls` (Excel có định dạng bảng) chống Formula Injection. |
-| **Kiểm tra chất lượng** | **Oxlint + Node.js Built-in Test Runner** | **0 cảnh báo, 0 lỗi** (`oxlint` trên 56 tệp), **88/88 bài kiểm thử tự động** chạy trong ~360ms. |
+## 3. Công nghệ sử dụng
 
----
+| Lớp | Công nghệ (ghi đúng thứ đã dùng) |
+|---|---|
+| Giao diện | `React 19` + `CSS Modules (không dùng Tailwind)` |
+| Thư viện | `react@19.3.1, react-dom@19.3.1, qrcode@1.5.4, jsqr@1.4.0` |
+| Lưu trữ | localStorage (phía trình duyệt, không có backend) |
+| Triển khai | `Vercel` |
 
-## 3. 5 TÍNH NĂNG CỐT LÕI (F1 → F5 THEO BAREM CHẤM ĐIỂM)
+## 4. Tích hợp AI
 
-### 🌟 F1: Nhập liệu thông tin sự kiện & Thư viện ảnh nguồn (Workspace 1)
-- Thu thập đầy đủ **5 trường thông tin bắt buộc**: Tên sự kiện, Ngày diễn ra, Giờ bắt đầu, Địa điểm tổ chức, Diễn giả, Ưu đãi đăng ký sớm và Chương trình (Agenda).
-- Kiểm tra tính hợp lệ tức thì: Chặn tên rỗng, chặn ngày giờ quá khứ, phân định rõ ngày đã qua và giờ đã trôi qua trong ngày theo múi giờ chuẩn Việt Nam (`GMT+7`).
-- **Thư viện ảnh nguồn (Asset Library)**: Hỗ trợ tải lên tối đa 8 ảnh (JPG, PNG, WebP), tự động nén HTML5 Canvas cạnh dài ≤ 1280px, gán vai trò (`speaker`, `venue`, `gift`, `other`) và mô tả ảnh.
+- **Chế độ đang dùng**: `API thật` (chọn một)
+  - API thật: `chib/gemini-3.8-flash` (qua endpoint tương thích OpenAI của vilao.ai)
+  - Mock: giao diện hiển thị dòng *"Bản demo vòng loại - Dữ liệu mô phỏng AI"*
+- **Mục đích**: phân tích dữ liệu người dùng nhập và trả về gợi ý theo ngữ cảnh đề bài.
+- **Bảo mật khoá API**: không ghi khoá trong mã nguồn phía client. Đặt trong biến môi trường (`.env`, không commit) và gọi qua serverless function / proxy; nếu chỉ dùng Mock thì không cần khoá.
 
-### 🤖 F2: AI Copywriting thông minh & Fact Guard chống ảo giác (Workspace 3)
-- AI phân tích dữ liệu đầu vào để biên soạn đúng **3 thành phần cốt lõi**: Headline (10–12 từ lôi cuốn), Description (2–3 câu sâu sắc), và đúng 3 Bullets lợi ích thiết thực.
-- **Fact Guard & Output Control 10 quy tắc**: Chặn mã độc XSS, chặn ký tự hỏng UTF-8, chặn chuỗi `undefined/null`, và **chống AI tự ý bịa đặt mã giảm giá (voucher), cam kết miễn phí 100% hoặc cam kết cấp chứng chỉ** khi dữ liệu đầu vào không nhắc tới.
-- Cho phép người dùng chỉnh sửa tay trực tiếp từng trường nội dung.
+Biến môi trường (nếu dùng API thật):
 
-### 📱 F3: Xem trước tương tác Responsive 2 thiết bị (Workspace 3)
-- Render đầy đủ **4 khu vực bắt buộc** trên Landing Page: **Hero Section**, **Đồng hồ đếm ngược (Countdown)**, **Lịch trình (Agenda)**, và **Biểu mẫu đăng ký (Registration Form)**.
-- Chuyển đổi tức thì giữa 2 khung màn hình: **Laptop (1280px)** và **Điện thoại (375px)**, đồng thời đáp ứng mượt mà trên màn hình nhỏ **320px** mà không tràn ngang (`overflow-x: hidden`).
-- Giao diện di động của Studio có thanh điều hướng 4 Workspace kèm **nút Quét QR** chuyên dụng nằm chính giữa (giữa *2. Form đăng ký* và *3. Preview*).
-
-### 🎫 F4: Form đăng ký động, Sinh mã vé DK-XXXXXX, Xuất CSV/Excel & Thống kê thời gian thực (Workspace 2 & 4)
-- Đăng ký thành công tức thì:
-  - Sinh mã vé độc nhất dạng **`DK-XXXXXX`** (bảng 32 ký tự loại bỏ 0/O, 1/I dễ nhầm lẫn).
-  - Tự động tạo ảnh mã QR vé check-in cho phép tải về máy hoặc thêm lịch `.ics`.
-  - Số lượng người đăng ký tăng ngay tức thì **$N \rightarrow N+1$**, chống trùng lặp Email và Số điện thoại (sau khi chuẩn hóa `+84` → `0`).
-  - **Bảo toàn dữ liệu sau `F5`**: Lưu trữ nguyên tử trong `localStorage` kèm cơ chế đọc kiểm chứng và bắt lỗi đầy bộ nhớ (`QuotaExceededError`).
-  - **Xuất dữ liệu tiện lợi**: Hỗ trợ xuất danh sách người tham gia ra cả định dạng **CSV (`.csv`)** và **Excel (`.xls`)** có chống Formula Injection.
-
-### 🔄 F5: Tạo trang mới (Reset sạch dự án an toàn)
-- Nút "Tạo trang mới" trên thanh công cụ trên cùng mở **hộp thoại xác nhận 2 bước (Modal Dialog)** giúp tránh bấm nhầm.
-- Khi xác nhận: Khởi tạo dự án sự kiện mới với trạng thái sạch hoàn toàn, sẵn sàng tạo landing page tiếp theo.
-
----
-
-## 4. HƯỚNG DẪN CÀI ĐẶT & KHỞI CHẠY
-
-### 4.1. Yêu cầu môi trường
-- **Node.js**: Phiên bản 18.0 trở lên (khuyến nghị Node.js v20 hoặc v22 LTS).
-- **Trình duyệt**: Google Chrome, Microsoft Edge, Mozilla Firefox hoặc Safari phiên bản mới nhất.
-
-### 4.2. Khởi chạy nhanh bằng lệnh Terminal
-```bash
-# 1. Cài đặt các gói thư viện
-npm install
-
-# 2. (Tùy chọn) Tạo file .env từ .env.example nếu muốn dùng Gemini API thật ở local
-cp .env.example .env
-
-# 3. Khởi chạy máy chủ phát triển (Dev Server)
-npm run dev
-# Mở trình duyệt truy cập: http://localhost:5173
-
-# 4. Chạy toàn bộ 88 ca kiểm thử tự động
-npm test
-
-# 5. Kiểm tra chất lượng mã nguồn (Linter - 0 lỗi)
-npm run lint
-
-# 6. Rà soát bí mật và đường dẫn cá nhân
-npm run scan:secrets
-
-# 7. Đóng gói bài thi tự động thành file .zip nghiệm thu
-npm run package:submission
-
-# 8. Biên dịch bản sản xuất (Production Build)
-npm run build
+```env
+VITE_GEMINI_API_KEY=<khoá của bạn>
+VITE_GEMINI_BASE_URL=https://api.vilao.ai/v1
+VITE_GEMINI_MODEL=chib/gemini-3.8-flash
 ```
 
----
+## 5. Cài đặt và chạy local
 
-### 4.3. BỘ DỮ LIỆU MẪU 5 TRƯỜNG BẮT BUỘC (DÀNH CHO GIÁM KHẢO KIỂM THỬ TRONG 30 GIÂY)
+Yêu cầu: trình duyệt hiện đại; Node.js ≥ 18 nếu dùng React/Vue/Vite.
 
-Giám khảo có thể sao chép nhanh dữ liệu chuẩn dưới đây và dán vào Workspace 1 để kiểm tra toàn bộ luồng F1 → F5:
+**Cách B — React/Vue (Vite)**
 
-| STT | Trường thông tin | Dữ liệu mẫu kiểm thử chuẩn (Copy & Paste) |
-|:---:|---|---|
-| **1** | **Tên sự kiện** | `Workshop Chinh Phục Vibe Coding & AI 2026` |
-| **2** | **Ngày diễn ra** | `2026-11-20` *(hoặc chọn bất kỳ ngày nào trong tương lai)* |
-| **3** | **Giờ bắt đầu** | `09:00` *(Giờ chuẩn Việt Nam GMT+7)* |
-| **4** | **Địa điểm tổ chức** | `Hội trường Innovation Hub, Tầng 3, Tòa nhà Công nghệ, Hà Nội` |
-| **5** | **Diễn giả chính** | `TS. Nguyễn Văn An` — Chức danh: `Chuyên gia Trưởng AI` |
-| **+** | **Ưu đãi đăng ký sớm** | `Tặng bộ tài liệu VIP và giảm 30% cho 50 vé đầu tiên` |
+```bash
+npm install
+npm run dev      # chạy dev, mặc định http://localhost:5173
+npm run build    # build production ra thư mục dist/
+```
 
----
+## 6. Cấu trúc thư mục
 
-## 5. TUYÊN BỐ SỬ DỤNG AI (AI DECLARATION)
+```text
+vibecode/
+├── index.html
+├── package.json
+├── vite.config.js
+├── .env.example                        # mẫu biến môi trường
+├── .gitignore
+├── .oxlintrc.json
+├── api/                                # serverless functions (Vercel)
+│   ├── generate.js                     # proxy gọi AI API
+│   ├── network-info.js                 # trả về IP LAN & trạng thái tunnel
+│   ├── _lib/
+│   │   └── http.js
+│   ├── sync/                           # đồng bộ dữ liệu thời gian thực
+│   │   ├── project.js
+│   │   ├── publish.js
+│   │   ├── register.js
+│   │   ├── registrations.js
+│   │   └── stream.js                   # Server-Sent Events
+│   └── tunnel/                         # quản lý Cloudflare Tunnel
+│       ├── start.js
+│       ├── status.js
+│       └── stop.js
+├── public/                             # tài nguyên tĩnh
+│   ├── favicon.svg
+│   ├── icons.svg
+│   └── sample-assets/                  # ảnh mẫu cho dự án demo
+│       ├── event_poster.svg
+│       ├── prizes_awards.svg
+│       ├── speaker_1.jpg
+│       ├── speaker_2.jpg
+│       ├── speaker_3.jpg
+│       └── venue_auditorium.svg
+├── scripts/                            # tiện ích build & đóng gói
+│   ├── package-submission.mjs          # đóng gói ZIP nộp bài
+│   └── scan-secrets.mjs               # quét lộ API key trước khi commit
+├── src/                                # mã nguồn React
+│   ├── main.jsx
+│   ├── App.jsx
+│   ├── index.css
+│   ├── App.module.css
+│   ├── assets/
+│   │   ├── hero.png
+│   │   └── vite.svg
+│   ├── components/
+│   │   ├── welcome/                    # màn hình chào (WelcomeIntro)
+│   │   ├── home/                       # dashboard quản lý dự án (HomeDashboard)
+│   │   ├── studio/                     # studio biên tập landing page
+│   │   │   ├── StudioLayout.jsx
+│   │   │   ├── WorkspaceInfo.jsx       # nhập thông tin sự kiện & gọi AI
+│   │   │   ├── WorkspaceForm.jsx       # thiết kế form đăng ký
+│   │   │   ├── WorkspaceLanding.jsx    # xem trước & xuất bản
+│   │   │   ├── WorkspaceRegistrations.jsx  # danh sách đăng ký & check-in
+│   │   │   └── QrCheckInModal.jsx      # quét QR check-in
+│   │   ├── landing/                    # render landing page (module-based)
+│   │   │   ├── LandingView.jsx
+│   │   │   └── ModuleRenderer.jsx
+│   │   ├── public/                     # trang landing công khai (URL slug)
+│   │   │   └── PublicLandingPage.jsx
+│   │   └── ui/                         # UI primitives dùng chung
+│   │       ├── ErrorBoundary.jsx
+│   │       ├── Icons.jsx
+│   │       ├── ConfirmDialog.jsx
+│   │       ├── Toast.jsx
+│   │       └── Lozenge.jsx
+│   ├── domain/                         # logic nghiệp vụ thuần (không phụ thuộc React)
+│   │   ├── elsSchema.js               # schema & factory (Project, Asset, Registration)
+│   │   ├── validators.js              # validation đầu vào
+│   │   ├── aiGuard.js                 # kiểm soát & xác thực đầu ra AI
+│   │   ├── moduleSchema.js            # schema module landing page
+│   │   ├── moduleAuditor.js           # kiểm tra cấu trúc module bắt buộc
+│   │   ├── normalize.js               # chuẩn hóa text, email, phone
+│   │   ├── time.js                    # countdown & xử lý thời gian GMT+7
+│   │   ├── agenda.js                  # xử lý lịch trình sự kiện
+│   │   ├── calendar.js                # tiện ích lịch
+│   │   ├── errors.js                  # ElsError & mã lỗi chuẩn
+│   │   ├── imageCompressor.js         # nén ảnh phía client
+│   │   ├── sampleAssets.js            # dữ liệu ảnh mẫu
+│   │   └── sampleProjects.js          # dự án mẫu cho demo
+│   ├── services/                       # tầng tích hợp bên ngoài & localStorage
+│   │   ├── aiClient.js                # gọi AI API (proxy + client-direct fallback)
+│   │   ├── aiLogger.js                # nhật ký gọi AI, masking API key
+│   │   ├── mockAi.js                  # Mock engine (dữ liệu mô phỏng AI)
+│   │   ├── elsRepository.js           # CRUD localStorage (Project, Asset, Registration)
+│   │   └── realtimeSync.js            # SSE client đồng bộ đăng ký thời gian thực
+│   ├── router/
+│   │   └── useHashRoute.js            # hash-based router (#welcome / #home / #studio / #public)
+│   └── themes/
+│       ├── tokens.css                 # CSS custom properties (màu, spacing, font)
+│       └── themes.css                 # các bộ màu theme (purple, blue, emerald, ...)
+└── tests/                              # bộ kiểm thử Node.js built-in test runner
+    ├── acceptance.test.js              # TC-01→TC-06 + TX-01→TX-15 + SEC-01→SEC-09
+    ├── domain.test.js                  # unit test domain logic
+    ├── els.test.js                     # unit test elsRepository
+    └── module.test.js                  # unit test moduleSchema & moduleAuditor
+```
 
-Nhằm đảm bảo tính minh bạch theo quy chế Hội đồng Giám khảo Cuộc thi Vibe Coding 2026:
+## 7. Truy cập và phân quyền
 
-1. **Mô hình AI sử dụng trong sản phẩm:**
-   - Ứng dụng tích hợp mô hình **Google Gemini 1.5 Flash** (`gemini-1.5-flash`) thông qua Serverless Proxy `/api/generate` (Node.js), **không để lộ API key trong client bundle hay URL trả về**.
-2. **Chế độ Mock AI Engine dự phòng:**
-   - Khi chạy offline hoặc chưa cấu hình `VITE_GEMINI_API_KEY`, hệ thống cho phép sử dụng **Mock AI Engine** cục bộ (`src/services/mockAi.js`).
-   - Mọi nội dung sinh bởi Mock Engine đều gắn nhãn minh bạch cố định trên giao diện:  
-     `"Bản demo vòng loại - Dữ liệu mô phỏng AI"`.
-3. **Kiểm soát đầu ra (Fact Guard):**
-   - Toàn bộ đầu ra AI đều đi qua bộ lọc `runAiGuard()` (`src/domain/aiGuard.js`) để kiểm tra định dạng JSON, kiểm tra đủ 3 thành phần và đối chiếu chống bịa đặt thông tin ngoài dữ liệu đầu vào.
+- Không yêu cầu đăng nhập; chuyển đổi giữa màn hình người dùng và màn hình quản trị ngay trên giao diện.
+- Màn hình quản trị: xem và xoá danh sách bản ghi trong localStorage.
 
----
+## 8. Giới hạn hiện tại
 
-## 6. GIỚI HẠN SẢN PHẨM TRUNG THỰC (HONEST PRODUCT LIMITATIONS)
+- Dữ liệu chỉ lưu trên trình duyệt hiện tại; xoá dữ liệu trình duyệt hoặc đổi thiết bị sẽ mất dữ liệu.
+- Không có xác thực, nên màn hình quản trị không bảo mật.
+- Tính năng AI ở mức demo phục vụ vòng loại (nếu dùng Mock, dữ liệu trả về không phải kết quả thật).
 
-1. **Lưu trữ dữ liệu cục bộ (`localStorage`):**
-   - Toàn bộ dự án và danh sách đăng ký được lưu trữ trong `localStorage` của trình duyệt theo đúng yêu cầu đề bài không bắt buộc Database rời. Nếu người dùng xóa dữ liệu duyệt web (Clear Site Data) hoặc mở ở chế độ Ẩn danh mới hoàn toàn mà không qua link đồng bộ, dữ liệu cục bộ cũ sẽ không còn.
-2. **Đồng bộ đa thiết bị:**
-   - Khi chạy trên cùng trình duyệt (nhiều tab), dữ liệu đồng bộ tức thì 100% qua `BroadcastChannel` và sự kiện `storage`. Khi quét QR từ điện thoại sang máy tính qua mạng LAN / Cloudflare Tunnel / Vercel, hệ thống sử dụng kênh đồng bộ tạm thời (`/api/sync/*`) để truyền dự án và đơn đăng ký.
-3. **Phụ thuộc hạn ngạch API AI bên ngoài:**
-   - Lệnh gọi AI trực tiếp phụ thuộc vào hạn ngạch (quota) của Google Gemini API. Khi vượt quá giới hạn tần suất (HTTP 429) hoặc mất kết nối mạng, hệ thống giữ nguyên dữ liệu người dùng đã nhập và hiển thị thông báo rõ ràng.
+## 9. Nguồn tham khảo
 
----
+- Google Fonts, Lucide Icons
+- Bộ thông số dịch vụ mẫu do Ban tổ chức cung cấp
 
-## 7. NGUỒN THAM KHẢO & THƯ VIỆN BÊN THỨ BA
 
-Tất cả các thư viện sử dụng trong dự án đều là mã nguồn mở với giấy phép thương mại tự do (MIT / Apache 2.0):
+## 10. Minh chứng dùng AI để xây dựng sản phẩm
 
-- **React & React DOM (v19.3.1)** — Giấy phép MIT.
-- **Vite (v8.3.4)** — Giấy phép MIT.
-- **qrcode (v1.5.4)** — Giấy phép MIT — Sinh ảnh mã QR vé tham dự.
-- **jsqr (v1.4.0)** — Giấy phép Apache 2.0 — Nhận diện mã QR từ camera khi check-in.
-- **Oxlint (v1.88.0)** — Giấy phép MIT — Kiểm tra chất lượng mã nguồn tĩnh.
+Tối đa 1 trang kèm tối đa 5 ảnh/đoạn hội thoại chọn lọc. Ghi mục tiêu → yêu cầu cho AI → vấn đề phát hiện khi thử → yêu cầu sửa → kết quả kiểm tra lại.
 
----
+- `<Tên tệp minh chứng hoặc liên kết>`
+- `<Tóm tắt một vòng thử và cải thiện>`
 
-## 8. CHECKLIST AN TOÀN TRƯỚC KHI ĐÓNG GÓI NỘP BÀI (PRE-ZIP SECURITY CHECKLIST)
+## 11. Bảng kiểm thử
 
-- [x] **0 Khóa API thật & 0 Đường dẫn cá nhân:** Đã kiểm chứng tự động bằng `npm run scan:secrets`.
-- [x] **File `.env` được loại trừ:** `.env` nằm trong `.gitignore` và bị loại bỏ hoàn toàn khi đóng gói ZIP.
-- [x] **Tệp `.env.example` chuẩn:** Cung cấp sẵn `.env.example` với giá trị mẫu an toàn (`your_gemini_api_key_here`).
-- [x] **88/88 Unit & Acceptance Tests vượt qua:** Chạy `npm test` đạt 100% PASS.
-- [x] **0 Cảnh báo Linter:** Chạy `npm run lint` đạt `0 warnings, 0 errors`.
-- [x] **Đóng gói & Giải nén kiểm chứng độc lập:** Gói nộp bài tạo bởi `npm run package:submission` loại bỏ hoàn toàn `node_modules`, `.git`, `dist`, `.env`.
+Bảng A: ít nhất 6 ca, gồm 2 bình thường, 2 đầu vào không hợp lệ, 2 ca biên/sự cố. Bảng B: ít nhất 3 ca, gồm bình thường, nhập thiếu/sai và một ca biên. Chấp nhận kiểm tra thủ công; ghi kết quả thực tế.
+
+| Mã ca | Loại ca | Dữ liệu và bước thử | Kỳ vọng | Kết quả thực tế | Đạt/Chưa đạt |
+|---|---|---|---|---|---|
+| TC01 | `Bình thường` | `Nhập 5 trường: Tên="Workshop Chinh Phục Vibe Coding 2026", Ngày=2026-11-20, Giờ=09:00, Địa điểm="Hội trường Innovation Hub, Tầng 3, Tòa nhà Công nghệ, Hà Nội", Diễn giả="TS. Nguyễn Văn An – Chuyên gia AI", Ưu đãi="Tặng bộ tài liệu VIP và giảm 30% cho 50 vé đầu tiên" → bấm Sinh nội dung AI → xem kết quả trên landing page preview` | `AI trả về đủ headline, description, 3 bullets; landing page render đủ 4 khu vực Hero/Countdown/Agenda/Form` | `AI sinh đúng headline "Workshop Chinh Phục Vibe Coding 2026"; description 3 câu bám sát dữ liệu nhập; đủ 3 bullets (diễn giả, lịch trình, ưu đãi 30%); Hero hiển thị ngày 2026-11-20, giờ 09:00–11:30, địa điểm đầy đủ; Countdown hiện 10d 22h 03m 35s; navbar có Chương trình / Diễn giả / Địa điểm` | `Đạt` |
+| TC02 | `Bình thường` | `Mở landing page "Workshop Chinh Phục Vibe Coding 2026" đã xuất bản → kéo xuống form đăng ký → điền: Họ và tên="Trần Thị Mai", Email="mai.tran@example.com", SĐT="0988123456" → bấm Gửi đăng ký → ghi lại mã vé → F5 → vào Studio tab Danh sách đăng ký kiểm tra` | `Hiển thị mã vé DK-XXXXXX; số lượng đăng ký tăng N→N+1; sau F5 vẫn giữ nguyên` | `Hiển thị "Đăng ký thành công!" kèm mã vé DK-KVVHSC và mã QR check-in; dashboard Studio ghi nhận Tổng đơn=1, Ghi nhận hôm nay=1, Đơn mới nhất="Trần Thị Mai", Trạng thái=Trực tuyến; bảng danh sách hiện đúng mã DK-KVVHSC / mail / nguồn Landing Page / thời gian 11:07:09 09-11` | `Đạt` |
+| TC03 | `Đầu vào không hợp lệ` | `Bấm "Tạo dự án mới" → modal hiện ra → thử lần lượt: (3A) để trống Tên dự án → bấm "Tạo và bắt đầu"; (3B) nhập toàn khoảng trắng "     "; (3C) nhập tên quá ngắn "AB" → bấm "Tạo và bắt đầu"` | `Chặn tại modal tạo dự án, hiển thị lỗi ngay tại trường tên, không cho vào trang nhập thông tin sự kiện` | `Cả 3 trường hợp bị chặn ngay tại modal; hiển thị lỗi "Tên dự án không được để trống. Vui lòng nhập tên từ 3 đến 120 ký tự."; không chuyển sang bước tiếp theo` | `Đạt` |
+| TC04 | `Đầu vào không hợp lệ` | `(4A) Vào tab Thông tin sự kiện → sửa Ngày=2020-01-01, Giờ=08:00 → bấm Sinh nội dung AI; (4B) Mở landing page public qua Cloudflare → đăng ký với Email="mai.tran@example.com" đã tồn tại (Họ tên="Nguyễn Văn B", SĐT="0911222333") → bấm Gửi đăng ký` | `(4A) Chặn tại form, báo lỗi ngày đã qua; countdown không hiển thị số âm. (4B) Báo lỗi trùng email, không tạo bản ghi mới` | `(4A) Trường Ngày diễn ra hiển thị viền đỏ và lỗi "Ngày diễn ra đã qua. Vui lòng chọn một ngày từ hôm nay trở đi." — không cho tiếp tục; (4B) Hệ thống cho phép đăng ký thành công với email đã tồn tại, tạo bản ghi mới DK-ZEDY63 cho Nguyễn Văn B; danh sách hiện 2 bản ghi cùng email mai.tran@example.com. Nguyên nhân: kiểm tra trùng lặp dựa trên localStorage từng trình duyệt, không phát hiện được khi truy cập từ thiết bị/tab khác qua Cloudflare Tunnel` | `(4A) Đạt; (4B) Chưa đạt` |
+| TC05 | `Giá trị biên` | `Tạo dự án mới với tên chứa ký tự đặc biệt, HTML, emoji và chuỗi dài: "Hội thảo: \"Vibe Coding 2026\" & Trí tuệ Nhân tạo — 🚀 Bùng nổ công nghệ tương lai! <script>alert(1)</script>" → điền ngày=2026-12-01, địa điểm="Hà Nội", diễn giả="Diễn giả A", ưu đãi="Giảm 20%" → bấm Sinh nội dung AI` | `Dữ liệu được chuẩn hóa an toàn; AI Guard chặn thẻ <script> hoặc mã độc, hiện thông báo lỗi rõ ràng` | `AI Guard phát hiện và chặn: hiển thị lỗi "Không thể tạo nội dung bằng AI — Phát hiện vi phạm tính xác thực: Nội dung chứa thẻ HTML, mã script hoặc URI nguy hiểm"; cung cấp 2 lựa chọn "Thử lại" và "Dùng dữ liệu mô phỏng"; không crash, không thực thi script độc hại` | `Đạt` |
+| TC06 | `Xử lý sự cố` | `Tắt Wi-Fi → bấm "Sinh nội dung AI" → chờ kết quả lỗi → bật lại mạng → bấm "Thử lại"` | `Báo lỗi mạng rõ ràng, giữ nguyên dữ liệu form; bấm Thử lại sau khi có mạng thì thành công` | `Hiển thị lỗi "Không thể tạo nội dung bằng AI — fetch failed. Vui lòng kiểm tra mạng và bấm Thử lại"; dữ liệu form giữ nguyên (badge "Đã đủ thông tin từ WS1 & WS2!"); cung cấp 2 lựa chọn "Thử lại" và "Dùng dữ liệu mô phỏng"; sau khi bật mạng bấm Thử lại → sinh nội dung thành công` | `Đạt` |
+
+## 12. Hồ sơ bàn giao
+
+- Source ZIP chứa mã nguồn và README này; chỉ kèm cấu hình mẫu.
+- Video tối đa 2 phút thể hiện thao tác thực tế và đủ 5 tính năng.
+- Minh chứng dùng AI và bảng kiểm thử nằm trong ZIP hoặc có liên kết riêng.
+- Ghi rõ tài khoản/dữ liệu demo nếu có.
+- Bản nộp trước hạn là căn cứ chấm; không sửa tính năng sau hạn nộp.
