@@ -71,10 +71,12 @@ npm run build    # build production ra thư mục dist/
 vibecode/
 ├── index.html
 ├── package.json
+├── package-lock.json
 ├── vite.config.js
 ├── .env.example                        # mẫu biến môi trường
 ├── .gitignore
 ├── .oxlintrc.json
+├── README.md
 ├── api/                                # serverless functions (Vercel)
 │   ├── generate.js                     # proxy gọi AI API
 │   ├── network-info.js                 # trả về IP LAN & trạng thái tunnel
@@ -102,7 +104,8 @@ vibecode/
 │       └── venue_auditorium.svg
 ├── scripts/                            # tiện ích build & đóng gói
 │   ├── package-submission.mjs          # đóng gói ZIP nộp bài
-│   └── scan-secrets.mjs               # quét lộ API key trước khi commit
+│   ├── scan-secrets.mjs                # quét lộ API key trước khi commit
+│   └── scan-hardcode.mjs               # quét chuỗi hardcode
 ├── src/                                # mã nguồn React
 │   ├── main.jsx
 │   ├── App.jsx
@@ -112,51 +115,76 @@ vibecode/
 │   │   ├── hero.png
 │   │   └── vite.svg
 │   ├── components/
-│   │   ├── welcome/                    # màn hình chào (WelcomeIntro)
-│   │   ├── home/                       # dashboard quản lý dự án (HomeDashboard)
-│   │   ├── studio/                     # studio biên tập landing page
-│   │   │   ├── StudioLayout.jsx
-│   │   │   ├── WorkspaceInfo.jsx       # nhập thông tin sự kiện & gọi AI
-│   │   │   ├── WorkspaceForm.jsx       # thiết kế form đăng ký
-│   │   │   ├── WorkspaceLanding.jsx    # xem trước & xuất bản
-│   │   │   ├── WorkspaceRegistrations.jsx  # danh sách đăng ký & check-in
-│   │   │   └── QrCheckInModal.jsx      # quét QR check-in
+│   │   ├── home/                       # dashboard quản lý dự án
+│   │   │   ├── HomeDashboard.jsx
+│   │   │   └── HomeDashboard.module.css
 │   │   ├── landing/                    # render landing page (module-based)
 │   │   │   ├── LandingView.jsx
-│   │   │   └── ModuleRenderer.jsx
+│   │   │   ├── LandingView.module.css
+│   │   │   ├── ModuleRenderer.jsx
+│   │   │   └── ModuleRenderer.module.css
 │   │   ├── public/                     # trang landing công khai (URL slug)
-│   │   │   └── PublicLandingPage.jsx
-│   │   └── ui/                         # UI primitives dùng chung
-│   │       ├── ErrorBoundary.jsx
-│   │       ├── Icons.jsx
-│   │       ├── ConfirmDialog.jsx
-│   │       ├── Toast.jsx
-│   │       └── Lozenge.jsx
+│   │   │   ├── PublicLandingPage.jsx
+│   │   │   └── PublicLandingPage.module.css
+│   │   ├── studio/                     # studio biên tập landing page
+│   │   │   ├── QrCheckInModal.jsx
+│   │   │   ├── QrCheckInModal.module.css
+│   │   │   ├── StudioLayout.jsx
+│   │   │   ├── StudioLayout.module.css
+│   │   │   ├── WorkspaceForm.jsx
+│   │   │   ├── WorkspaceForm.module.css
+│   │   │   ├── WorkspaceInfo.jsx
+│   │   │   ├── WorkspaceInfo.module.css
+│   │   │   ├── WorkspaceLanding.jsx
+│   │   │   ├── WorkspaceLanding.module.css
+│   │   │   ├── WorkspaceRegistrations.jsx
+│   │   │   └── WorkspaceRegistrations.module.css
+│   │   ├── ui/                         # UI primitives dùng chung
+│   │   │   ├── ConfirmDialog.jsx
+│   │   │   ├── ConfirmDialog.module.css
+│   │   │   ├── ErrorBoundary.jsx
+│   │   │   ├── ErrorBoundary.module.css
+│   │   │   ├── Icons.jsx
+│   │   │   ├── Lozenge.jsx
+│   │   │   ├── Lozenge.module.css
+│   │   │   ├── Toast.jsx
+│   │   │   └── Toast.module.css
+│   │   └── welcome/                    # màn hình chào
+│   │       ├── WelcomeIntro.jsx
+│   │       └── WelcomeIntro.module.css
 │   ├── domain/                         # logic nghiệp vụ thuần (không phụ thuộc React)
-│   │   ├── elsSchema.js               # schema & factory (Project, Asset, Registration)
-│   │   ├── validators.js              # validation đầu vào
-│   │   ├── aiGuard.js                 # kiểm soát & xác thực đầu ra AI
-│   │   ├── moduleSchema.js            # schema module landing page
-│   │   ├── moduleAuditor.js           # kiểm tra cấu trúc module bắt buộc
-│   │   ├── normalize.js               # chuẩn hóa text, email, phone
-│   │   ├── time.js                    # countdown & xử lý thời gian GMT+7
 │   │   ├── agenda.js                  # xử lý lịch trình sự kiện
+│   │   ├── aiGuard.js                 # kiểm soát & xác thực đầu ra AI
 │   │   ├── calendar.js                # tiện ích lịch
+│   │   ├── elsSchema.js               # schema & factory (Project, Asset, Registration)
 │   │   ├── errors.js                  # ElsError & mã lỗi chuẩn
 │   │   ├── imageCompressor.js         # nén ảnh phía client
+│   │   ├── moduleAuditor.js           # kiểm tra cấu trúc module bắt buộc
+│   │   ├── moduleSchema.js            # schema module landing page
+│   │   ├── normalize.js               # chuẩn hóa text, email, phone
 │   │   ├── sampleAssets.js            # dữ liệu ảnh mẫu
-│   │   └── sampleProjects.js          # dự án mẫu cho demo
+│   │   ├── sampleProjects.js          # dự án mẫu cho demo
+│   │   ├── time.js                    # countdown & xử lý thời gian GMT+7
+│   │   └── validators.js              # validation đầu vào
+│   ├── lib/                            # thư viện tiện ích bổ trợ
+│   │   ├── clipboard.js               # sao chép clipboard
+│   │   └── confetti.js                # hiệu ứng pháo hoa chúc mừng
+│   ├── router/
+│   │   └── useHashRoute.js            # hash-based router (#welcome / #home / #studio / #public)
 │   ├── services/                       # tầng tích hợp bên ngoài & localStorage
 │   │   ├── aiClient.js                # gọi AI API (proxy + client-direct fallback)
 │   │   ├── aiLogger.js                # nhật ký gọi AI, masking API key
-│   │   ├── mockAi.js                  # Mock engine (dữ liệu mô phỏng AI)
 │   │   ├── elsRepository.js           # CRUD localStorage (Project, Asset, Registration)
+│   │   ├── mockAi.js                  # Mock engine (dữ liệu mô phỏng AI)
 │   │   └── realtimeSync.js            # SSE client đồng bộ đăng ký thời gian thực
-│   ├── router/
-│   │   └── useHashRoute.js            # hash-based router (#welcome / #home / #studio / #public)
 │   └── themes/
 │       ├── tokens.css                 # CSS custom properties (màu, spacing, font)
 │       └── themes.css                 # các bộ màu theme (purple, blue, emerald, ...)
+├── submission-docs/                    # tài liệu minh chứng nộp bài
+│   ├── 01-chong-dang-ky-trung.jpg
+│   ├── 02-kiem-tra-logic-timeline.jpg
+│   ├── 03-toi-uu-mobile-thu-vien-anh.jpg
+│   └── minh-chung-ai.pdf
 └── tests/                              # bộ kiểm thử Node.js built-in test runner
     ├── acceptance.test.js              # TC-01→TC-06 + TX-01→TX-15 + SEC-01→SEC-09
     ├── domain.test.js                  # unit test domain logic
@@ -179,6 +207,7 @@ vibecode/
 
 - Google Fonts, Lucide Icons
 - Bộ thông số dịch vụ mẫu do Ban tổ chức cung cấp
+- Nhạc nền video demo: https://www.youtube.com/watch?v=kh7WxlzHXAU&list=PLfwPeGOAUUCbHkqEAV_IYA0DlPC-NoKr6
 
 
 ## 10. Minh chứng dùng AI để xây dựng sản phẩm
